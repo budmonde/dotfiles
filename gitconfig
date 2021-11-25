@@ -1,0 +1,47 @@
+[user]
+	email = budmonde@gmail.com
+	name = Monde Duinkharjav
+[push]
+    default = simple
+[core]
+	editor = vim
+[credential]
+    helper = cache
+[branch]
+    autosetuprebase = always
+[alias]
+    cc = clone
+    fe = pull
+    ff = push
+    ci = commit
+
+    st = status
+    stu = status HEAD^
+    stuu = status HEAD^^
+
+    d = diff
+    ds = diff --staged
+    du = diff HEAD^
+    duu = diff HEAD^^
+
+    co = checkout
+    cou = checkout HEAD^
+    couu = checkout HEAD^^
+
+    cfg = config --global -e
+    cfgl = config -e
+
+    sl = sl1
+    sl1 = sl1-specific --all
+    sl2 = sl2-specific --all
+    sl3 = sl3-specific --all
+
+    sl1-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)'
+    sl2-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(auto)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)'
+    sl3-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) %C(bold cyan)(committed: %cD)%C(reset) %C(auto)%d%C(reset)%n''          %C(white)%s%C(reset)%n''          %C(dim white)- %an <%ae> %C(reset) %C(dim white)(committer: %cn <%ce>)%C(reset)'
+[pull]
+	rebase = true
+[fetch]
+	prune = true
+[diff]
+	colorMoved = zebra

@@ -1,0 +1,43 @@
+[submodule "dotbot"]
+	path = dotbot
+	url = https://github.com/anishathalye/dotbot
+	ignore = dirty
+[submodule "zsh/plugins/zsh-syntax-highlighting"]
+	path = zsh/plugins/zsh-syntax-highlighting
+	url = https://github.com/zsh-users/zsh-syntax-highlighting
+[submodule "vim/pack/vendor/start/ctrlp.vim"]
+	path = vim/pack/vendor/start/ctrlp.vim
+	url = https://github.com/kien/ctrlp.vim.git
+[submodule "vim/pack/vendor/start/incsearch.vim"]
+	path = vim/pack/vendor/start/incsearch.vim
+	url = https://github.com/haya14busa/incsearch.vim.git
+[submodule "vim/pack/vendor/start/nerdtree"]
+	path = vim/pack/vendor/start/nerdtree
+	url = https://github.com/preservim/nerdtree.git
+[submodule "vim/pack/vendor/start/nerdtree-git-plugin"]
+	path = vim/pack/vendor/start/nerdtree-git-plugin
+	url = https://github.com/Xuyuanp/nerdtree-git-plugin.git
+[submodule "vim/pack/vendor/start/syntastic"]
+	path = vim/pack/vendor/start/syntastic
+	url = https://github.com/vim-syntastic/syntastic.git
+[submodule "vim/pack/vendor/start/vim-airline-themes"]
+	path = vim/pack/vendor/start/vim-airline-themes
+	url = https://github.com/vim-airline/vim-airline-themes.git
+[submodule "vim/pack/vendor/start/vim-airline"]
+	path = vim/pack/vendor/start/vim-airline
+	url = https://github.com/vim-airline/vim-airline.git
+[submodule "vim/pack/vendor/start/vim-fugitive"]
+	path = vim/pack/vendor/start/vim-fugitive
+	url = https://github.com/tpope/vim-fugitive.git
+[submodule "vim/pack/vendor/start/vim-gitgutter"]
+	path = vim/pack/vendor/start/vim-gitgutter
+	url = https://github.com/airblade/vim-gitgutter.git
+[submodule "vim/pack/vendor/start/vim-surround"]
+	path = vim/pack/vendor/start/vim-surround
+	url = https://github.com/tpope/vim-surround.git
+[submodule "vim/pack/vendor/start/vim-tmux-navigator"]
+	path = vim/pack/vendor/start/vim-tmux-navigator
+	url = https://github.com/christoomey/vim-tmux-navigator.git
+[submodule "zsh/plugins/fzf"]
+	path = zsh/plugins/fzf
+	url = https://github.com/junegunn/fzf.git
