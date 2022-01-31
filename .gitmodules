@@ -50,3 +50,6 @@
 [submodule "vim/pack/vendor/start/jedi-vim"]
 	path = vim/pack/vendor/start/jedi-vim
 	url = git@github.com:davidhalter/jedi-vim.git
+[submodule "vim/pack/vendor/start/vim-easymotion"]
+	path = vim/pack/vendor/start/vim-easymotion
+	url = git@github.com:easymotion/vim-easymotion.git
