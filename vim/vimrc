@@ -9,6 +9,7 @@ set showmatch                " Show matching braces when cursor over
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " View
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+color desert
 set number                   " Show line numbers
 set relativenumber           " Line numbers are relative to currentline
 set shortmess+=I             " Disable startup message

@@ -1,11 +1,16 @@
 - defaults:
     link:
+        create: true
         relink: true
 
 - clean: ['~']
 
 - link:
     ~/.gitconfig:
+    ~/.inputrc:
+    ~/.jupyter/jupyter_notebook_config.py: jupyter/jupyter_notebook_config.py
+    ~/.jupyter/nbconfig/notebook.json: jupyter/notebook.json
+    ~/.local/share/jupyter/nbextensions: jupyter/nbextensions
     ~/.shell:
     ~/.tmux.conf:
     ~/.tmux.theme.conf:
