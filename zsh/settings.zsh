@@ -6,6 +6,9 @@ setopt appendhistory
 setopt incappendhistory
 setopt extendedhistory
 
+# Disable beeping
+unsetopt beep
+
 # Time to wait for additional characters in a sequence
 export KEYTIMEOUT=1 # 10ms
 
