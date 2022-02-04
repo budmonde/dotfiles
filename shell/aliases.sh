@@ -3,6 +3,7 @@ alias grep='grep --color'
 alias ls='ls --color=auto'
 
 # Overwrite safety
+alias rm='rm -i'
 alias mv='mv -i'
 alias cp='cp -i'
 
