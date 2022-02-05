@@ -38,9 +38,6 @@
 [submodule "vim/pack/vendor/start/vim-tmux-navigator"]
 	path = vim/pack/vendor/start/vim-tmux-navigator
 	url = https://github.com/christoomey/vim-tmux-navigator.git
-[submodule "zsh/plugins/fzf"]
-	path = zsh/plugins/fzf
-	url = https://github.com/junegunn/fzf.git
 [submodule "zsh/plugins/zsh-autosuggestions"]
 	path = zsh/plugins/zsh-autosuggestions
 	url = https://github.com/zsh-users/zsh-autosuggestions
@@ -53,3 +50,6 @@
 [submodule "vim/pack/vendor/start/vim-easymotion"]
 	path = vim/pack/vendor/start/vim-easymotion
 	url = git@github.com:easymotion/vim-easymotion.git
+[submodule "shell/plugins/fzf"]
+	path = shell/plugins/fzf
+	url = https://github.com/junegunn/fzf.git

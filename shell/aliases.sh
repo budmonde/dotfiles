@@ -2,6 +2,10 @@
 alias grep='grep --color'
 alias ls='ls --color=auto'
 
+# Typo fixes
+alias sl=ls
+alias dc=cd
+
 # Overwrite safety
 alias rm='rm -i'
 alias mv='mv -i'
@@ -9,13 +13,18 @@ alias cp='cp -i'
 
 # ls shorcuts
 alias ll='ls -lX --color'
-alias sl=ls
 
 # Config file edits
-alias src='. ~/.zshrc'
+src() {
+    if [[ $SHELL = '/bin/zsh' ]]; then
+        . ~/.zshrc
+    elif [[ $SHELL = '/bin/bash' ]]; then
+        . ~/.bashrc
+    fi
+}
 alias et='vi ~/.tmux.conf'
 alias ev='vi ~/.vim/vimrc'
-alias ez='vi ~/.zshrc; . ~/.zshrc'
+alias ea='vi ~/.shell/aliases.sh; src'
 
 # Command shortcuts
 alias g='git'

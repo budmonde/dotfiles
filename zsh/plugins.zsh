@@ -2,11 +2,11 @@
 # Fuzzy Finder (fzf)
 ###############################################################################
 # Add to fzf to path
-path_append $HOME/.zsh/plugins/fzf/bin
+path_append $HOME/.shell/plugins/fzf/bin
 # Auto-completion
-[[ $- == *i* ]] && source "$HOME/.zsh/plugins/fzf/shell/completion.zsh" 2> /dev/null
+[[ $- == *i* ]] && source "$HOME/.shell/plugins/fzf/shell/completion.zsh" 2> /dev/null
 # Key-binds
-source "$HOME/.zsh/plugins/fzf/shell/key-bindings.zsh"
+source "$HOME/.shell/plugins/fzf/shell/key-bindings.zsh"
 ###############################################################################
 # Syntax highlighting
 ###############################################################################
