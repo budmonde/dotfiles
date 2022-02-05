@@ -9,6 +9,7 @@
     ~/.bash:
     ~/.bash_profile:
     ~/.bashrc:
+    ~/.condarc:
     ~/.dotfiles: ''
     ~/.gitconfig:
     ~/.inputrc:

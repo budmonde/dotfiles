@@ -11,6 +11,9 @@ source ~/.shell/aliases.sh
 # Prompt
 source ~/.zsh/prompt.zsh
 # Load local configurations
+if [ -f ~/.shell_local_after ]; then
+    source ~/.shell_local_after
+fi
 if [ -f ~/.zshrc_local_after ]; then
     source ~/.zshrc_local_after
 fi
