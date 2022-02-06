@@ -1,21 +1,11 @@
-[user]
-	email = budmonde@gmail.com
-	name = Monde Duinkharjav
-[push]
-    default = simple
-[core]
-	editor = vim
-[credential]
-    helper = cache
-[branch]
-    autosetuprebase = always
 [alias]
     cc = clone
-    fe = pull
+    fe = fetch --tags --prune
+	fa = fetch --all --tags --prune
     ff = push
     ci = commit
 
-    st = status
+    st = status -sb
     stu = status HEAD^
     stuu = status HEAD^^
 
@@ -39,9 +29,36 @@
     sl1-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)'
     sl2-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(auto)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)'
     sl3-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) %C(bold cyan)(committed: %cD)%C(reset) %C(auto)%d%C(reset)%n''          %C(white)%s%C(reset)%n''          %C(dim white)- %an <%ae> %C(reset) %C(dim white)(committer: %cn <%ce>)%C(reset)'
+
+[init]
+	defaultBranch = main
+
+[diff]
+	mnemonicPrefix = true
+	colorMoved = zebra
+
 [pull]
-	rebase = true
+	ff = only
+
+[push]
+    default = upstream
+
+[branch]
+    autosetuprebase = always
+
 [fetch]
 	prune = true
-[diff]
-	colorMoved = zebra
+
+[credential]
+	helper = cache --timeout=3600
+
+[grep]
+	lineNumber = true
+
+[advice]
+	detachedHead = false
+	waitingForEditor = false
+
+[user]
+	email = budmonde@gmail.com
+	name = Monde Duinkharjav
