@@ -137,3 +137,6 @@ nnoremap <silent> j :TmuxNavigateDown<CR>
 nnoremap <silent> k :TmuxNavigateUp<CR>
 nnoremap <silent> l :TmuxNavigateRight<CR>
 nnoremap <silent> \ :TmuxNavigatePrevious<CR>
+
+" Vim-jedi config
+let g:jedi#popup_on_dot = 0
