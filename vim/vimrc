@@ -67,6 +67,15 @@ set history=8192             " Extend history
 set undofile                 " Maintain undo history between sessions
 set undodir=~/.vim/undodir
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" WSL Configs
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Yank forward to clipboard
+if !empty(glob("/proc/sys/fs/binfmt_misc/WSLInterop"))
+    autocmd TextYankPost * call system(
+    \   'echo '.shellescape(join(v:event.regcontents, "\<CR>")).' |  clip.exe'
+    \)
+endif
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Custom Commands
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Display line relative movement
