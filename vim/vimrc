@@ -39,6 +39,7 @@ set wildmode=longest,list
 set splitbelow               " Default horizontal split splits below
 set splitright               " Default vertical split splits right
 set mouse+=a                 " Enable mouse mode
+set pastetoggle=<F2>         " Toggle paste mode
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Tabs and Spaces
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -76,6 +77,26 @@ if !empty(glob("/proc/sys/fs/binfmt_misc/WSLInterop"))
     \)
 endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Language configs
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Alternate insert mode with Mongolian Keyboard emulation (from QWERTY)
+" See: http://vim.wikia.com/wiki/Insert-mode_only_Caps_Lock
+" See: http://vi.stackexchange.com/q/2260/267
+set imsearch=-1
+set keymap=qwerty2mongolian
+set iminsert=0
+autocmd InsertLeave * set iminsert=0
+nnoremap <Leader>i :set iminsert=1<CR>i
+nnoremap <Leader>I :set iminsert=1<CR>I
+nnoremap <Leader>a :set iminsert=1<CR>a
+nnoremap <Leader>A :set iminsert=1<CR>A
+nnoremap <Leader>c :set iminsert=1<CR>c
+nnoremap <Leader>C :set iminsert=1<CR>C
+nnoremap <Leader>r :set iminsert=1<CR>r
+nnoremap <Leader>R :set iminsert=1<CR>R
+nnoremap <Leader>o :set iminsert=1<CR>o
+nnoremap <Leader>O :set iminsert=1<CR>O
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Custom Commands
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Display line relative movement
@@ -106,6 +127,10 @@ nnoremap <C-n> :set rnu!<CR>
 " Force save read-only
 command -nargs=0 Sudow w !sudo tee % > /dev/null
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Saved Macros
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let @d="oimport pdb; pdb.set_trace()"
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Plug-in Configs
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " NERDtree config
@@ -125,10 +150,10 @@ let g:syntastic_mode_map = {
     \ 'active_filetypes': [],
     \ 'passive_filetypes': []
 \}
-nnoremap <Leader>s :SyntasticCheck<CR>
-nnoremap <Leader>r :SyntasticReset<CR>
-nnoremap <Leader>i :SyntasticInfo<CR>
-nnoremap <Leader>m :SyntasticToggleMode<CR>
+" nnoremap <Leader>s :SyntasticCheck<CR>
+" nnoremap <Leader>r :SyntasticReset<CR>
+" nnoremap <Leader>i :SyntasticInfo<CR>
+" nnoremap <Leader>m :SyntasticToggleMode<CR>
 
 " Incsearch
 map / <Plug>(incsearch-forward)
