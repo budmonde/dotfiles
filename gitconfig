@@ -36,6 +36,9 @@
 [diff]
 	mnemonicPrefix = true
 	colorMoved = zebra
+    submodule = log
+[merge]
+    conflictstyle = diff3
 
 [pull]
 	ff = only
@@ -55,6 +58,9 @@
 [grep]
 	lineNumber = true
 
+[rerere]
+    enabled = true
+
 [advice]
 	detachedHead = false
 	waitingForEditor = false
@@ -62,3 +68,5 @@
 [user]
 	email = budmonde@gmail.com
 	name = Monde Duinkharjav
+[core]
+	editor = vi
