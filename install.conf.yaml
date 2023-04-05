@@ -12,6 +12,7 @@
     ~/.condarc:
     ~/.dotfiles: ''
     ~/.gitconfig:
+    ~/.gitignore:
     ~/.inputrc:
     ~/.jupyter/jupyter_notebook_config.py: jupyter/jupyter_notebook_config.py
     ~/.jupyter/nbconfig/notebook.json: jupyter/notebook.json

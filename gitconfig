@@ -45,6 +45,7 @@
 	mnemonicPrefix = true
 	colorMoved = zebra
     submodule = log
+
 [merge]
     conflictstyle = diff3
 
@@ -78,3 +79,9 @@
 	name = Monde Duinkharjav
 [core]
 	editor = vi
+    excludesfile = ~/.gitignore
+[filter "lfs"]
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
