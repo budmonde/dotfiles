@@ -1,9 +1,11 @@
 [alias]
     cc = clone
     fe = fetch --tags --prune
-	fa = fetch --all --tags --prune
+	fa = fetch --tags --prune --all
+    me = merge
     ff = push
     ci = commit
+    ca = commit --amend --no-edit
 
     st = status -sb
     stu = status HEAD^
@@ -22,6 +24,12 @@
     cfgl = config -e
 
     sl = sl1
+    ssl = sl1 -6
+
+    ssl1 = sl1-specific -6
+    ssl2 = sl2-specific -6
+    ssl3 = sl3-specific -6
+
     sl1 = sl1-specific --all
     sl2 = sl2-specific --all
     sl3 = sl3-specific --all
