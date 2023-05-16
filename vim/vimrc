@@ -97,6 +97,17 @@ nnoremap <Leader>R :set iminsert=1<CR>R
 nnoremap <Leader>o :set iminsert=1<CR>o
 nnoremap <Leader>O :set iminsert=1<CR>O
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Dictionary configs
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" https://vi.stackexchange.com/questions/5050
+for d in glob('~/.vim/spell/*.add', 1, 1)
+    if filereadable(d) && (
+    \   !filereadable(d . '.spl') || getftime(d) > getftime(d . '.spl')
+    \)
+        exec 'mkspell! ' . fnameescape(d)
+    endif
+endfor
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Custom Commands
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Display line relative movement
