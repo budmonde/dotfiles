@@ -36,7 +36,7 @@ function PR_ERROR() {
 }
 
 # Prompt Arrow
-PR_ARROW_CHAR="%B➜%b"
+PR_ARROW_CHAR="%B›%b"
 _arrow_color="$fg[green]"
 _root_arrow_color="$fg[red]"
 
