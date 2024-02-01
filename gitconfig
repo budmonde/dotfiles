@@ -16,6 +16,11 @@
     du = diff HEAD^
     duu = diff HEAD^^
 
+    b = branch
+    bd = branch -d
+
+    obd = push origin --delete
+
     co = checkout
     cou = checkout HEAD^
     couu = checkout HEAD^^
