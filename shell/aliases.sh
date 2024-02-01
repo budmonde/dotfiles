@@ -25,12 +25,9 @@ src() {
 alias et='vi ~/.tmux.conf'
 alias ev='vi ~/.vim/vimrc'
 alias ea='vi ~/.shell/aliases.sh; src'
+alias eg='git config --global -e'
 
 # Command shortcuts
 alias g='git'
 alias v='vim -p'
 alias pjson='python -m json.tool'
-
-# Linux shortcuts
-alias alert='notify-send "Job Finished!"'
-alias chrome='google-chrome'
