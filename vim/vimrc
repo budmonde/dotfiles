@@ -148,6 +148,7 @@ let @d="oimport pdb; pdb.set_trace()"
 map n :NERDTreeToggle<CR>
 map N :NERDTreeFind<CR>
 let g:NERDTreeWinSize=60
+let g:NERDTreeShowBookmarks=1
 
 " CtrlP config
 let g:ctrlp_switch_buffer = 0
