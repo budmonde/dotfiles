@@ -187,3 +187,7 @@ nnoremap <silent> \ :TmuxNavigatePrevious<CR>
 
 " Vim-jedi config
 let g:jedi#popup_on_dot = 0
+
+" fzf.vim config
+set rtp+=~/.shell_local/plugins/fzf
+nnoremap <silent> <Leader>ag :Ag <C-R><C-W><CR>

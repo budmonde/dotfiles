@@ -56,3 +56,6 @@
 [submodule "vim/pack/vendor/start/vim-abolish"]
 	path = vim/pack/vendor/start/vim-abolish
 	url = https://github.com/tpope/vim-abolish.git
+[submodule "vim/pack/vendor/start/fzf.vim"]
+	path = vim/pack/vendor/start/fzf.vim
+	url = https://github.com/junegunn/fzf.vim.git
