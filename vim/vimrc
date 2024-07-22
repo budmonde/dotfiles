@@ -153,6 +153,7 @@ let g:NERDTreeShowBookmarks=1
 " CtrlP config
 let g:ctrlp_switch_buffer = 0
 let g:ctrlp_show_hidden = 1
+let g:ctrlp_cmd = 'CtrlPMRU'
 
 " Syntastic cfg
 let g:syntastic_always_populate_loc_list = 1
