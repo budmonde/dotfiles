@@ -59,3 +59,6 @@
 [submodule "vim/pack/vendor/start/fzf.vim"]
 	path = vim/pack/vendor/start/fzf.vim
 	url = https://github.com/junegunn/fzf.vim.git
+[submodule "shell/plugins/dircolors-solarized"]
+	path = shell/plugins/dircolors-solarized
+	url = https://github.com/seebi/dircolors-solarized.git
