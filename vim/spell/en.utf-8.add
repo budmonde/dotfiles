@@ -83,7 +83,6 @@ Newsome
 Mustari
 Wolpert
 Todorov
-#iffeq
 SDN
 CN
 #an
@@ -129,7 +128,6 @@ Dupin
 Dyde
 PNAS
 allocentric
-#emifield
 hemi
 Wallach
 Hannon
@@ -199,7 +197,6 @@ HDR
 VDP
 FSIM
 Mou
-#arkman
 Gentner
 Nonintentional
 Goldstone
@@ -220,12 +217,9 @@ ICCV
 Num
 Nosofsky
 Shoben
-#ongnitive
-congnitive/!
 MDS
 Featural
 #ng
-ang/!
 Podgorny
 Sergent
 Takane
