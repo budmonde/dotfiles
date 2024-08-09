@@ -24,6 +24,7 @@
     co = checkout
     cou = checkout HEAD^
     couu = checkout HEAD^^
+    cob = checkout -b
 
     cfg = config --global -e
     cfgl = config -e
