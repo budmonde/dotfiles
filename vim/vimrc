@@ -25,7 +25,7 @@ set noerrorbells visualbell t_vb= " Remove error bell sound
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Never use Execute Mode
 nmap Q <Nop>
-" Conflicts with Tmux bindings
+" Unbind increment and decrement on <C-a> and <C-x> due to tmux conflict
 map <C-a> <Nop>
 map <C-x> <Nop>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -68,15 +68,6 @@ set history=8192             " Extend history
 set undofile                 " Maintain undo history between sessions
 set undodir=~/.vim/undodir
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" WSL Configs
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Yank forward to clipboard
-if !empty(glob("/proc/sys/fs/binfmt_misc/WSLInterop"))
-    autocmd TextYankPost * call system(
-    \   'echo '.shellescape(join(v:event.regcontents, "\<CR>")).' |  clip.exe'
-    \)
-endif
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Language configs
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Alternate insert mode with Mongolian Keyboard emulation (from QWERTY)
@@ -110,7 +101,7 @@ endfor
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Custom Commands
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Display line relative movement
+" Movement relative to displayed lines with <Leader>d
 nnoremap <silent> <Leader>d :call ToggleMovementByDisplayLines()<CR>
 function SetMovementByDisplayLines()
     noremap <buffer> <silent> <expr> k v:count ? 'k' : 'gk'
@@ -133,9 +124,16 @@ function ToggleMovementByDisplayLines()
         call SetMovementByDisplayLines()
     endif
 endfunction
-" Toggle relative numbering
+" Toggle relative numbering with <C-n>
 nnoremap <C-n> :set rnu!<CR>
-" Force save read-only
+" Drag lines down with <C-j> and up with <C-k>
+nnoremap <silent> <C-j> :m .+1<CR>==
+nnoremap <silent> <C-k> :m .-2<CR>==
+inoremap <silent> <C-j> <Esc>:m .+1<CR>==gi
+inoremap <silent> <C-k> <Esc>:m .-2<CR>==gi
+vnoremap <silent> <C-j> :m '>+1<CR>gv=gv
+vnoremap <silent> <C-k> :m '<-2<CR>gv=gv
+" Force save read-only with :Sudow
 command -nargs=0 Sudow w !sudo tee % > /dev/null
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Saved Macros
@@ -143,20 +141,45 @@ command -nargs=0 Sudow w !sudo tee % > /dev/null
 let @d="oimport pdb; pdb.set_trace()"
 let @s="]szg"
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Plug-in Configs
+" Event-Listeners
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+augroup myvimrc
+    autocmd!
+    autocmd BufWritePost .vimrc,_vimrc,vimrc,.gvimrc,_gvimrc,gvimrc so $MYVIMRC | if has('gui_running') | so $MYGVIMRC | endif
+augroup END
+" Yank forward to clipboard (WSL-specific)
+if !empty(glob("/proc/sys/fs/binfmt_misc/WSLInterop"))
+    augroup ClipboardSynchronizer
+        autocmd!
+        autocmd TextYankPost * if get(g:, 'clipboard_sync_enabled', 0) | call system('echo '.shellescape(join(v:event.regcontents, "\<CR>")).' |  clip.exe') | endif
+    augroup END
+endif
+nnoremap <silent> <Leader>x :let g:clipboard_sync_enabled = !get(g:, 'clipboard_sync_enabled', 0)<CR>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" Plug-in Configs
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " NERDtree config
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Open NERDTree with <A-n>
 map n :NERDTreeToggle<CR>
+" Find current file in NERDTree with <A-N>
 map N :NERDTreeFind<CR>
 let g:NERDTreeWinSize=60
 let g:NERDTreeShowBookmarks=1
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " CtrlP config
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:ctrlp_switch_buffer = 0
 let g:ctrlp_show_hidden = 1
 let g:ctrlp_cmd = 'CtrlPMRU'
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Syntastic cfg
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 1
 let g:syntastic_check_on_wq = 0
@@ -170,16 +193,22 @@ let g:syntastic_mode_map = {
 " nnoremap <Leader>i :SyntasticInfo<CR>
 " nnoremap <Leader>m :SyntasticToggleMode<CR>
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Incsearch
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 map / <Plug>(incsearch-forward)
 map ? <Plug>(incsearch-backward)
 map g/ <Plug>(incsearch-stay)
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Airline config
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:airline_powerline_fonts = 1
 let g:airline#extensions#tabline#enabled = 1
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Tmux-navigator config
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:tmux_navigator_no_mappings = 1
 nnoremap <silent> h :TmuxNavigateLeft<CR>
 nnoremap <silent> j :TmuxNavigateDown<CR>
@@ -187,9 +216,14 @@ nnoremap <silent> k :TmuxNavigateUp<CR>
 nnoremap <silent> l :TmuxNavigateRight<CR>
 nnoremap <silent> \ :TmuxNavigatePrevious<CR>
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Vim-jedi config
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:jedi#popup_on_dot = 0
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " fzf.vim config
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set rtp+=~/.shell_local/plugins/fzf
+" Ag search selection on <Leader>ag
 nnoremap <silent> <Leader>ag :Ag <C-R><C-W><CR>
