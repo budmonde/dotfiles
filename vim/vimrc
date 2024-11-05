@@ -142,7 +142,11 @@ if !empty(glob("/proc/sys/fs/binfmt_misc/WSLInterop"))
         autocmd TextYankPost * if get(g:, 'clipboard_sync_enabled', 0) | call system('echo '.shellescape(join(v:event.regcontents, "\<CR>")).' |  clip.exe') | endif
     augroup END
 endif
-nnoremap <silent> <Leader>x :let g:clipboard_sync_enabled = !get(g:, 'clipboard_sync_enabled', 0)<CR>
+function ToggleClipboardSync()
+    let g:clipboard_sync_enabled = !get(g:, 'clipboard_sync_enabled', 0)
+    echom "clipboard_sync_enabled = " . g:clipboard_sync_enabled
+endfunction
+nnoremap <Leader>x :call ToggleClipboardSync()<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Language configs
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
