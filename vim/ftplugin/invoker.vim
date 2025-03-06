@@ -1,5 +1,5 @@
-nnoremap <localleader>e :call CreateInvokerPane()<CR>
-nnoremap <localleader>r :call RunInvokerDebug()<CR>
+nnoremap <localleader>c :call CreateInvokerPane()<CR>
+nnoremap <localleader>d :call RunInvokerDebug()<CR>
 
 let g:invoker_debug_pane = ""
 function! CreateInvokerPane()
