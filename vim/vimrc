@@ -1,35 +1,14 @@
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" General
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
 set nocompatible             " This config file is not compatible Vim <8.0
-
-" Never use Execute Mode
 nmap Q <Nop>
+let mapleader = ","
+let maplocalleader = "\\"
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Buffers and History
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set hidden                   " Allow auto-hide of edited buffers
-set history=8192             " Extend history
-set undofile                 " Maintain undo history between sessions
-set undodir=~/.vim/undodir
+""""""""""""""""""""""""""""""""""""""""""""""""" Apperance and Window Dynamics
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Syntax and Indent
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-syntax on                    " Enable syntax highlights
-set autoindent               " Enable autoindent
-filetype plugin indent on    " Filetype specific autoindent
-
-set showmatch                " Show matching braces when cursor over
-
-set expandtab                " Expands tabs into spaces
-set tabstop=4                " All tabs are 4 wide
-set shiftwidth=4
-set softtabstop=4
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" View
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-color desert
+colorscheme gruvbox
+set background=dark
 set shortmess+=I             " Disable startup message
 set noshowmode               " Hide mode at bottom of screen
 set laststatus=2             " Keep status line open
@@ -48,8 +27,39 @@ set colorcolumn=80           " Line-width ruler
 set splitbelow               " Default horizontal split splits below
 set splitright               " Default vertical split splits right
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Search
+""" PLUGIN : vim-airline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if !exists('g:airline_symbols')
+    let g:airline_symbols = {}
+endif
+let g:airline_symbols.colnr = ' ℅:'
+let g:airline_symbols.linenr = ' ␤:'
+let g:airline_symbols.maxlinenr = '㏑'
+let g:airline_symbols.branch = '⎇'
+let g:airline#extensions#tabline#enabled = 1
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""" PLUGIN : vim-tmux-navigator
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:tmux_navigator_no_mappings = 1
+nnoremap <silent> h :TmuxNavigateLeft<CR>
+nnoremap <silent> j :TmuxNavigateDown<CR>
+nnoremap <silent> k :TmuxNavigateUp<CR>
+nnoremap <silent> l :TmuxNavigateRight<CR>
+nnoremap <silent> \ :TmuxNavigatePrevious<CR>
+let g:tmux_navigator_disable_when_zoomed = 1
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""" Filesystem, Buffers and Search
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set hidden                   " Allow auto-hide of edited buffers
+set history=8192             " Extend history
+set undofile                 " Maintain undo history between sessions
+set undodir=~/.vim/undodir
+
+" Force save read-only with :Sudow
+command -nargs=0 Sudow w !sudo tee % > /dev/null
+
 set incsearch                " Incrementally search as you type
 set hlsearch                 " Highlight search query as you type
 set ignorecase               " Ignore cases by default
@@ -58,14 +68,34 @@ set smartcase                " Enable smartcase search
 vnoremap <C-h> :nohlsearch<CR>
 nnoremap <C-h> :nohlsearch<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Tab completion
+""" PLUGIN : nerdtree
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set wildmenu                 " Tab completion for files/buffers
-set wildmode=longest,list
-" Ignore files for completion
-set wildignore+=*/.git/*,*/tmp/*,*.swp
+" Open NERDTree
+map n :NERDTreeToggle<CR>
+" Find current file in NERDTree
+map N :NERDTreeFind<CR>
+" NERDTree Window width
+let g:NERDTreeWinSize=60
+" NERDTree File num lines
+let g:NERDTreeFileLines = 1
+let g:NERDTreeShowBookmarks=1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Interactions
+""" PLUGIN : ctrlp
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:ctrlp_cmd = 'CtrlPMRU'
+let g:ctrlp_switch_buffer = 'Et'
+let g:ctrlp_show_hidden = 1
+let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""" PLUGIN : fzf
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set rtp+=~/.shell_local/plugins/fzf
+" Ag search selection on <Leader>ag
+nnoremap <silent> <Leader>ag :Ag <C-R><C-W><CR>
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""" Movement and Navigation
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set backspace=indent,eol,start " More intuitive backspace
 set timeout timeoutlen=1000 ttimeoutlen=100 " Fix slow O inserts
@@ -75,12 +105,6 @@ set pastetoggle=<F2>         " Toggle paste mode using F2
 " Unbind increment and decrement due to tmux conflict
 map <C-a> <Nop>
 map <C-x> <Nop>
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" Custom Binds
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-let mapleader = ","
-let maplocalleader = "\\"
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ Operator-Pending Mappings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -93,7 +117,7 @@ onoremap inp :<c-u>normal! f(vi(<CR>
 " Last close parentheses
 onoremap ilp :<c-u>normal! F)vi(<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Custom Commands
+""" <Leader>d : Display-relative Movement 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Movement relative to displayed lines
 nnoremap <silent> <Leader>d :call ToggleMovementByDisplayLines()<CR>
@@ -119,47 +143,51 @@ function ToggleMovementByDisplayLines()
         call SetMovementByDisplayLines()
     endif
 endfunction
-" <C-k> and <C-j> Drag lines up and down
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""" <C-k> <C-j> : Drag lines up and down
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 nnoremap <silent> <C-j> :m .+1<CR>==
 nnoremap <silent> <C-k> :m .-2<CR>==
 inoremap <silent> <C-j> <Esc>:m .+1<CR>==gi
 inoremap <silent> <C-k> <Esc>:m .-2<CR>==gi
 vnoremap <silent> <C-j> :m '>+1<CR>gv=gv
 vnoremap <silent> <C-k> :m '<-2<CR>gv=gv
-" Force save read-only with :Sudow
-command -nargs=0 Sudow w !sudo tee % > /dev/null
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""" PLUGIN : vim-easymotion
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nmap <Leader><Leader>f <Plug>(easymotion-overwin-f)
+nmap <Leader><Leader>w <Plug>(easymotion-overwin-w)
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" Auto Commands
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""" Syntax, Auto-completion and Indent
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+syntax on                    " Enable syntax highlights
+set autoindent               " Enable autoindent
+filetype plugin indent on    " Filetype specific autoindent
 
+set showmatch                " Show matching braces when cursor over
+
+set expandtab                " Expands tabs into spaces
+set tabstop=4                " All tabs are 4 wide
+set shiftwidth=4
+set softtabstop=4
+
+set wildmenu                 " Tab completion for files/buffers
+set wildmode=longest,list
+" Ignore files for completion
+set wildignore+=*/.git/*,*/tmp/*,*.swp
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Vimrc Editing and Sourcing
+""" Vim-jedi config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Edit vimrc
-nnoremap <Leader>ev :vsplit $MYVIMRC<CR>
-" Reload vimrc when it's saved
-augroup myvimrc
-    autocmd!
-    autocmd BufWritePost .vimrc,_vimrc,vimrc,.gvimrc,_gvimrc,gvimrc so $MYVIMRC | if has('gui_running') | so $MYGVIMRC | endif
-augroup END
+let g:jedi#popup_on_dot = 0
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Yank forwarding to Windows clipboard (WSL-specific)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap <Leader>x :call ToggleClipboardSync()<CR>
-if !empty(glob("/proc/sys/fs/binfmt_misc/WSLInterop"))
-    augroup ClipboardSynchronizer
-        autocmd!
-        autocmd TextYankPost * if get(g:, 'clipboard_sync_enabled', 0) | call system('echo '.shellescape(join(v:event.regcontents, "\<CR>")).' |  clip.exe') | endif
-    augroup END
-endif
-function ToggleClipboardSync()
-    let g:clipboard_sync_enabled = !get(g:, 'clipboard_sync_enabled', 0)
-    echom "clipboard_sync_enabled = " . g:clipboard_sync_enabled
-endfunction
+"""""""""""""""""""""""""""""""""""""""""""""""""""""" Language and Spell-check
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Language configs
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" <Leader> <action> : Mongolian keyboard
 " Alternate insert mode with Mongolian Keyboard emulation (from QWERTY)
 " See: http://vim.wikia.com/wiki/Insert-mode_only_Caps_Lock
 " See: http://vi.stackexchange.com/q/2260/267
@@ -177,12 +205,11 @@ nnoremap <Leader>r :set iminsert=1<CR>r
 nnoremap <Leader>R :set iminsert=1<CR>R
 nnoremap <Leader>o :set iminsert=1<CR>o
 nnoremap <Leader>O :set iminsert=1<CR>O
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Dictionary configs
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Add to word under cursor to spell dictionary
+" <Leader>s : Add word under cursor to spell dictionary
 nnoremap <Leader>s ]szg
-" Regenerate dictionary binary https://vi.stackexchange.com/questions/5050
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""" Regenerate dictionary binary https://vi.stackexchange.com/questions/5050
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 for d in glob('~/.vim/spell/*.add', 1, 1)
     if filereadable(d) && (
     \   !filereadable(d . '.spl') || getftime(d) > getftime(d . '.spl')
@@ -191,57 +218,27 @@ for d in glob('~/.vim/spell/*.add', 1, 1)
     endif
 endfor
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" Plug-in Configs
+"""""""""""""""""""""""""""""""""""""""""""""""""""" Vimrc Editing and Sourcing
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
+" <Leader>ev : Edit vimrc
+nnoremap <Leader>ev :vsplit $MYVIMRC<CR>
+" Reload vimrc when it's saved
+augroup myvimrc
+    autocmd!
+    autocmd BufWritePost .vimrc,_vimrc,vimrc,.gvimrc,_gvimrc,gvimrc so $MYVIMRC | if has('gui_running') | so $MYGVIMRC | endif
+augroup END
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" NERDTree config
+"""""""""""""""""""""""""""""""""""""""""""""" External Application Interaction
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Open NERDTree
-map n :NERDTreeToggle<CR>
-" Find current file in NERDTree
-map N :NERDTreeFind<CR>
-" NERDTree Window width
-let g:NERDTreeWinSize=60
-let g:NERDTreeShowBookmarks=1
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" CtrlP config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:ctrlp_switch_buffer = 0
-let g:ctrlp_show_hidden = 1
-let g:ctrlp_cmd = 'CtrlPMRU'
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Airline config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if !exists('g:airline_symbols')
-    let g:airline_symbols = {}
+" <Leader>x : Yank forwarding to Windows clipboard (WSL-specific)
+nnoremap <Leader>x :call ToggleClipboardSync()<CR>
+if !empty(glob("/proc/sys/fs/binfmt_misc/WSLInterop"))
+    augroup ClipboardSynchronizer
+        autocmd!
+        autocmd TextYankPost * if get(g:, 'clipboard_sync_enabled', 0) | call system('echo '.shellescape(join(v:event.regcontents, "\<CR>")).' |  clip.exe') | endif
+    augroup END
 endif
-let g:airline_symbols.colnr = ' ℅:'
-let g:airline_symbols.linenr = ' ␤:'
-let g:airline_symbols.maxlinenr = '㏑'
-let g:airline_symbols.branch = '⎇'
-let g:airline#extensions#tabline#enabled = 1
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Tmux-navigator config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:tmux_navigator_no_mappings = 1
-nnoremap <silent> h :TmuxNavigateLeft<CR>
-nnoremap <silent> j :TmuxNavigateDown<CR>
-nnoremap <silent> k :TmuxNavigateUp<CR>
-nnoremap <silent> l :TmuxNavigateRight<CR>
-nnoremap <silent> \ :TmuxNavigatePrevious<CR>
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Vim-jedi config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:jedi#popup_on_dot = 0
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" fzf.vim config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set rtp+=~/.shell_local/plugins/fzf
-" Ag search selection on <Leader>ag
-nnoremap <silent> <Leader>ag :Ag <C-R><C-W><CR>
+function ToggleClipboardSync()
+    let g:clipboard_sync_enabled = !get(g:, 'clipboard_sync_enabled', 0)
+    echom "clipboard_sync_enabled = " . g:clipboard_sync_enabled
+endfunction

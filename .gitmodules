@@ -53,3 +53,12 @@
 [submodule "shell/plugins/dircolors-solarized"]
 	path = shell/plugins/dircolors-solarized
 	url = https://github.com/seebi/dircolors-solarized.git
+[submodule "vim/pack/vendor/start/ctrlp.vim"]
+	path = vim/pack/vendor/start/ctrlp.vim
+	url = https://github.com/ctrlpvim/ctrlp.vim.git
+[submodule "vim/pack/vendor/start/gruvbox"]
+	path = vim/pack/vendor/start/gruvbox
+	url = https://github.com/morhetz/gruvbox.git
+[submodule "vim/pack/vendor/start/vim-colors-solarized"]
+	path = vim/pack/vendor/start/vim-colors-solarized
+	url = https://github.com/altercation/vim-colors-solarized.git
