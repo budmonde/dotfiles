@@ -3,57 +3,52 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 set nocompatible             " This config file is not compatible Vim <8.0
+
+" Never use Execute Mode
+nmap Q <Nop>
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""" Buffers and History
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set hidden                   " Allow auto-hide of edited buffers
+set history=8192             " Extend history
+set undofile                 " Maintain undo history between sessions
+set undodir=~/.vim/undodir
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Syntax and Indent
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 syntax on                    " Enable syntax highlights
 set autoindent               " Enable autoindent
 filetype plugin indent on    " Filetype specific autoindent
+
 set showmatch                " Show matching braces when cursor over
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" View
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-color desert
-set number                   " Show line numbers
-set relativenumber           " Line numbers are relative to currentline
-set shortmess+=I             " Disable startup message
-set linebreak                " Line breaks on whole words
-set scrolloff=5              " Show lines above and below while scrolling
-set noshowmode               " Hide mode at bottom of screen
-set laststatus=2             " Keep status line open
-set lazyredraw               " Enable skipping redraws sometimes
-set colorcolumn=80           " Line-width ruler
-set noerrorbells visualbell t_vb= " Remove error bell sound
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Unbinds
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Never use Execute Mode
-nmap Q <Nop>
-" Unbind increment and decrement on <C-a> and <C-x> due to tmux conflict
-map <C-a> <Nop>
-map <C-x> <Nop>
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Interactions
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set backspace=indent,eol,start " More intuitive backspace
-set timeout timeoutlen=1000 ttimeoutlen=100 " Fix slow O inserts
-set nojoinspaces             " Suppress inserting repeated spaces
-set wildmenu                 " Tab completion for files/buffers
-set wildmode=longest,list
-set splitbelow               " Default horizontal split splits below
-set splitright               " Default vertical split splits right
-set mouse+=a                 " Enable mouse mode
-set pastetoggle=<F2>         " Toggle paste mode
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Tabs and Spaces
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Default tabs are 4-wide
+
 set expandtab                " Expands tabs into spaces
 set tabstop=4                " All tabs are 4 wide
 set shiftwidth=4
 set softtabstop=4
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Search
+""" View
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+color desert
+set shortmess+=I             " Disable startup message
+set noshowmode               " Hide mode at bottom of screen
+set laststatus=2             " Keep status line open
+set lazyredraw               " Enable skipping redraws sometimes
+set noerrorbells visualbell t_vb= " Remove error bell sound
+
+set number                   " Show line numbers
+set relativenumber           " Line numbers are relative to currentline
+" Toggle relative numbering
+nnoremap <C-n> :set rnu!<CR>
+
+set scrolloff=5              " Show lines above and below while scrolling
+set linebreak                " Line breaks on whole words
+set colorcolumn=80           " Line-width ruler
+
+set splitbelow               " Default horizontal split splits below
+set splitright               " Default vertical split splits right
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""" Search
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set incsearch                " Incrementally search as you type
 set hlsearch                 " Highlight search query as you type
@@ -62,31 +57,45 @@ set smartcase                " Enable smartcase search
 " Turn off highlight search
 vnoremap <C-h> :nohlsearch<CR>
 nnoremap <C-h> :nohlsearch<CR>
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""" Tab completion
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set wildmenu                 " Tab completion for files/buffers
+set wildmode=longest,list
 " Ignore files for completion
 set wildignore+=*/.git/*,*/tmp/*,*.swp
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Buffers and History
+""" Interactions
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set hidden                   " Allow auto-hide of edited buffers
-set history=8192             " Extend history
-set undofile                 " Maintain undo history between sessions
-set undodir=~/.vim/undodir
+set backspace=indent,eol,start " More intuitive backspace
+set timeout timeoutlen=1000 ttimeoutlen=100 " Fix slow O inserts
+set nojoinspaces             " Suppress inserting repeated spaces
+set mouse+=a                 " Enable mouse mode
+set pastetoggle=<F2>         " Toggle paste mode using F2
+" Unbind increment and decrement due to tmux conflict
+map <C-a> <Nop>
+map <C-x> <Nop>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Custom Binds
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" Custom Binds
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
 let mapleader = ","
 let maplocalleader = "\\"
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Movement Maps
+""" Operator-Pending Mappings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Funciton parameters
 onoremap p i(
+" Function body
 onoremap b /return<CR>
+" Next open parentheses
 onoremap inp :<c-u>normal! f(vi(<CR>
+" Last close parentheses
 onoremap ilp :<c-u>normal! F)vi(<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Custom Commands
+""" Custom Commands
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Movement relative to displayed lines with <Leader>d
+" Movement relative to displayed lines
 nnoremap <silent> <Leader>d :call ToggleMovementByDisplayLines()<CR>
 function SetMovementByDisplayLines()
     noremap <buffer> <silent> <expr> k v:count ? 'k' : 'gk'
@@ -98,6 +107,7 @@ function ToggleMovementByDisplayLines()
     if !exists('b:movement_by_display_lines')
         let b:movement_by_display_lines = 0
     endif
+    echom "movement_by_display_lines = " . b:movement_by_display_lines
     if b:movement_by_display_lines
         let b:movement_by_display_lines = 0
         silent! nunmap <buffer> k
@@ -109,9 +119,7 @@ function ToggleMovementByDisplayLines()
         call SetMovementByDisplayLines()
     endif
 endfunction
-" Toggle relative numbering with <C-n>
-nnoremap <C-n> :set rnu!<CR>
-" Drag lines down with <C-j> and up with <C-k>
+" <C-k> and <C-j> Drag lines up and down
 nnoremap <silent> <C-j> :m .+1<CR>==
 nnoremap <silent> <C-k> :m .-2<CR>==
 inoremap <silent> <C-j> <Esc>:m .+1<CR>==gi
@@ -126,16 +134,19 @@ command -nargs=0 Sudow w !sudo tee % > /dev/null
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Vimrc Editing and Sourcing
+""" Vimrc Editing and Sourcing
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Edit vimrc
+nnoremap <Leader>ev :vsplit $MYVIMRC<CR>
+" Reload vimrc when it's saved
 augroup myvimrc
     autocmd!
     autocmd BufWritePost .vimrc,_vimrc,vimrc,.gvimrc,_gvimrc,gvimrc so $MYVIMRC | if has('gui_running') | so $MYGVIMRC | endif
 augroup END
-nnoremap <Leader>ev :vsplit $MYVIMRC<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Yank forwarding to clipboard (WSL-specific)
+""" Yank forwarding to Windows clipboard (WSL-specific)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap <Leader>x :call ToggleClipboardSync()<CR>
 if !empty(glob("/proc/sys/fs/binfmt_misc/WSLInterop"))
     augroup ClipboardSynchronizer
         autocmd!
@@ -146,9 +157,8 @@ function ToggleClipboardSync()
     let g:clipboard_sync_enabled = !get(g:, 'clipboard_sync_enabled', 0)
     echom "clipboard_sync_enabled = " . g:clipboard_sync_enabled
 endfunction
-nnoremap <Leader>x :call ToggleClipboardSync()<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Language configs
+""" Language configs
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Alternate insert mode with Mongolian Keyboard emulation (from QWERTY)
 " See: http://vim.wikia.com/wiki/Insert-mode_only_Caps_Lock
@@ -168,9 +178,11 @@ nnoremap <Leader>R :set iminsert=1<CR>R
 nnoremap <Leader>o :set iminsert=1<CR>o
 nnoremap <Leader>O :set iminsert=1<CR>O
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Dictionary configs
+""" Dictionary configs
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" https://vi.stackexchange.com/questions/5050
+" Add to word under cursor to spell dictionary
+nnoremap <Leader>s ]szg
+" Regenerate dictionary binary https://vi.stackexchange.com/questions/5050
 for d in glob('~/.vim/spell/*.add', 1, 1)
     if filereadable(d) && (
     \   !filereadable(d . '.spl') || getftime(d) > getftime(d . '.spl')
@@ -178,61 +190,42 @@ for d in glob('~/.vim/spell/*.add', 1, 1)
         exec 'mkspell! ' . fnameescape(d)
     endif
 endfor
-" Add to word under cursor to spell dictionary
-nnoremap <Leader>s ]szg
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" Plug-in Configs
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" NERDtree config
+""" NERDTree config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Open NERDTree with <A-n>
+" Open NERDTree
 map n :NERDTreeToggle<CR>
-" Find current file in NERDTree with <A-N>
+" Find current file in NERDTree
 map N :NERDTreeFind<CR>
+" NERDTree Window width
 let g:NERDTreeWinSize=60
 let g:NERDTreeShowBookmarks=1
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" CtrlP config
+""" CtrlP config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:ctrlp_switch_buffer = 0
 let g:ctrlp_show_hidden = 1
 let g:ctrlp_cmd = 'CtrlPMRU'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Syntastic cfg
+""" Airline config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_wq = 0
-let g:syntastic_mode_map = {
-    \ 'mode': 'passive',
-    \ 'active_filetypes': [],
-    \ 'passive_filetypes': []
-\}
-" nnoremap <Leader>s :SyntasticCheck<CR>
-" nnoremap <Leader>r :SyntasticReset<CR>
-" nnoremap <Leader>i :SyntasticInfo<CR>
-" nnoremap <Leader>m :SyntasticToggleMode<CR>
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Incsearch
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map / <Plug>(incsearch-forward)
-map ? <Plug>(incsearch-backward)
-map g/ <Plug>(incsearch-stay)
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Airline config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:airline_powerline_fonts = 1
+if !exists('g:airline_symbols')
+    let g:airline_symbols = {}
+endif
+let g:airline_symbols.colnr = ' ℅:'
+let g:airline_symbols.linenr = ' ␤:'
+let g:airline_symbols.maxlinenr = '㏑'
+let g:airline_symbols.branch = '⎇'
 let g:airline#extensions#tabline#enabled = 1
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Tmux-navigator config
+""" Tmux-navigator config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:tmux_navigator_no_mappings = 1
 nnoremap <silent> h :TmuxNavigateLeft<CR>
@@ -242,12 +235,12 @@ nnoremap <silent> l :TmuxNavigateRight<CR>
 nnoremap <silent> \ :TmuxNavigatePrevious<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Vim-jedi config
+""" Vim-jedi config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:jedi#popup_on_dot = 0
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" fzf.vim config
+""" fzf.vim config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set rtp+=~/.shell_local/plugins/fzf
 " Ag search selection on <Leader>ag

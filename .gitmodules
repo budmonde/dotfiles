@@ -5,21 +5,12 @@
 [submodule "zsh/plugins/zsh-syntax-highlighting"]
 	path = zsh/plugins/zsh-syntax-highlighting
 	url = https://github.com/zsh-users/zsh-syntax-highlighting
-[submodule "vim/pack/vendor/start/ctrlp.vim"]
-	path = vim/pack/vendor/start/ctrlp.vim
-	url = https://github.com/kien/ctrlp.vim
-[submodule "vim/pack/vendor/start/incsearch.vim"]
-	path = vim/pack/vendor/start/incsearch.vim
-	url = https://github.com/haya14busa/incsearch.vim
 [submodule "vim/pack/vendor/start/nerdtree"]
 	path = vim/pack/vendor/start/nerdtree
 	url = https://github.com/preservim/nerdtree
 [submodule "vim/pack/vendor/start/nerdtree-git-plugin"]
 	path = vim/pack/vendor/start/nerdtree-git-plugin
 	url = https://github.com/Xuyuanp/nerdtree-git-plugin
-[submodule "vim/pack/vendor/start/syntastic"]
-	path = vim/pack/vendor/start/syntastic
-	url = https://github.com/vim-syntastic/syntastic
 [submodule "vim/pack/vendor/start/vim-airline-themes"]
 	path = vim/pack/vendor/start/vim-airline-themes
 	url = https://github.com/vim-airline/vim-airline-themes
