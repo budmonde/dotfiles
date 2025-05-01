@@ -52,6 +52,7 @@ let g:tmux_navigator_disable_when_zoomed = 1
 """""""""""""""""""""""""""""""""""""""""""""""" Filesystem, Buffers and Search
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+silent! helptags ALL         " Regenerate help tags
 set hidden                   " Allow auto-hide of edited buffers
 set history=8192             " Extend history
 set undofile                 " Maintain undo history between sessions
