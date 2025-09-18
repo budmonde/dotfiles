@@ -9,6 +9,9 @@ setopt extendedhistory
 # Disable beeping
 unsetopt beep
 
+# Extended glob
+setopt extended_glob
+
 # Time to wait for additional characters in a sequence
 export KEYTIMEOUT=1 # 10ms
 
