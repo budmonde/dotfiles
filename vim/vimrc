@@ -233,7 +233,7 @@ augroup END
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " <Leader>x : Yank forwarding to Windows clipboard (WSL-specific)
 nnoremap <Leader>x :call ToggleClipboardSync()<CR>
-if !empty(glob("/proc/sys/fs/binfmt_misc/WSLInterop"))
+if !empty(glob("/usr/bin/wslinfo"))
     augroup ClipboardSynchronizer
         autocmd!
         autocmd TextYankPost * if get(g:, 'clipboard_sync_enabled', 0) | call system('echo '.shellescape(join(v:event.regcontents, "\<CR>")).' |  clip.exe') | endif
