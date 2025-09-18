@@ -1,0 +1,9 @@
+# includes must go at the top
+# host-specific customization
+Include ~/.ssh/config_local
+
+# include must go at the top
+Host github
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/git/github_ed25519

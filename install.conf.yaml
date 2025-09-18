@@ -18,6 +18,7 @@
     ~/.jupyter/nbconfig/notebook.json: jupyter/notebook.json
     ~/.local/share/jupyter/nbextensions: jupyter/nbextensions
     ~/.shell:
+    ~/.ssh/config: ssh/config
     ~/.tmux.conf:
     ~/.vim:
     ~/.zsh:
