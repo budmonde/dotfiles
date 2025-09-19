@@ -3,7 +3,7 @@
 Include ~/.ssh/config_local
 
 # include must go at the top
-Host github
-    HostName github.com
+Host github.com
     User git
     IdentityFile ~/.ssh/git/github_ed25519
+    IdentitiesOnly yes
