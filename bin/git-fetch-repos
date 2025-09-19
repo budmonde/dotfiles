@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Color codes
+BLUE="\033[34m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RESET="\033[0m"
+
+if [ "$#" -lt 1 ]; then
+    echo -e "${YELLOW}Usage: $0 <path-to-git-repo> [more-repos...]${RESET}"
+    exit 1
+fi
+
+for repo in "$@"; do
+    if ! git -C "$repo" rev-parse --git-dir >/dev/null 2>&1; then
+        echo -e "${YELLOW}Skipping '$repo': not a git repository.${RESET}"
+        continue
+    fi
+
+    echo -e "${BLUE}Checking repository: $repo${RESET}"
+    pushd "$repo" >/dev/null || continue
+
+    # Fetch latest changes from remote
+    git fetch --quiet
+
+    # Get current branch
+    current_branch=$(git symbolic-ref --short HEAD)
+
+    # Get tracking branch
+    tracking_branch=$(git for-each-ref --format='%(upstream:short)' "refs/heads/$current_branch")
+
+    if [ -z "$tracking_branch" ]; then
+        echo -e "${YELLOW}  Branch '$current_branch' has no upstream tracking branch.${RESET}"
+        popd >/dev/null
+        continue
+    fi
+
+    # Check how many commits behind
+    behind_count=$(git rev-list --count "$current_branch".."$tracking_branch")
+
+    if [ "$behind_count" -gt 0 ]; then
+        echo -e "${YELLOW}  Branch '$current_branch' is behind '$tracking_branch' by $behind_count commits.${RESET}"
+    else
+        echo -e "${GREEN}  Branch '$current_branch' is up to date with '$tracking_branch'.${RESET}"
+    fi
+
+    popd >/dev/null
+done
