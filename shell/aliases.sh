@@ -31,3 +31,5 @@ alias eg='git config --global -e'
 alias g='git'
 alias v='vim -p'
 alias pjson='python -m json.tool'
+
+alias cdr='cd "$(git rev-parse --show-toplevel)"'
