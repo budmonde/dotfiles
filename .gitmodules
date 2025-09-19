@@ -62,3 +62,6 @@
 [submodule "vim/pack/vendor/start/vim-colors-solarized"]
 	path = vim/pack/vendor/start/vim-colors-solarized
 	url = https://github.com/altercation/vim-colors-solarized.git
+[submodule "vim/pack/vendor/start/vim-better-whitespace"]
+	path = vim/pack/vendor/start/vim-better-whitespace
+	url = git@github.com:ntpeters/vim-better-whitespace.git

@@ -48,6 +48,12 @@ nnoremap <silent> l :TmuxNavigateRight<CR>
 nnoremap <silent> \ :TmuxNavigatePrevious<CR>
 let g:tmux_navigator_disable_when_zoomed = 1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""" PLUGIN : vim-better-whitespace
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:better_whitespace_enabled=1
+let g:strip_whitespace_on_save=1
+let g:better_whitespace_ctermcolor='gray'
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""" Filesystem, Buffers and Search
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -118,7 +124,7 @@ onoremap inp :<c-u>normal! f(vi(<CR>
 " Last close parentheses
 onoremap ilp :<c-u>normal! F)vi(<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" <Leader>d : Display-relative Movement 
+""" <Leader>d : Display-relative Movement
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Movement relative to displayed lines
 nnoremap <silent> <Leader>d :call ToggleMovementByDisplayLines()<CR>
