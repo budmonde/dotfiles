@@ -33,3 +33,32 @@ alias v='vim -p'
 alias pjson='python -m json.tool'
 
 alias cdr='cd "$(git rev-parse --show-toplevel)"'
+
+# List all Make Targets
+make_targets() {
+    local makefile="${1:-Makefile}"
+    if [[ ! -f "$makefile" ]]; then
+        echo "Makefile '$makefile' not found!"
+        return 1
+    fi
+
+    # Extract all target names
+    local targets
+    targets=$(make -pRrq -f "$makefile" : 2>/dev/null \
+        | awk -F: '/^[a-zA-Z0-9][^$#\/\t=]*:([^=]|$)/ {print $1}' \
+        | sort -u)
+
+    # Extract phony targets
+    local phony
+    phony=$(awk '/\.PHONY:/ {for (i=2;i<=NF;i++) print $i}' "$makefile")
+
+    # Print targets, highlighting phony ones
+    for t in $targets; do
+        if grep -qx "$t" <<< "$phony"; then
+            echo -e "\e[33m$t\e[0m"   # yellow for PHONY
+        else
+            echo "$t"
+        fi
+    done
+}
+
