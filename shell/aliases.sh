@@ -62,3 +62,9 @@ list_make_targets() {
     done
 }
 
+# Set terminal title
+set_title() {
+    if [ -n "$WT_SESSION" ]; then
+        printf '\033]0;%s\007' "$*"
+    fi
+}
