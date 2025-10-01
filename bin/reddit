@@ -1,3 +1,71 @@
 #!/bin/sh
-url="https://www.reddit.com/r/$1/hot/.json?limit=10"
-curl -s $url | jq -r '.data.children[].data | [.ups?, (.ups? * (1-.upvote_ratio?) | round), (.title? | split(","))[0], .permalink?] | @csv' | column -t -s,
+# ========================================================
+# Reddit Posts Fetcher
+#
+# Usage:
+#   ./reddit.sh [-n NUM] [-s SORT] [-t RANGE] <subreddit>
+#
+# Options:
+#   -n NUM     Number of posts to fetch (default: 10)
+#   -s SORT    Sorting: hot | new | top   (default: hot)
+#   -t RANGE   Time range for "top": hour | day | week | month | year | all
+#              (default: week, ignored unless -s top)
+#
+# Examples:
+#   ./reddit.sh programming
+#   ./reddit.sh -n 25 -s new funny
+#   ./reddit.sh -n 15 -s top -t month science
+#
+# Requires: curl, jq, column
+# ========================================================
+
+# Default values
+limit=10
+sort="hot"
+time="week"
+
+# Parse options
+while getopts "n:s:t:" opt; do
+  case $opt in
+    n) limit="$OPTARG" ;;
+    s) sort="$OPTARG" ;;
+    t) time="$OPTARG" ;;
+    *) echo "Usage: $0 [-n NUM] [-s SORT] [-t RANGE] <subreddit>" >&2; exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+# Check if subreddit was given
+if [ -z "$1" ]; then
+  echo "Usage: $0 [-n NUM] [-s SORT] [-t RANGE] <subreddit>" >&2
+  exit 1
+fi
+
+subreddit="$1"
+
+# Build URL depending on sort
+case "$sort" in
+  hot|new)
+    url="https://www.reddit.com/r/$subreddit/$sort/.json?limit=$limit"
+    ;;
+  top)
+    url="https://www.reddit.com/r/$subreddit/top/.json?limit=$limit&t=$time"
+    ;;
+  *)
+    echo "Error: sort must be one of: hot | new | top" >&2
+    exit 1
+    ;;
+esac
+
+# Fetch and format results
+curl -s -A "Mozilla/5.0" "$url" \
+| jq -r '.data.children[].data
+    | [
+        .ups?,                                                # Upvotes
+        (.ups? * (1 - .upvote_ratio?) | round),               # Downvotes (approx)
+        ("https://redd.it/" + .id),                           # Short URL
+        (.title? // "" | split(",")[0])                       # Title (first part if comma present)
+      ]
+    | @csv' \
+| column -t -s,
+
