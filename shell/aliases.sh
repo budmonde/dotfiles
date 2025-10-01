@@ -68,3 +68,8 @@ set_title() {
         printf '\033]0;%s\007' "$*"
     fi
 }
+
+if [ -n "$WT_SESSION" ]; then
+    export WINDOWS_USER=$(cmd.exe /C "echo %USERNAME%" 2>/dev/null | tr -d '\r\n')
+    export WINDOWS_HOME="/mnt/c/Users/$WINDOWS_USER"
+fi
