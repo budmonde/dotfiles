@@ -35,7 +35,7 @@ alias pjson='python -m json.tool'
 alias cdr='cd "$(git rev-parse --show-toplevel)"'
 
 # List all Make Targets
-make_targets() {
+list_make_targets() {
     local makefile="${1:-Makefile}"
     if [[ ! -f "$makefile" ]]; then
         echo "Makefile '$makefile' not found!"
@@ -54,7 +54,7 @@ make_targets() {
 
     # Print targets, highlighting phony ones
     for t in $targets; do
-        if grep -qx "$t" <<< "$phony"; then
+        if echo "$phony" | grep -qx "$t"; then
             echo -e "\e[33m$t\e[0m"   # yellow for PHONY
         else
             echo "$t"
