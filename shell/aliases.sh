@@ -70,6 +70,6 @@ set_title() {
 }
 
 if [ -n "$WT_SESSION" ]; then
-    export WINDOWS_USER=$(cmd.exe /C "echo %USERNAME%" 2>/dev/null | tr -d '\r\n')
+    export WINDOWS_USER=$(powershell.exe -NoProfile -Command "[Environment]::UserName" | tr -d '\r\n')
     export WINDOWS_HOME="/mnt/c/Users/$WINDOWS_USER"
 fi
