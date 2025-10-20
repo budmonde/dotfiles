@@ -33,6 +33,23 @@ alias v='vim -p'
 alias pjson='python -m json.tool'
 
 alias cdr='cd "$(git rev-parse --show-toplevel)"'
+cdp() {
+    local target="$1"
+    if [ -z "$target" ]; then
+        echo "Usage: cdp <path>"
+        return 1
+    fi
+
+    if [ -d "$target" ]; then
+        cd "$target" || return
+    elif [ -f "$target" ]; then
+        cd "$(dirname "$target")" || return
+    else
+        echo "Error: '$target' is not a valid file or directory"
+        return 1
+    fi
+}
+
 
 # List all Make Targets
 list_make_targets() {
