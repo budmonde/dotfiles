@@ -86,7 +86,7 @@ set_title() {
     fi
 }
 
-if [ -n "$WT_SESSION" ]; then
+if [ -n "$WSL_DISTRO_NAME" ]; then
     export WINDOWS_USER=$(powershell.exe -NoProfile -Command "[Environment]::UserName" | tr -d '\r\n')
     export WINDOWS_HOME="/mnt/c/Users/$WINDOWS_USER"
 fi
