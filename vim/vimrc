@@ -86,6 +86,8 @@ let g:NERDTreeWinSize=60
 " NERDTree File num lines
 let g:NERDTreeFileLines = 1
 let g:NERDTreeShowBookmarks=1
+" NERDTree vim CWD when root is changed
+let g:NERDTreeChDirMode=2
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ PLUGIN : ctrlp
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
