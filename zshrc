@@ -4,6 +4,8 @@ source ~/.shell/functions.sh
 source ~/.zsh/settings.zsh
 # Bootstrap
 source ~/.shell/bootstrap.sh
+# External
+source ~/.shell/external.sh
 # Plug-ins
 source ~/.zsh/plugins.zsh
 # Aliases

@@ -1,0 +1,19 @@
+import os
+import atexit
+import readline
+import rlcompleter
+
+# Enable tab completion (cross-platform)
+if 'libedit' in readline.__doc__:
+    readline.parse_and_bind("bind ^I rl_complete")
+else:
+    readline.parse_and_bind("tab: complete")
+
+# Persistent history
+histfile = os.path.expanduser("~/.pyhistory")
+try:
+    readline.read_history_file(histfile)
+except FileNotFoundError:
+    pass
+atexit.register(readline.write_history_file, histfile)
+readline.set_history_length(10000)
