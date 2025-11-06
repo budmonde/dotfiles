@@ -5,6 +5,7 @@ set -euo pipefail
 BLUE="\033[34m"
 GREEN="\033[32m"
 YELLOW="\033[33m"
+RED="\033[31m"
 RESET="\033[0m"
 
 if [ "$#" -lt 1 ]; then
@@ -36,13 +37,23 @@ for repo in "$@"; do
         continue
     fi
 
-    # Check how many commits behind
+    # Check ahead/behind counts relative to upstream
     behind_count=$(git rev-list --count "$current_branch".."$tracking_branch")
+    ahead_count=$(git rev-list --count "$tracking_branch".."$current_branch")
 
-    if [ "$behind_count" -gt 0 ]; then
+    if [ "$ahead_count" -gt 0 ] && [ "$behind_count" -gt 0 ]; then
+        echo -e "${RED}  Branch '$current_branch' has diverged from '$tracking_branch' (ahead $ahead_count, behind $behind_count).${RESET}"
+    elif [ "$behind_count" -gt 0 ]; then
         echo -e "${YELLOW}  Branch '$current_branch' is behind '$tracking_branch' by $behind_count commits.${RESET}"
+    elif [ "$ahead_count" -gt 0 ]; then
+        echo -e "${YELLOW}  Branch '$current_branch' is ahead of '$tracking_branch' by $ahead_count commits.${RESET}"
     else
         echo -e "${GREEN}  Branch '$current_branch' is up to date with '$tracking_branch'.${RESET}"
+    fi
+
+    # Also indicate if there are local changes in the working tree (regardless of ahead/behind/diverged)
+    if [ -n "$(git status --porcelain)" ]; then
+        echo -e "${YELLOW}  Local changes present in the working tree.${RESET}"
     fi
 
     popd >/dev/null
