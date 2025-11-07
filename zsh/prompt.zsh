@@ -2,7 +2,7 @@ setopt prompt_subst
 
 autoload -U colors && colors
 
-if [[ "$(tput colors)" == "256" ]]; then
+if [[ "$(tput colors 2>/dev/null)" -ge 256 ]]; then
     source ~/.zsh/plugins/spectrum.zsh
     fg[red]=$FG[196]
     fg[green]=$FG[010]
@@ -92,7 +92,7 @@ function PR_VARS() {
             # if variable is set
             if export | grep -Eq "^${v}="; then
                 # if exported, show regularly
-                printf '%s' "$spc%{$fg[cyan]%}${v}=${(P)${v}}%{$reset_color%}$nl"
+                printf '%s' "$spc%{$fg[yellow]%}${v}=${(P)${v}}%{$reset_color%}$nl"
             else
                 printf '%s' "$spc%{$fg[red]%}${v}=${(P)${v}}%{$reset_color%}$nl"
             fi
