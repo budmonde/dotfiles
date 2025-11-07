@@ -138,6 +138,7 @@ PR_HEADER() {
     fi
 }
 
+
 # Simple Git branch segment
 git_branch_prompt() {
     local ref
@@ -149,6 +150,15 @@ git_branch_prompt() {
         "$RAW_COLOR_DEFAULT"
 }
 
+
+PYENV() {
+    if [[ -n $CONDA_DEFAULT_ENV ]]; then
+        echo "${RAW_COLOR_YELLOW}[conda:${RAW_COLOR_ORANGE}${CONDA_DEFAULT_ENV}${RAW_COLOR_YELLOW}]${RAW_COLOR_DEFAULT} "
+    fi
+}
+
+
+
 PS1="\n"\
 "\$(PR_HEADER) "\
 "${COLOR_TEAL}\u${COLOR_DEFAULT} "\
@@ -158,6 +168,7 @@ PS1="\n"\
 "${COLOR_OLIVE}${ATTRIBUTE_BOLD}\\w${ATTRIBUTE_RESET}${COLOR_DEFAULT}"\
 "\$(git_branch_prompt)"\
 "\n"\
+"\$(PYENV)"\
 "${COLOR_BLUE}${PR_ARROW_CHAR}${COLOR_DEFAULT} "
 
 PS2="${COLOR_BLUE}>${COLOR_DEFAULT} "

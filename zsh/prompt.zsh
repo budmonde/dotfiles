@@ -43,7 +43,7 @@ _root_arrow_color="$fg[red]"
 # Change Arrow color depending on insert or command mode
 function zle-line-init zle-keymap-select () {
     case $KEYMAP in
-        (vicmd) _arrow_color="$fg[green]" ; _root_arrow_color="$fg[red]" ;; 
+        (vicmd) _arrow_color="$fg[green]" ; _root_arrow_color="$fg[red]" ;;
         (viins|main) _arrow_color="$fg[blue]" ; _root_arrow_color="$fg[magenta]" ;;
     esac
     zle reset-prompt
@@ -100,17 +100,27 @@ function PR_VARS() {
     done
 }
 
+
 # Directory
 function PR_DIR() {
     echo "%{$fg[olive]%}%B%c%b%{$reset_color%}"
 }
 
+
+
+function PYENV() {
+    if [[ -n $CONDA_DEFAULT_ENV ]]; then
+        echo "%{$fg[yellow]%}[conda:%{$fg[orange]%}${CONDA_DEFAULT_ENV}%{$fg[yellow]%}]%{$reset_color%} "
+    fi
+}
+
+
 # LHS Prompt Display
 function PCMD() {
     if $_vars_multiline; then
-        echo "$(PR_VARS)$(PR_ERROR) $(PR_DIR) $(PR_ARROW) " # space at the end
+        echo "$(PR_VARS)$(PR_ERROR) $(PR_DIR) $(PYENV)$(PR_ARROW) " # space at the end
     else
-        echo "$(PR_ERROR)$(PR_VARS) $(PR_DIR) $(PR_ARROW) " # space at the end
+        echo "$(PR_ERROR)$(PR_VARS) $(PR_DIR) $(PYENV)$(PR_ARROW) " # space at the end
     fi
 }
 
