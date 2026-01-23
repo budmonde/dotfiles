@@ -23,6 +23,7 @@
     ~/.ssh/config: ssh/config
     ~/.tmux.conf:
     ~/.vim:
+    ~/.config/nvim: nvim
     ~/.zsh:
     ~/.zshrc:
 
