@@ -1,4 +1,4 @@
-set nocompatible             " This config file is not compatible Vim <8.0
+set nocompatible             " Disable Vi compatibility mode
 nmap Q <Nop>
 let mapleader = ","
 let maplocalleader = "\\"
@@ -7,8 +7,19 @@ let maplocalleader = "\\"
 """"""""""""""""""""""""""""""""""""""""""""""""" Apperance and Window Dynamics
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-colorscheme gruvbox
+" Colorscheme setup (config must come before colorscheme)
 set background=dark
+if has('termguicolors')
+    set termguicolors
+endif
+packadd! gruvbox-material
+let g:gruvbox_material_foreground = 'original'
+" Disable italic comments if terminal doesn't support italics (screen-256color)
+if $TERM =~# '^screen'
+    let g:gruvbox_material_disable_italic_comment = 1
+endif
+let g:gruvbox_material_better_performance = 1
+colorscheme gruvbox-material
 set shortmess+=I             " Disable startup message
 set noshowmode               " Hide mode at bottom of screen
 set laststatus=2             " Keep status line open
@@ -63,6 +74,9 @@ set hidden                   " Allow auto-hide of edited buffers
 set history=8192             " Extend history
 set undofile                 " Maintain undo history between sessions
 set undodir=~/.vim/undodir
+if !isdirectory($HOME . "/.vim/undodir")
+    call mkdir($HOME . "/.vim/undodir", "p", 0700)
+endif
 
 " Force save read-only with :Sudow
 command -nargs=0 Sudow w !sudo tee % > /dev/null
@@ -89,18 +103,17 @@ let g:NERDTreeShowBookmarks=1
 " NERDTree vim CWD when root is changed
 let g:NERDTreeChDirMode=2
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" PLUGIN : ctrlp
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:ctrlp_cmd = 'CtrlPMRU'
-let g:ctrlp_switch_buffer = 'Et'
-let g:ctrlp_show_hidden = 1
-let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ PLUGIN : fzf
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set rtp+=~/.shell_local/plugins/fzf
-" Ag search selection on <Leader>ag
+" File finders
+nnoremap <silent> <C-p> :Files<CR>
+nnoremap <silent> <Leader>p :GFiles<CR>
+nnoremap <silent> <Leader>b :Buffers<CR>
+nnoremap <silent> <Leader>h :History<CR>
+" Search content
 nnoremap <silent> <Leader>ag :Ag <C-R><C-W><CR>
+nnoremap <silent> <Leader>/ :Rg<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""" Movement and Navigation
@@ -108,9 +121,11 @@ nnoremap <silent> <Leader>ag :Ag <C-R><C-W><CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set backspace=indent,eol,start " More intuitive backspace
 set timeout timeoutlen=1000 ttimeoutlen=100 " Fix slow O inserts
-set nojoinspaces             " Suppress inserting repeated spaces
-set mouse+=a                 " Enable mouse mode
-set pastetoggle=<F2>         " Toggle paste mode using F2
+set nojoinspaces               " Suppress inserting repeated spaces
+set mouse=a                    " Enable mouse mode
+if !has('nvim')
+    set pastetoggle=<F2>       " Toggle paste mode using F2 (vim only)
+endif
 " Unbind increment and decrement due to tmux conflict
 map <C-a> <Nop>
 map <C-x> <Nop>
