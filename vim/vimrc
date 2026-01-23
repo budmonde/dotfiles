@@ -187,6 +187,9 @@ set wildmenu                 " Tab completion for files/buffers
 set wildmode=longest,list
 " Ignore files for completion
 set wildignore+=*/.git/*,*/tmp/*,*.swp
+
+" Split multi sentence line into separate lines
+nnoremap <Leader><CR> :s/\([.!?;]\)\s\+/\1\r/g<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ Vim-jedi config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
