@@ -12,14 +12,17 @@ set background=dark
 if has('termguicolors')
     set termguicolors
 endif
-packadd! gruvbox-material
-let g:gruvbox_material_foreground = 'original'
-" Disable italic comments if terminal doesn't support italics (screen-256color)
-if $TERM =~# '^screen'
-    let g:gruvbox_material_disable_italic_comment = 1
+" Skip colorscheme in neovim (lazy.nvim handles it)
+if !get(g:, 'skip_colorscheme', 0)
+    packadd! gruvbox-material
+    let g:gruvbox_material_foreground = 'original'
+    " Disable italic comments if terminal doesn't support italics (screen-256color)
+    if $TERM =~# '^screen'
+        let g:gruvbox_material_disable_italic_comment = 1
+    endif
+    let g:gruvbox_material_better_performance = 1
+    colorscheme gruvbox-material
 endif
-let g:gruvbox_material_better_performance = 1
-colorscheme gruvbox-material
 set shortmess+=I             " Disable startup message
 set noshowmode               " Hide mode at bottom of screen
 set laststatus=2             " Keep status line open
@@ -40,13 +43,30 @@ set splitright               " Default vertical split splits right
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ PLUGIN : vim-airline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" g:use_nerd_fonts - set to 0 in local config for machines without Nerd Fonts
+if !exists('g:use_nerd_fonts')
+    let g:use_nerd_fonts = 1
+endif
 if !exists('g:airline_symbols')
     let g:airline_symbols = {}
 endif
-let g:airline_symbols.colnr = ' ℅:'
-let g:airline_symbols.linenr = ' ␤:'
-let g:airline_symbols.maxlinenr = '㏑'
-let g:airline_symbols.branch = '⎇'
+if g:use_nerd_fonts
+    " Extended Nerd Font symbols
+    let g:airline_powerline_fonts = 1
+    let g:airline_symbols.colnr = ' :'
+    let g:airline_symbols.linenr = ' :'
+    let g:airline_symbols.maxlinenr = ''
+    let g:airline_symbols.branch = ''
+else
+    " Simple ASCII-compatible symbols
+    let g:airline_powerline_fonts = 0
+    let g:airline_symbols.colnr = ' C:'
+    let g:airline_symbols.linenr = ' L:'
+    let g:airline_symbols.maxlinenr = ''
+    let g:airline_symbols.branch = '|'
+    let g:airline_left_sep = ''
+    let g:airline_right_sep = ''
+endif
 let g:airline#extensions#tabline#enabled = 1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ PLUGIN : vim-tmux-navigator

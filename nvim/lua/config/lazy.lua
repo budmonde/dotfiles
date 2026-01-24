@@ -1,0 +1,390 @@
+-------------------------------------------------------------------------------
+-- Bootstrap lazy.nvim
+-------------------------------------------------------------------------------
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+    vim.fn.system({
+        "git",
+        "clone",
+        "--filter=blob:none",
+        "https://github.com/folke/lazy.nvim.git",
+        "--branch=stable",
+        lazypath,
+    })
+end
+vim.opt.rtp:prepend(lazypath)
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+------------------------------------------------- Appearance and Window Dynamics
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+local appearance_plugins = {
+    ---------------------------------------------------------------------------
+    --- PLUGIN : gruvbox-material
+    ---------------------------------------------------------------------------
+    {
+        "sainnhe/gruvbox-material",
+        lazy = false,
+        priority = 1000,
+        config = function()
+            vim.g.gruvbox_material_foreground = "original"
+            vim.g.gruvbox_material_better_performance = 1
+            -- Disable italic comments if terminal doesn't support italics
+            if vim.env.TERM and vim.env.TERM:match("^screen") then
+                vim.g.gruvbox_material_disable_italic_comment = 1
+            end
+            vim.cmd.colorscheme("gruvbox-material")
+        end,
+    },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : lualine.nvim (replaces vim-airline)
+    ---------------------------------------------------------------------------
+    {
+        "nvim-lualine/lualine.nvim",
+        dependencies = { "nvim-tree/nvim-web-devicons" },
+        config = function()
+            local use_nerd_fonts = vim.g.use_nerd_fonts ~= 0  -- default true
+            require("lualine").setup({
+                options = {
+                    theme = "gruvbox-material",
+                    icons_enabled = use_nerd_fonts,
+                    section_separators = use_nerd_fonts and { left = '', right = '' } or { left = '', right = '' },
+                    component_separators = use_nerd_fonts and { left = '', right = '' } or { left = '|', right = '|' },
+                },
+                extensions = { "nvim-tree", "fugitive" },
+            })
+        end,
+    },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : vim-tmux-navigator
+    ---------------------------------------------------------------------------
+    {
+        "christoomey/vim-tmux-navigator",
+        init = function()
+            vim.g.tmux_navigator_no_mappings = 1
+        end,
+        config = function()
+            vim.keymap.set("n", "<M-h>", ":TmuxNavigateLeft<CR>", { silent = true })
+            vim.keymap.set("n", "<M-j>", ":TmuxNavigateDown<CR>", { silent = true })
+            vim.keymap.set("n", "<M-k>", ":TmuxNavigateUp<CR>", { silent = true })
+            vim.keymap.set("n", "<M-l>", ":TmuxNavigateRight<CR>", { silent = true })
+            vim.keymap.set("n", "<M-\\>", ":TmuxNavigatePrevious<CR>", { silent = true })
+        end,
+    },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : vim-better-whitespace
+    ---------------------------------------------------------------------------
+    {
+        "ntpeters/vim-better-whitespace",
+        init = function()
+            vim.g.better_whitespace_enabled = 1
+            vim.g.strip_whitespace_on_save = 1
+            vim.g.better_whitespace_ctermcolor = "gray"
+        end,
+    },
+}
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+------------------------------------------------ Filesystem, Buffers and Search
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+local filesystem_plugins = {
+    ---------------------------------------------------------------------------
+    --- PLUGIN : nvim-tree (replaces nerdtree)
+    ---------------------------------------------------------------------------
+    {
+        "nvim-tree/nvim-tree.lua",
+        dependencies = { "nvim-tree/nvim-web-devicons" },
+        config = function()
+            local use_nerd_fonts = vim.g.use_nerd_fonts ~= 0  -- default true
+            require("nvim-tree").setup({
+                view = { width = 60 },
+                actions = {
+                    change_dir = { enable = true, global = true },
+                },
+                renderer = {
+                    icons = {
+                        show = {
+                            file = use_nerd_fonts,
+                            folder = true,
+                            folder_arrow = true,
+                            git = true,
+                        },
+                        glyphs = use_nerd_fonts and {} or {
+                            folder = {
+                                arrow_closed = ">",
+                                arrow_open = "v",
+                                default = "[D]",
+                                open = "[O]",
+                                empty = "[E]",
+                                empty_open = "[E]",
+                                symlink = "[L]",
+                                symlink_open = "[L]",
+                            },
+                            git = {
+                                unstaged = "M",
+                                staged = "S",
+                                unmerged = "!",
+                                renamed = "R",
+                                untracked = "?",
+                                deleted = "D",
+                                ignored = "-",
+                            },
+                        },
+                    },
+                },
+            })
+            vim.keymap.set("n", "<M-n>", ":NvimTreeToggle<CR>", { silent = true })
+            vim.keymap.set("n", "<M-N>", ":NvimTreeFindFile<CR>", { silent = true })
+        end,
+    },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : telescope.nvim (replaces fzf)
+    ---------------------------------------------------------------------------
+    {
+        "nvim-telescope/telescope.nvim",
+        branch = "0.1.x",
+        dependencies = { "nvim-lua/plenary.nvim" },
+        config = function()
+            local builtin = require("telescope.builtin")
+            -- File finders
+            vim.keymap.set("n", "<C-p>", builtin.find_files, { desc = "Find files" })
+            vim.keymap.set("n", "<leader>p", builtin.git_files, { desc = "Git files" })
+            vim.keymap.set("n", "<leader>b", builtin.buffers, { desc = "Buffers" })
+            vim.keymap.set("n", "<leader>h", builtin.oldfiles, { desc = "Recent files" })
+            -- Search content
+            vim.keymap.set("n", "<leader>ag", builtin.grep_string, { desc = "Grep word under cursor" })
+            vim.keymap.set("n", "<leader>/", builtin.live_grep, { desc = "Live grep" })
+        end,
+    },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : gitsigns.nvim (replaces vim-gitgutter)
+    ---------------------------------------------------------------------------
+    {
+        "lewis6991/gitsigns.nvim",
+        config = function()
+            require("gitsigns").setup()
+        end,
+    },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : vim-fugitive
+    ---------------------------------------------------------------------------
+    { "tpope/vim-fugitive" },
+}
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+------------------------------------------------------- Movement and Navigation
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+local movement_plugins = {
+    ---------------------------------------------------------------------------
+    --- PLUGIN : flash.nvim (replaces vim-easymotion)
+    ---------------------------------------------------------------------------
+    {
+        "folke/flash.nvim",
+        event = "VeryLazy",
+        opts = {},
+        keys = {
+            { "<leader><leader>f", mode = { "n", "x", "o" }, function() require("flash").jump() end, desc = "Flash" },
+            { "<leader><leader>w", mode = { "n", "x", "o" }, function() require("flash").treesitter() end, desc = "Flash Treesitter" },
+        },
+    },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : nvim-surround (replaces vim-surround)
+    ---------------------------------------------------------------------------
+    {
+        "kylechui/nvim-surround",
+        version = "*",
+        event = "VeryLazy",
+        config = function()
+            require("nvim-surround").setup()
+        end,
+    },
+}
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+-------------------------------------------- Syntax, Auto-completion and Indent
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+local syntax_plugins = {
+    ---------------------------------------------------------------------------
+    --- PLUGIN : nvim-treesitter
+    ---------------------------------------------------------------------------
+    {
+        "nvim-treesitter/nvim-treesitter",
+        build = ":TSUpdate",
+        config = function()
+            -- Enable treesitter highlighting for supported filetypes
+            vim.api.nvim_create_autocmd("FileType", {
+                pattern = { "python", "lua", "vim", "bash", "json", "yaml", "markdown", "javascript", "typescript" },
+                callback = function()
+                    pcall(vim.treesitter.start)
+                end,
+            })
+        end,
+    },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : mason.nvim (LSP/linter/formatter installer)
+    ---------------------------------------------------------------------------
+    {
+        "williamboman/mason.nvim",
+        config = function()
+            require("mason").setup()
+        end,
+    },
+    {
+        "williamboman/mason-lspconfig.nvim",
+        dependencies = { "williamboman/mason.nvim", "neovim/nvim-lspconfig" },
+        config = function()
+            require("mason-lspconfig").setup({
+                ensure_installed = { "pyright", "lua_ls" },
+            })
+        end,
+    },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : nvim-lspconfig (replaces jedi-vim)
+    ---------------------------------------------------------------------------
+    {
+        "neovim/nvim-lspconfig",
+        dependencies = { "williamboman/mason-lspconfig.nvim" },
+        config = function()
+            local capabilities = require("cmp_nvim_lsp").default_capabilities()
+
+            -- Python
+            vim.lsp.config.pyright = {
+                cmd = { "pyright-langserver", "--stdio" },
+                filetypes = { "python" },
+                root_markers = { "pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", ".git" },
+                capabilities = capabilities,
+            }
+            vim.lsp.enable("pyright")
+
+            -- Lua
+            vim.lsp.config.lua_ls = {
+                cmd = { "lua-language-server" },
+                filetypes = { "lua" },
+                root_markers = { ".luarc.json", ".luarc.jsonc", ".git" },
+                capabilities = capabilities,
+                settings = {
+                    Lua = {
+                        diagnostics = { globals = { "vim" } },
+                    },
+                },
+            }
+            vim.lsp.enable("lua_ls")
+        end,
+    },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : nvim-cmp (autocompletion)
+    ---------------------------------------------------------------------------
+    {
+        "hrsh7th/nvim-cmp",
+        dependencies = {
+            "hrsh7th/cmp-nvim-lsp",
+            "hrsh7th/cmp-buffer",
+            "hrsh7th/cmp-path",
+            "L3MON4D3/LuaSnip",
+            "saadparwaiz1/cmp_luasnip",
+        },
+        config = function()
+            local cmp = require("cmp")
+            local luasnip = require("luasnip")
+
+            cmp.setup({
+                snippet = {
+                    expand = function(args)
+                        luasnip.lsp_expand(args.body)
+                    end,
+                },
+                mapping = cmp.mapping.preset.insert({
+                    ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+                    ["<C-f>"] = cmp.mapping.scroll_docs(4),
+                    ["<C-Space>"] = cmp.mapping.complete(),
+                    ["<C-e>"] = cmp.mapping.abort(),
+                    ["<CR>"] = cmp.mapping.confirm({ select = true }),
+                    ["<Tab>"] = cmp.mapping(function(fallback)
+                        if cmp.visible() then
+                            cmp.select_next_item()
+                        elseif luasnip.expand_or_jumpable() then
+                            luasnip.expand_or_jump()
+                        else
+                            fallback()
+                        end
+                    end, { "i", "s" }),
+                    ["<S-Tab>"] = cmp.mapping(function(fallback)
+                        if cmp.visible() then
+                            cmp.select_prev_item()
+                        elseif luasnip.jumpable(-1) then
+                            luasnip.jump(-1)
+                        else
+                            fallback()
+                        end
+                    end, { "i", "s" }),
+                }),
+                sources = cmp.config.sources({
+                    { name = "nvim_lsp" },
+                    { name = "luasnip" },
+                }, {
+                    { name = "buffer" },
+                    { name = "path" },
+                }),
+            })
+        end,
+    },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : Comment.nvim
+    ---------------------------------------------------------------------------
+    {
+        "numToStr/Comment.nvim",
+        config = function()
+            require("Comment").setup()
+        end,
+    },
+}
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+------------------------------------------------------------- Keybinding Helpers
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+local keybinding_plugins = {
+    ---------------------------------------------------------------------------
+    --- PLUGIN : which-key.nvim
+    ---------------------------------------------------------------------------
+    {
+        "folke/which-key.nvim",
+        event = "VeryLazy",
+        config = function()
+            require("which-key").setup()
+        end,
+    },
+}
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+-- Setup lazy.nvim with all plugin groups
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+local all_plugins = {}
+for _, group in ipairs({ appearance_plugins, filesystem_plugins, movement_plugins, syntax_plugins, keybinding_plugins }) do
+    for _, plugin in ipairs(group) do
+        table.insert(all_plugins, plugin)
+    end
+end
+
+require("lazy").setup(all_plugins)
