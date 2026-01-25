@@ -377,11 +377,113 @@ local keybinding_plugins = {
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
+------------------------------------------------------------ AI CLI Integration
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+local ai_plugins = {
+    ---------------------------------------------------------------------------
+    --- PLUGIN : sidekick.nvim
+    ---------------------------------------------------------------------------
+    {
+        "folke/sidekick.nvim",
+        config = function(_, opts)
+            require("sidekick").setup(opts)
+            -- Patch: enable watch for split/window sessions (PR #173 fix)
+            vim.api.nvim_create_autocmd("User", {
+                pattern = "SidekickCliAttach",
+                callback = function()
+                    pcall(function()
+                        require("sidekick.cli.watch").enable()
+                    end)
+                end,
+            })
+        end,
+        opts = {
+            picker = "telescope",  -- use telescope instead of snacks
+            cli = {
+                watch = true,  -- auto-reload files changed by AI tools
+                mux = {
+                    backend = "tmux",
+                    enabled = true,
+                    create = "split",  -- tmux split
+                },
+            },
+        },
+        keys = {
+            -- Tab for Next Edit Suggestions
+            {
+                "<Tab>",
+                function()
+                    if not require("sidekick").nes_jump_or_apply() then
+                        return "<Tab>"
+                    end
+                end,
+                expr = true,
+                desc = "Goto/Apply Next Edit Suggestion",
+            },
+            -- AI CLI toggles
+            {
+                "<leader>aa",
+                function() require("sidekick.cli").toggle() end,
+                desc = "Sidekick Toggle CLI",
+            },
+            {
+                "<leader>as",
+                function() require("sidekick.cli").select() end,
+                desc = "Select CLI Tool",
+            },
+            {
+                "<leader>ad",
+                function() require("sidekick.cli").close() end,
+                desc = "Detach CLI Session",
+            },
+            -- Send context to AI
+            {
+                "<leader>at",
+                function() require("sidekick.cli").send({ msg = "{this}" }) end,
+                mode = { "x", "n" },
+                desc = "Send This",
+            },
+            {
+                "<leader>af",
+                function() require("sidekick.cli").send({ msg = "{file}" }) end,
+                desc = "Send File",
+            },
+            {
+                "<leader>av",
+                function() require("sidekick.cli").send({ msg = "{selection}" }) end,
+                mode = { "x" },
+                desc = "Send Visual Selection",
+            },
+            {
+                "<leader>ap",
+                function() require("sidekick.cli").prompt() end,
+                mode = { "n", "x" },
+                desc = "Select Prompt",
+            },
+            -- Direct tool toggles
+            {
+                "<leader>ac",
+                function() require("sidekick.cli").toggle({ name = "cursor", focus = true }) end,
+                desc = "Toggle Cursor",
+            },
+            {
+                "<leader>aC",
+                function() require("sidekick.cli").toggle({ name = "claude", focus = true }) end,
+                desc = "Toggle Claude",
+            },
+        },
+    },
+
+}
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- Setup lazy.nvim with all plugin groups
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 local all_plugins = {}
-for _, group in ipairs({ appearance_plugins, filesystem_plugins, movement_plugins, syntax_plugins, keybinding_plugins }) do
+for _, group in ipairs({ appearance_plugins, filesystem_plugins, movement_plugins, syntax_plugins, keybinding_plugins, ai_plugins }) do
     for _, plugin in ipairs(group) do
         table.insert(all_plugins, plugin)
     end
