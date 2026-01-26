@@ -382,97 +382,64 @@ local keybinding_plugins = {
 -------------------------------------------------------------------------------
 local ai_plugins = {
     ---------------------------------------------------------------------------
-    --- PLUGIN : sidekick.nvim
+    --- PLUGIN : opencode.nvim
     ---------------------------------------------------------------------------
     {
-        "folke/sidekick.nvim",
-        config = function(_, opts)
-            require("sidekick").setup(opts)
-            -- Patch: enable watch for split/window sessions (PR #173 fix)
-            vim.api.nvim_create_autocmd("User", {
-                pattern = "SidekickCliAttach",
-                callback = function()
-                    pcall(function()
-                        require("sidekick.cli.watch").enable()
-                    end)
-                end,
-            })
-        end,
-        opts = {
-            picker = "telescope",  -- use telescope instead of snacks
-            cli = {
-                watch = true,  -- auto-reload files changed by AI tools
-                mux = {
-                    backend = "tmux",
-                    enabled = true,
-                    create = "split",  -- tmux split
+        "NickvanDyke/opencode.nvim",
+        dependencies = {
+            { "folke/snacks.nvim", opts = { input = {}, picker = {}, terminal = {} } },
+        },
+        config = function()
+            -- Required for auto-reload when opencode edits files
+            vim.o.autoread = true
+
+            ---@type opencode.Opts
+            vim.g.opencode_opts = {
+                provider = {
+                    enabled = "tmux",
+                    tmux = {},
                 },
-            },
-        },
-        keys = {
-            -- Tab for Next Edit Suggestions
-            {
-                "<Tab>",
-                function()
-                    if not require("sidekick").nes_jump_or_apply() then
-                        return "<Tab>"
-                    end
-                end,
-                expr = true,
-                desc = "Goto/Apply Next Edit Suggestion",
-            },
-            -- AI CLI toggles
-            {
-                "<leader>aa",
-                function() require("sidekick.cli").toggle() end,
-                desc = "Sidekick Toggle CLI",
-            },
-            {
-                "<leader>as",
-                function() require("sidekick.cli").select() end,
-                desc = "Select CLI Tool",
-            },
-            {
-                "<leader>ad",
-                function() require("sidekick.cli").close() end,
-                desc = "Detach CLI Session",
-            },
-            -- Send context to AI
-            {
-                "<leader>at",
-                function() require("sidekick.cli").send({ msg = "{this}" }) end,
-                mode = { "x", "n" },
-                desc = "Send This",
-            },
-            {
-                "<leader>af",
-                function() require("sidekick.cli").send({ msg = "{file}" }) end,
-                desc = "Send File",
-            },
-            {
-                "<leader>av",
-                function() require("sidekick.cli").send({ msg = "{selection}" }) end,
-                mode = { "x" },
-                desc = "Send Visual Selection",
-            },
-            {
-                "<leader>ap",
-                function() require("sidekick.cli").prompt() end,
-                mode = { "n", "x" },
-                desc = "Select Prompt",
-            },
-            -- Direct tool toggles
-            {
-                "<leader>ac",
-                function() require("sidekick.cli").toggle({ name = "cursor", focus = true }) end,
-                desc = "Toggle Cursor",
-            },
-            {
-                "<leader>aC",
-                function() require("sidekick.cli").toggle({ name = "claude", focus = true }) end,
-                desc = "Toggle Claude",
-            },
-        },
+            }
+
+            -- Keymaps
+            -- Ask opencode with context
+            vim.keymap.set({ "n", "x" }, "<leader>oa", function()
+                require("opencode").ask("@this: ", { submit = false })
+            end, { desc = "Ask opencode" })
+
+            -- Submit immediately with current context
+            vim.keymap.set({ "n", "x" }, "<leader>oA", function()
+                require("opencode").ask("@this: ", { submit = true })
+            end, { desc = "Ask opencode (submit)" })
+
+            -- Select from prompts/commands
+            vim.keymap.set({ "n", "x" }, "<leader>os", function()
+                require("opencode").select()
+            end, { desc = "Opencode select action" })
+
+            -- Toggle opencode panel
+            vim.keymap.set({ "n", "t" }, "<leader>oo", function()
+                require("opencode").toggle()
+            end, { desc = "Toggle opencode" })
+
+            -- Operator for adding ranges
+            vim.keymap.set({ "n", "x" }, "go", function()
+                return require("opencode").operator("@this ")
+            end, { desc = "Add range to opencode", expr = true })
+
+            vim.keymap.set("n", "goo", function()
+                return require("opencode").operator("@this ") .. "_"
+            end, { desc = "Add line to opencode", expr = true })
+
+            -- Scroll opencode
+            vim.keymap.set("n", "<leader>ok", function()
+                require("opencode").command("session.half.page.up")
+            end, { desc = "Scroll opencode up" })
+
+            vim.keymap.set("n", "<leader>oj", function()
+                require("opencode").command("session.half.page.down")
+            end, { desc = "Scroll opencode down" })
+        end,
     },
 
 }
