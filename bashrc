@@ -1,21 +1,24 @@
-# Import Functions
+# Environment variables and PATH setup
+
 source ~/.shell/functions.sh
-# Settings
-source ~/.bash/settings.bash
-# Bootstrap
+# PATH setup
 source ~/.shell/bootstrap.sh
-# External settings
+# External tool environment variables
 source ~/.shell/external.sh
-# Plug-ins
-source ~/.bash/plugins.bash
-# Aliases
-source ~/.shell/aliases.sh
-# Prompt
-source ~/.bash/prompt.bash
-# Load local configurations
-if [ -f ~/.shell_local_after ]; then
-    source ~/.shell_local_after
+
+if [ -f ~/.shellenv_local ]; then
+    source ~/.shellenv_local
 fi
-if [ -f ~/.bashrc_local_after ]; then
-    source ~/.bashrc_local_after
+
+# Interactive shell setup
+source ~/.bash/settings.bash
+source ~/.bash/plugins.bash
+source ~/.shell/aliases.sh
+source ~/.bash/prompt.bash
+
+if [ -f ~/.shellrc_local ]; then
+    source ~/.shellrc_local
+fi
+if [ -f ~/.bashrc_local ]; then
+    source ~/.bashrc_local
 fi

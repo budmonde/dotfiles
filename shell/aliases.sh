@@ -78,39 +78,3 @@ list_make_targets() {
         fi
     done
 }
-
-# Set terminal title
-set_title() {
-    if [ -n "$WT_SESSION" ]; then
-        printf '\033]0;%s\007' "$*"
-    fi
-}
-
-if [ -n "$WSL_DISTRO_NAME" ]; then
-    export WINDOWS_USER=$(powershell.exe -NoProfile -Command "[Environment]::UserName" | tr -d '\r\n')
-    export WINDOWS_HOME="/mnt/c/Users/$WINDOWS_USER"
-fi
-
-notify() {
-    local title="${1:-Notification}"
-    local message="${2:-Task finished}"
-	if [ -z "$WSL_DISTRO_NAME" ]; then
-        echo "Error: No Windows notification environment found (not running in WSL)" >&2
-        return 1
-	fi
-
-    powershell.exe -NoLogo -NonInteractive -WindowStyle Hidden -Command \
-    "[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > \$null;
-    [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] > \$null;
-    \$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02);
-    \$textNodes = \$template.GetElementsByTagName('text');
-    \$textNodes.Item(0).AppendChild(\$template.CreateTextNode('$title')) > \$null;
-    \$textNodes.Item(1).AppendChild(\$template.CreateTextNode('$message')) > \$null;
-    \$toast = [Windows.UI.Notifications.ToastNotification]::new(\$template);
-    \$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('WSL');
-    \$notifier.Show(\$toast);" \
-    > /dev/null 2>&1 || {
-        echo "Error: Failed to send Windows notification." >&2
-        return 1
-    }
-}
