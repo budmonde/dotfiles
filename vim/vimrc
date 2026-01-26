@@ -72,11 +72,11 @@ let g:airline#extensions#tabline#enabled = 1
 """ PLUGIN : vim-tmux-navigator
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:tmux_navigator_no_mappings = 1
-nnoremap <silent> h :TmuxNavigateLeft<CR>
-nnoremap <silent> j :TmuxNavigateDown<CR>
-nnoremap <silent> k :TmuxNavigateUp<CR>
-nnoremap <silent> l :TmuxNavigateRight<CR>
-nnoremap <silent> \ :TmuxNavigatePrevious<CR>
+nnoremap <silent> <M-h> :TmuxNavigateLeft<CR>
+nnoremap <silent> <M-j> :TmuxNavigateDown<CR>
+nnoremap <silent> <M-k> :TmuxNavigateUp<CR>
+nnoremap <silent> <M-l> :TmuxNavigateRight<CR>
+nnoremap <silent> <M-\> :TmuxNavigatePrevious<CR>
 let g:tmux_navigator_disable_when_zoomed = 1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ PLUGIN : vim-better-whitespace
@@ -112,9 +112,9 @@ nnoremap <C-h> :nohlsearch<CR>
 """ PLUGIN : nerdtree
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Open NERDTree
-map n :NERDTreeToggle<CR>
+map <M-n> :NERDTreeToggle<CR>
 " Find current file in NERDTree
-map N :NERDTreeFind<CR>
+map <M-N> :NERDTreeFind<CR>
 " NERDTree Window width
 let g:NERDTreeWinSize=60
 " NERDTree File num lines
