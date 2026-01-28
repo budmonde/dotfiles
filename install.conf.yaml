@@ -24,6 +24,7 @@
     ~/.tmux.conf:
     ~/.vim:
     ~/.config/nvim: nvim
+    ~/.config/opencode/plugins: opencode/plugins
     ~/.zsh:
     ~/.zshenv:
     ~/.zshrc:

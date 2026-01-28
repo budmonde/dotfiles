@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Set terminal title in Windows Terminal (WSL)
+# Usage: set-title <title>
+
+set -e
+
+title="${1:-}"
+
+if [[ -z "$title" ]]; then
+    echo "Usage: set-title <title>" >&2
+    exit 1
+fi
+
+if [[ -n "$WSL_DISTRO_NAME" ]] && [[ -n "$WT_SESSION" ]]; then
+    if [[ -n "$TMUX" ]]; then
+        # Inside tmux - use tmux's built-in title setting
+        tmux set-option -g set-titles on
+        tmux set-option -g set-titles-string "$title"
+    else
+        # Direct terminal
+        printf '\033]0;%s\007' "$title"
+    fi
+fi
