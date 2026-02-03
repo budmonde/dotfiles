@@ -22,14 +22,14 @@ src() {
         . ~/.bashrc
     fi
 }
-alias et='vi ~/.tmux.conf'
-alias ev='vi ~/.vim/vimrc'
-alias ea='vi ~/.shell/aliases.sh; src'
+alias et='$EDITOR ~/.tmux.conf'
+alias ev='$EDITOR ~/.vim/vimrc'
+alias ea='$EDITOR ~/.shell/aliases.sh; src'
 alias eg='git config --global -e'
 
 # Command shortcuts
 alias g='git'
-alias v='vim -p'
+alias v='$EDITOR -p'
 alias pjson='python -m json.tool'
 
 alias cdr='cd "$(git rev-parse --show-toplevel)"'

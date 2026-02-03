@@ -15,9 +15,6 @@ setopt extended_glob
 # Time to wait for additional characters in a sequence
 export KEYTIMEOUT=1 # 10ms
 
-# Use vim as default editor
-export EDITOR=vim
-
 # Use vim editing mode
 bindkey -v
 
