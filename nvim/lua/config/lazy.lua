@@ -149,9 +149,18 @@ local filesystem_plugins = {
     ---------------------------------------------------------------------------
     {
         "nvim-telescope/telescope.nvim",
-        branch = "0.1.x",
         dependencies = { "nvim-lua/plenary.nvim" },
         config = function()
+            require("telescope").setup({
+                defaults = {
+                    mappings = {
+                        i = {
+                            ["<C-j>"] = "move_selection_next",
+                            ["<C-k>"] = "move_selection_previous",
+                        },
+                    },
+                },
+            })
             local builtin = require("telescope.builtin")
             -- File finders
             vim.keymap.set("n", "<C-p>", builtin.find_files, { desc = "Find files" })
@@ -439,6 +448,11 @@ local ai_plugins = {
             vim.keymap.set("n", "<leader>oj", function()
                 require("opencode").command("session.half.page.down")
             end, { desc = "Scroll opencode down" })
+
+            -- Code review command
+            vim.keymap.set("n", "<leader>or", function()
+                require("opencode").ask("/review @this", { submit = true })
+            end, { desc = "Review current file" })
         end,
     },
 
