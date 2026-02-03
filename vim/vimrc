@@ -40,6 +40,25 @@ set colorcolumn=80           " Line-width ruler
 
 set splitbelow               " Default horizontal split splits below
 set splitright               " Default vertical split splits right
+
+" Custom tabline showing tab-local working directory
+function! MyTabLine()
+    let s = ''
+    for i in range(1, tabpagenr('$'))
+        let is_current = (i == tabpagenr())
+        let s .= is_current ? '%#TabLineSel#' : '%#TabLine#'
+        let s .= ' %' . i . 'T'
+        let tab_cwd = getcwd(-1, i)
+        let tab_name = fnamemodify(tab_cwd, ':t')
+        if tab_name == ''
+            let tab_name = '/'
+        endif
+        let s .= i . ':' . tab_name . ' '
+    endfor
+    let s .= '%#TabLineFill#'
+    return s
+endfunction
+set tabline=%!MyTabLine()
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ PLUGIN : vim-airline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -67,7 +86,7 @@ else
     let g:airline_left_sep = ''
     let g:airline_right_sep = ''
 endif
-let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#enabled = 0
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ PLUGIN : vim-tmux-navigator
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
