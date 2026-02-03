@@ -25,6 +25,7 @@
     ~/.tmux/plugins/tpm: tmux/plugins/tpm
     ~/.vim:
     ~/.config/nvim: nvim
+    ~/.config/opencode/AGENTS.md: opencode/AGENTS.md
     ~/.config/opencode/plugins: opencode/plugins
     ~/.zsh:
     ~/.zshenv:
