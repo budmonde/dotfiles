@@ -3,3 +3,6 @@
 
 # Tags
 tags
+
+# Machine-specific opencode config
+opencode.json

@@ -104,8 +104,14 @@ local filesystem_plugins = {
             local use_nerd_fonts = vim.g.use_nerd_fonts ~= 0  -- default true
             require("nvim-tree").setup({
                 view = { width = 60 },
+                sync_root_with_cwd = true,
+                respect_buf_cwd = true,
+                update_focused_file = {
+                    enable = true,
+                    update_root = true,
+                },
                 actions = {
-                    change_dir = { enable = true, global = true },
+                    change_dir = { enable = true, global = false },
                 },
                 renderer = {
                     icons = {
@@ -382,6 +388,54 @@ local keybinding_plugins = {
             require("which-key").setup()
         end,
     },
+
+    ---------------------------------------------------------------------------
+    --- PLUGIN : persistence.nvim
+    ---------------------------------------------------------------------------
+    {
+        "folke/persistence.nvim",
+        lazy = false,
+        config = function()
+            require("persistence").setup({
+                dir = vim.fn.stdpath("state") .. "/sessions/",
+            })
+
+            -- Auto-load session if nvim started without arguments
+            vim.api.nvim_create_autocmd("VimEnter", {
+                group = vim.api.nvim_create_augroup("persistence_autoload", { clear = true }),
+                callback = function()
+                    if vim.fn.argc() == 0 and not vim.g.started_with_stdin then
+                        require("persistence").load()
+                    end
+                end,
+                nested = true,
+            })
+
+            -- Auto-save session on exit
+            vim.api.nvim_create_autocmd("VimLeavePre", {
+                group = vim.api.nvim_create_augroup("persistence_autosave", { clear = true }),
+                callback = function()
+                    require("persistence").save()
+                end,
+            })
+
+            -- Manual keymaps
+            vim.keymap.set("n", "<leader>qs", function()
+                require("persistence").save()
+                vim.notify("Session saved")
+            end, { desc = "Save session" })
+            vim.keymap.set("n", "<leader>ql", function()
+                require("persistence").load()
+            end, { desc = "Load session" })
+            vim.keymap.set("n", "<leader>qL", function()
+                require("persistence").select()
+            end, { desc = "Select session" })
+            vim.keymap.set("n", "<leader>qd", function()
+                require("persistence").stop()
+                vim.notify("Session recording stopped")
+            end, { desc = "Stop session recording" })
+        end,
+    },
 }
 
 -------------------------------------------------------------------------------
@@ -406,7 +460,9 @@ local ai_plugins = {
             vim.g.opencode_opts = {
                 provider = {
                     enabled = "tmux",
-                    tmux = {},
+                    tmux = {
+                        options = "-h -l 33% -f",
+                    },
                 },
             }
 
