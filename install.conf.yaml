@@ -22,6 +22,7 @@
     ~/.shell:
     ~/.ssh/config: ssh/config
     ~/.tmux.conf:
+    ~/.tmux/plugins/tpm: tmux/plugins/tpm
     ~/.vim:
     ~/.config/nvim: nvim
     ~/.config/opencode/plugins: opencode/plugins

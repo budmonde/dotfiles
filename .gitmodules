@@ -62,3 +62,6 @@
 [submodule "vim/pack/vendor/start/vim-solarized8"]
 	path = vim/pack/vendor/start/vim-solarized8
 	url = https://github.com/lifepillar/vim-solarized8.git
+[submodule "tmux/plugins/tpm"]
+	path = tmux/plugins/tpm
+	url = https://github.com/tmux-plugins/tpm
