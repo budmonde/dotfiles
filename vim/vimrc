@@ -164,6 +164,14 @@ set nojoinspaces               " Suppress inserting repeated spaces
 set mouse=a                    " Enable mouse mode
 if !has('nvim')
     set pastetoggle=<F2>       " Toggle paste mode using F2 (vim only)
+    " Fix Alt key mappings in terminal Vim. Terminals send <Esc>+key for Alt,
+    " but with low ttimeoutlen Vim can't distinguish this from pressing Esc
+    " then a key. Neovim handles this natively via modern terminal protocols.
+    " Explicitly mapping the escape sequences lets us keep ttimeoutlen low
+    " (avoiding delay when exiting insert mode) while still recognizing Alt.
+    for c in split('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', '\zs')
+        execute "set <M-" . c . ">=\e" . c
+    endfor
 endif
 " Unbind increment and decrement due to tmux conflict
 map <C-a> <Nop>
