@@ -2,6 +2,19 @@
 
 - Remove .spl file from vim spelling dir
 
+## Installing Neovim on Remote Servers
+
+On servers without root access or where package managers have outdated versions, use the AppImage:
+
+```bash
+mkdir -p ~/.local/bin
+curl -L -o ~/.local/bin/nvim.appimage https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
+chmod +x ~/.local/bin/nvim.appimage
+ln -s nvim.appimage ~/.local/bin/nvim
+```
+
+Ensure `~/.local/bin` is in your PATH (already configured in `shell/path.sh`).
+
 ## Neovim Plugins to Consider
 
 Quality of life plugins that may be worth adding:
