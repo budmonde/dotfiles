@@ -396,42 +396,54 @@ local keybinding_plugins = {
         "folke/persistence.nvim",
         lazy = false,
         config = function()
-            require("persistence").setup({
+            -- Store global CWD before any :tcd is set
+            vim.g.global_cwd = vim.fn.getcwd()
+
+            local persistence = require("persistence")
+            persistence.setup({
                 dir = vim.fn.stdpath("state") .. "/sessions/",
             })
+
+            -- Override the current() function to use global CWD
+            local config = require("persistence.config")
+            local original_current = persistence.current
+            persistence.current = function(opts)
+                opts = opts or {}
+                local cwd = vim.g.global_cwd or vim.fn.getcwd()
+                local name = cwd:gsub("[\\/:]+", "%%")
+                if config.options.branch and opts.branch ~= false then
+                    local branch = persistence.branch()
+                    if branch and branch ~= "main" and branch ~= "master" then
+                        name = name .. "%%" .. branch:gsub("[\\/:]+", "%%")
+                    end
+                end
+                return config.options.dir .. name .. ".vim"
+            end
 
             -- Auto-load session if nvim started without arguments
             vim.api.nvim_create_autocmd("VimEnter", {
                 group = vim.api.nvim_create_augroup("persistence_autoload", { clear = true }),
                 callback = function()
                     if vim.fn.argc() == 0 and not vim.g.started_with_stdin then
-                        require("persistence").load()
+                        persistence.load()
                     end
                 end,
                 nested = true,
             })
 
-            -- Auto-save session on exit
-            vim.api.nvim_create_autocmd("VimLeavePre", {
-                group = vim.api.nvim_create_augroup("persistence_autosave", { clear = true }),
-                callback = function()
-                    require("persistence").save()
-                end,
-            })
-
             -- Manual keymaps
             vim.keymap.set("n", "<leader>qs", function()
-                require("persistence").save()
+                persistence.save()
                 vim.notify("Session saved")
             end, { desc = "Save session" })
             vim.keymap.set("n", "<leader>ql", function()
-                require("persistence").load()
+                persistence.load()
             end, { desc = "Load session" })
             vim.keymap.set("n", "<leader>qL", function()
-                require("persistence").select()
+                persistence.select()
             end, { desc = "Select session" })
             vim.keymap.set("n", "<leader>qd", function()
-                require("persistence").stop()
+                persistence.stop()
                 vim.notify("Session recording stopped")
             end, { desc = "Stop session recording" })
         end,

@@ -9,6 +9,12 @@ let g:skip_colorscheme = 1
 
 source ~/.vim/vimrc
 
+" Auto-set tab-local CWD to file's directory on new tabs
+augroup TabLocalCwd
+    autocmd!
+    autocmd TabNewEntered * if expand('%:p') != '' | tcd %:p:h | endif
+augroup END
+
 " Neovim-specific overrides
 set nolazyredraw               " lazyredraw behaves differently in neovim
 set undodir=~/.local/state/nvim/undo
