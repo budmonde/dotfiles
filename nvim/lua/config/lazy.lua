@@ -528,6 +528,55 @@ local ai_plugins = {
         end,
     },
 
+    ---------------------------------------------------------------------------
+    --- PLUGIN : claudecode.nvim
+    ---------------------------------------------------------------------------
+    {
+        "coder/claudecode.nvim",
+        dependencies = {
+            { "folke/snacks.nvim", opts = { input = {}, picker = {}, terminal = {} } },
+        },
+        config = function()
+            require("claudecode").setup({
+                terminal = {
+                    provider = "native",  -- Use native neovim terminal splits
+                    split_side = "right",
+                    split_width_percentage = 0.33,  -- 33% width, similar to opencode
+                    auto_close = true,
+                },
+                diff_opts = {
+                    auto_close_on_accept = true,
+                    vertical_split = true,
+                    open_in_current_tab = true,
+                },
+                track_selection = true,
+            })
+
+            -- Keymaps (using <leader>c prefix to complement opencode's <leader>o)
+            -- Toggle claude panel
+            vim.keymap.set({ "n", "t" }, "<leader>cc", "<cmd>ClaudeCode<cr>", { desc = "Toggle Claude Code" })
+
+            -- Focus claude terminal
+            vim.keymap.set("n", "<leader>cf", "<cmd>ClaudeCodeFocus<cr>", { desc = "Focus Claude Code" })
+
+            -- Resume last session
+            vim.keymap.set("n", "<leader>cr", "<cmd>ClaudeCode --resume<cr>", { desc = "Resume Claude session" })
+
+            -- Send selection to Claude
+            vim.keymap.set("v", "<leader>cs", "<cmd>ClaudeCodeSend<cr>", { desc = "Send selection to Claude" })
+
+            -- Add current buffer to Claude context
+            vim.keymap.set("n", "<leader>ca", "<cmd>ClaudeCodeAdd %<cr>", { desc = "Add buffer to Claude" })
+
+            -- Model selection
+            vim.keymap.set("n", "<leader>cm", "<cmd>ClaudeCodeSelectModel<cr>", { desc = "Select Claude model" })
+
+            -- Diff management
+            vim.keymap.set("n", "<leader>cA", "<cmd>ClaudeCodeDiffAccept<cr>", { desc = "Accept diff" })
+            vim.keymap.set("n", "<leader>cD", "<cmd>ClaudeCodeDiffDeny<cr>", { desc = "Reject diff" })
+        end,
+    },
+
 }
 
 -------------------------------------------------------------------------------
