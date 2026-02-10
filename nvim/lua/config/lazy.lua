@@ -395,6 +395,9 @@ local keybinding_plugins = {
     {
         "folke/persistence.nvim",
         lazy = false,
+        cond = function()
+            return vim.g.enable_session == true
+        end,
         config = function()
             -- Store global CWD before any :tcd is set
             vim.g.global_cwd = vim.fn.getcwd()
@@ -539,3 +542,7 @@ for _, group in ipairs({ appearance_plugins, filesystem_plugins, movement_plugin
 end
 
 require("lazy").setup(all_plugins)
+
+-- Add ~/.vim to runtimepath for shared ftdetect/ftplugin/syntax files
+-- Must be after lazy.setup() as it resets runtimepath
+vim.opt.rtp:append(vim.fn.expand("~/.vim"))

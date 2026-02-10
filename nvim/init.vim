@@ -1,11 +1,14 @@
 " Neovim configuration
 " Sources shared vim config, then applies neovim-specific settings
 
-" Add vim paths for shared resources (keymap, spell, etc.)
-set runtimepath+=~/.vim
-
 " Skip colorscheme from vimrc (lazy.nvim handles it)
 let g:skip_colorscheme = 1
+
+" Session mode: disabled by default, enable with --cmd 'let g:enable_session=1'
+" Usage: nvim -S (alias recommended) or nvim --cmd 'let g:enable_session=1'
+if !exists('g:enable_session')
+    let g:enable_session = 0
+endif
 
 source ~/.vim/vimrc
 
