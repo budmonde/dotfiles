@@ -18,6 +18,9 @@ export KEYTIMEOUT=1 # 10ms
 # Use vim editing mode
 bindkey -v
 
+# Enable completions
+source ~/.zsh/completion.zsh
+
 # Enable edit-command-line
 autoload -U edit-command-line && zle -N edit-command-line
 bindkey -a '^V' edit-command-line
