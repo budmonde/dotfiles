@@ -26,6 +26,7 @@
     ~/.vim:
     ~/.config/nvim: nvim
     ~/.config/opencode/AGENTS.md: opencode/AGENTS.md
+    ~/.config/opencode/commands: opencode/commands
     ~/.config/opencode/plugins: opencode/plugins
     ~/.zsh:
     ~/.zshenv:
