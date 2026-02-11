@@ -91,5 +91,9 @@
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
+# WSL: repos on Windows mounts (/mnt/) need CRLF and no filemode
+[includeIf "gitdir:/mnt/"]
+	path = ~/.gitconfig-crlf
+
 [includeIf "hasconfig:~/.gitconfig_local"]
 	path = ~/.gitconfig_local

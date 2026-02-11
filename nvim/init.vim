@@ -21,6 +21,13 @@ augroup TabLocalCwd
     autocmd TabNewEntered * if expand('%:p') != '' | tcd %:p:h | endif
 augroup END
 
+" WSL: set fileformat based on path (Windows mounts use CRLF)
+augroup CrossPlatformLineEndings
+    autocmd!
+    autocmd BufReadPost,BufNewFile /mnt/* setlocal fileformat=dos
+    autocmd BufReadPost,BufNewFile /home/* setlocal fileformat=unix
+augroup END
+
 " Neovim-specific overrides
 set nolazyredraw               " lazyredraw behaves differently in neovim
 set undodir=~/.local/state/nvim/undo
