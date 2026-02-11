@@ -591,4 +591,23 @@ for _, group in ipairs({ appearance_plugins, filesystem_plugins, movement_plugin
     end
 end
 
-require("lazy").setup(all_plugins)
+require("lazy").setup(all_plugins, {
+    performance = {
+        rtp = {
+            paths = { vim.fn.expand("~/.vim"), vim.fn.expand("~/.vim/after") },
+        },
+    },
+})
+
+-- lazy.nvim's rtp.reset skips ftdetect for rtp.paths entries
+-- (it assumes filetype.lua handled them, but that only covers built-in types)
+local vim_ftdetect = vim.fn.expand("~/.vim/ftdetect")
+if vim.fn.isdirectory(vim_ftdetect) == 1 then
+    vim.cmd("augroup filetypedetect")
+    for _, ext in ipairs({ "*.vim", "*.lua" }) do
+        for _, f in ipairs(vim.fn.glob(vim_ftdetect .. "/" .. ext, false, true)) do
+            vim.cmd.source(f)
+        end
+    end
+    vim.cmd("augroup END")
+end
