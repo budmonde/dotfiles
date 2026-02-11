@@ -1,99 +1,102 @@
-[alias]
-    cc = clone
-    fe = fetch --tags --prune
-	fa = fetch --tags --prune --all
-    me = merge
-    ff = push
-    ci = commit
-    ca = commit --amend --no-edit
+[user]
+	email = budmonde@gmail.com
+	name = Monde Duinkharjav
 
-    st = status -sb
-    stu = status HEAD^
-    stuu = status HEAD^^
-
-    d = diff
-    ds = diff --staged
-    du = diff HEAD^
-    duu = diff HEAD^^
-
-    b = branch
-    bd = branch -d
-
-    obd = push origin --delete
-
-    co = checkout
-    cou = checkout HEAD^
-    couu = checkout HEAD^^
-    cob = checkout -b
-
-    cfg = config --global -e
-    cfgl = config -e
-
-    sl = sl1
-    ssl = sl1 -6
-
-    ssl1 = sl1-specific -6
-    ssl2 = sl2-specific -6
-    ssl3 = sl3-specific -6
-
-    sl1 = sl1-specific --all
-    sl2 = sl2-specific --all
-    sl3 = sl3-specific --all
-
-    sl1-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)'
-    sl2-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(auto)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)'
-    sl3-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) %C(bold cyan)(committed: %cD)%C(reset) %C(auto)%d%C(reset)%n''          %C(white)%s%C(reset)%n''          %C(dim white)- %an <%ae> %C(reset) %C(dim white)(committer: %cn <%ce>)%C(reset)'
+[core]
+	editor = vi
+	excludesfile = ~/.gitignore
 
 [init]
 	defaultBranch = main
 
-[diff]
-	mnemonicPrefix = true
-	colorMoved = zebra
-    submodule = log
+[branch]
+	autosetuprebase = always
 
-[merge]
-    conflictstyle = diff3
+[fetch]
+	prune = true
 
 [pull]
 	ff = only
 
 [push]
-    default = upstream
+	default = upstream
 
-[branch]
-    autosetuprebase = always
+[merge]
+	conflictstyle = diff3
 
-[fetch]
-	prune = true
-
-[credential]
-	helper = cache --timeout=3600
+[diff]
+	mnemonicPrefix = true
+	colorMoved = zebra
+	submodule = log
 
 [grep]
 	lineNumber = true
 
 [rerere]
-    enabled = true
+	enabled = true
+
+[credential]
+	helper = cache --timeout=3600
 
 [advice]
 	detachedHead = false
 	waitingForEditor = false
 
-[user]
-	email = budmonde@gmail.com
-	name = Monde Duinkharjav
-[core]
-	editor = vi
-    excludesfile = ~/.gitignore
 [filter "lfs"]
 	required = true
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
+
+[alias]
+	cc = clone
+	fe = fetch --tags --prune
+	fa = fetch --tags --prune --all
+	me = merge
+	ff = push
+	ci = commit
+	ca = commit --amend --no-edit
+
+	st = status -sb
+	stu = status HEAD^
+	stuu = status HEAD^^
+
+	d = diff
+	ds = diff --staged
+	du = diff HEAD^
+	duu = diff HEAD^^
+
+	b = branch
+	bd = branch -d
+
+	obd = push origin --delete
+
+	co = checkout
+	cou = checkout HEAD^
+	couu = checkout HEAD^^
+	cob = checkout -b
+
+	cfg = config --global -e
+	cfgl = config -e
+
+	sl = sl1
+	ssl = sl1 -6
+
+	ssl1 = sl1-specific -6
+	ssl2 = sl2-specific -6
+	ssl3 = sl3-specific -6
+
+	sl1 = sl1-specific --all
+	sl2 = sl2-specific --all
+	sl3 = sl3-specific --all
+
+	sl1-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)'
+	sl2-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(auto)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)'
+	sl3-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) %C(bold cyan)(committed: %cD)%C(reset) %C(auto)%d%C(reset)%n''          %C(white)%s%C(reset)%n''          %C(dim white)- %an <%ae> %C(reset) %C(dim white)(committer: %cn <%ce>)%C(reset)'
+
 # WSL: repos on Windows mounts (/mnt/) need CRLF and no filemode
 [includeIf "gitdir:/mnt/"]
 	path = ~/.gitconfig-crlf
 
-[includeIf "hasconfig:~/.gitconfig_local"]
+[include]
 	path = ~/.gitconfig_local
