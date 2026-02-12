@@ -527,6 +527,31 @@ local ai_plugins = {
                 require("opencode").toggle()
             end, { desc = "Toggle opencode" })
 
+            -- Focus opencode (open if not running, focus if already open)
+            vim.keymap.set("n", "<leader>of", function()
+                local function has_opencode_pane()
+                    return vim.fn.system("tmux list-panes -F '#{pane_current_command}'"):match("opencode") ~= nil
+                end
+
+                if has_opencode_pane() then
+                    vim.fn.system("tmux select-pane -R")
+                    return
+                end
+
+                require("opencode").toggle()
+
+                local attempts = 0
+                local function try_focus()
+                    attempts = attempts + 1
+                    if has_opencode_pane() then
+                        vim.fn.system("tmux select-pane -R")
+                    elseif attempts < 20 then
+                        vim.defer_fn(try_focus, 100)
+                    end
+                end
+                vim.defer_fn(try_focus, 100)
+            end, { desc = "Focus opencode" })
+
             -- Operator for adding ranges
             vim.keymap.set({ "n", "x" }, "go", function()
                 return require("opencode").operator("@this ")
