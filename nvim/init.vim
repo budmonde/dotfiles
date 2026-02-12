@@ -30,10 +30,17 @@ augroup END
 
 " Neovim-specific overrides
 set nolazyredraw               " lazyredraw behaves differently in neovim
+set autoread                   " Reload files changed outside of nvim
 set undodir=~/.local/state/nvim/undo
 if !isdirectory($HOME . "/.local/state/nvim/undo")
     call mkdir($HOME . "/.local/state/nvim/undo", "p", 0700)
 endif
+
+" Auto-reload files modified externally (e.g. by opencode, git)
+augroup AutoReload
+    autocmd!
+    autocmd FocusGained,BufEnter * checktime
+augroup END
 
 " Load Lua configuration (includes colorscheme via lazy.nvim)
 " lazy.nvim preserves ~/.vim in rtp via performance.rtp.paths
