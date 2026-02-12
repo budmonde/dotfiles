@@ -152,13 +152,13 @@ let g:NERDTreeChDirMode=2
 """ PLUGIN : fzf
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set rtp+=~/.shell_local/plugins/fzf
-" File finders
+" File finders (<Leader>f)
 nnoremap <silent> <C-p> :Files<CR>
-nnoremap <silent> <Leader>p :GFiles<CR>
-nnoremap <silent> <Leader>b :Buffers<CR>
-nnoremap <silent> <Leader>h :History<CR>
+nnoremap <silent> <Leader>fp :GFiles<CR>
+nnoremap <silent> <Leader>fb :Buffers<CR>
+nnoremap <silent> <Leader>fh :History<CR>
 " Search content
-nnoremap <silent> <Leader>ag :Ag <C-R><C-W><CR>
+nnoremap <silent> <Leader>* :Rg <C-R><C-W><CR>
 nnoremap <silent> <Leader>/ :Rg<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -231,7 +231,7 @@ inoremap <silent> <C-k> <Esc>:m .-2<CR>==gi
 vnoremap <silent> <C-j> :m '>+1<CR>gv=gv
 vnoremap <silent> <C-k> :m '<-2<CR>gv=gv
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" PLUGIN : vim-easymotion
+""" PLUGIN : vim-easymotion (<Leader><Leader>)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 nmap <Leader><Leader>f <Plug>(easymotion-overwin-f)
 nmap <Leader><Leader>w <Plug>(easymotion-overwin-w)
@@ -257,44 +257,81 @@ set wildmode=longest,list
 " Ignore files for completion
 set wildignore+=*/.git/*,*/tmp/*,*.swp
 
-" Split multi sentence line into separate lines
-nnoremap <Leader><CR> :s/\([.!?;]\)\s\+/\1\r/g<CR>
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""" <Leader><CR> : Split multi-sentence line into separate lines
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap <Leader><CR> :call SplitSentences()<CR>
+
+function! SplitSentences()
+    s/\([.!?;]\)\s\+/\1\r/ge
+endfunction
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ Vim-jedi config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:jedi#popup_on_dot = 0
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"""""""""""""""""""""""""""""""""""""""""""""""""""""" Language and Spell-check
+"""""""""""""""""""""""""""""""""""""""""" Language and Spell-check (<Leader>l)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" NOTE: Mongolian keyboard input settings moved to vimrc.after
-"       (requires ~/.vim/keymap/ in runtimepath)
+" Mongolian Keyboard Input (keymap loaded in vimrc.after, requires rtp)
+" See: http://vim.wikia.com/wiki/Insert-mode_only_Caps_Lock
+" See: http://vi.stackexchange.com/q/2260/267
+set imsearch=-1
 
-" <Leader>s : Add word under cursor to spell dictionary
-nnoremap <Leader>s ]szg
+" <Leader>ll : Toggle Mongolian keyboard input
+nnoremap <Leader>ll :call ToggleMongolianInput()<CR>
+" <C-l> : Toggle input method in insert mode
+inoremap <C-l> <C-^>
+
+function! ToggleMongolianInput()
+    if &iminsert == 0
+        set iminsert=1
+        echom "Mongolian input: ON"
+    else
+        set iminsert=0
+        echom "Mongolian input: OFF"
+    endif
+endfunction
+
+" <Leader>ls : Add word under cursor to spell dictionary
+nnoremap <Leader>ls ]szg
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"""""""""""""""""""""""""""""""""""""""""""""""""""" Vimrc Editing and Sourcing
+""""""""""""""""""""""""""""""""""""""""""""""""""""""" Edit Config (<Leader>e)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " <Leader>ev : Edit vimrc
 nnoremap <Leader>ev :vsplit $MYVIMRC<CR>
+" <Leader>ea : Edit shell aliases
+nnoremap <Leader>ea :vsplit ~/.shell/aliases.sh<CR>
+" <Leader>en : Edit neovim config (lazy.lua)
+nnoremap <Leader>en :vsplit ~/.config/nvim/lua/config/lazy.lua<CR>
 " Reload vimrc when it's saved
 augroup myvimrc
     autocmd!
     autocmd BufWritePost .vimrc,_vimrc,vimrc,.gvimrc,_gvimrc,gvimrc so $MYVIMRC | if has('gui_running') | so $MYGVIMRC | endif
 augroup END
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"""""""""""""""""""""""""""""""""""""""""""""" External Application Interaction
+"""""""""""""""""""""""""""""""""" External Application Interaction (<Leader>x)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" <Leader>x : Yank forwarding to Windows clipboard (WSL-specific)
-nnoremap <Leader>x :call ToggleClipboardSync()<CR>
+" <Leader>xo : Open CWD in system file manager
 if !empty(glob("/usr/bin/wslinfo"))
+    nnoremap <Leader>xo :silent !explorer.exe .<CR>
+endif
+
+" <Leader>xx : Toggle yank forwarding to Windows clipboard
+" <Leader>xc : Yank selection to Windows clipboard (visual mode)
+nnoremap <Leader>xx :call ToggleClipboardSync()<CR>
+if !empty(glob("/usr/bin/wslinfo"))
+    vnoremap <Leader>xc y:call YankToClipboard()<CR>
     augroup ClipboardSynchronizer
         autocmd!
-        autocmd TextYankPost * if get(g:, 'clipboard_sync_enabled', 0) | call system('echo '.shellescape(join(v:event.regcontents, "\<CR>")).' |  clip.exe') | endif
+        autocmd TextYankPost * if get(g:, 'clipboard_sync_enabled', 0) | call YankToClipboard() | endif
     augroup END
 endif
-function ToggleClipboardSync()
+function! YankToClipboard()
+    call system('echo '.shellescape(join(getreg('"', 1, 1), "\n")).' | clip.exe')
+endfunction
+function! ToggleClipboardSync()
     let g:clipboard_sync_enabled = !get(g:, 'clipboard_sync_enabled', 0)
     echom "clipboard_sync_enabled = " . g:clipboard_sync_enabled
 endfunction

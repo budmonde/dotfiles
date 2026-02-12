@@ -5,35 +5,13 @@
 "   - In Neovim (after lazy.nvim sets up rtp via init.vim)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Mongolian Keyboard Input - requires ~/.vim/keymap/ in runtimepath
-" See: http://vim.wikia.com/wiki/Insert-mode_only_Caps_Lock
-" See: http://vi.stackexchange.com/q/2260/267
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set imsearch=-1
+" Mongolian keymap - requires ~/.vim/keymap/ in runtimepath
+" set keymap implicitly sets iminsert=1, so reset it after
 set keymap=qwerty2mongolian
 set iminsert=0
 
-" <Leader>l : Toggle Mongolian keyboard input
-nnoremap <Leader>l :call ToggleMongolianInput()<CR>
-" <C-l> : Toggle input method in insert mode
-inoremap <C-l> <C-^>
-
-function! ToggleMongolianInput()
-    if &iminsert == 0
-        set iminsert=1
-        echom "Mongolian input: ON"
-    else
-        set iminsert=0
-        echom "Mongolian input: OFF"
-    endif
-endfunction
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Regenerate spell dictionary binary
-" Requires ~/.vim/spell/ in runtimepath
+" Regenerate spell dictionary binary - requires ~/.vim/spell/ in runtimepath
 " See: https://vi.stackexchange.com/questions/5050
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 for d in glob('~/.vim/spell/*.add', 1, 1)
     if filereadable(d) && (
     \   !filereadable(d . '.spl') || getftime(d) > getftime(d . '.spl')

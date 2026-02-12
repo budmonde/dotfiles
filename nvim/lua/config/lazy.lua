@@ -170,11 +170,11 @@ local filesystem_plugins = {
             local builtin = require("telescope.builtin")
             -- File finders
             vim.keymap.set("n", "<C-p>", builtin.find_files, { desc = "Find files" })
-            vim.keymap.set("n", "<leader>p", builtin.git_files, { desc = "Git files" })
-            vim.keymap.set("n", "<leader>b", builtin.buffers, { desc = "Buffers" })
-            vim.keymap.set("n", "<leader>h", builtin.oldfiles, { desc = "Recent files" })
+            vim.keymap.set("n", "<leader>fp", builtin.git_files, { desc = "Git files" })
+            vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Buffers" })
+            vim.keymap.set("n", "<leader>fh", builtin.oldfiles, { desc = "Recent files" })
             -- Search content
-            vim.keymap.set("n", "<leader>ag", builtin.grep_string, { desc = "Grep word under cursor" })
+            vim.keymap.set("n", "<leader>*", builtin.grep_string, { desc = "Grep word under cursor" })
             vim.keymap.set("n", "<leader>/", builtin.live_grep, { desc = "Live grep" })
         end,
     },
@@ -436,17 +436,17 @@ local keybinding_plugins = {
             })
 
             -- Manual keymaps
-            vim.keymap.set("n", "<leader>qs", function()
+            vim.keymap.set("n", "<leader>ss", function()
                 persistence.save()
                 vim.notify("Session saved")
             end, { desc = "Save session" })
-            vim.keymap.set("n", "<leader>ql", function()
+            vim.keymap.set("n", "<leader>sl", function()
                 persistence.load()
             end, { desc = "Load session" })
-            vim.keymap.set("n", "<leader>qL", function()
+            vim.keymap.set("n", "<leader>sL", function()
                 persistence.select()
             end, { desc = "Select session" })
-            vim.keymap.set("n", "<leader>qd", function()
+            vim.keymap.set("n", "<leader>sd", function()
                 persistence.stop()
                 vim.notify("Session recording stopped")
             end, { desc = "Stop session recording" })
