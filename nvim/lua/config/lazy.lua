@@ -385,7 +385,31 @@ local keybinding_plugins = {
         "folke/which-key.nvim",
         event = "VeryLazy",
         config = function()
-            require("which-key").setup()
+            local wk = require("which-key")
+            wk.setup()
+            wk.add({
+                -- Group labels
+                { "<leader>e", group = "edit config" },
+                { "<leader>f", group = "find" },
+                { "<leader>l", group = "language" },
+                { "<leader>s", group = "sessions" },
+                { "<leader>x", group = "external apps" },
+                { "<leader>o", group = "opencode" },
+                { "<leader>c", group = "claude" },
+                { "<leader><leader>", group = "motion" },
+
+                -- Vimscript mappings lacking desc
+                { "<leader>ev", desc = "Edit vimrc" },
+                { "<leader>ea", desc = "Edit shell aliases" },
+                { "<leader>en", desc = "Edit neovim config" },
+                { "<leader>ll", desc = "Toggle Mongolian input" },
+                { "<leader>ls", desc = "Add word to spell dict" },
+                { "<leader>xo", desc = "Open file manager" },
+                { "<leader>xx", desc = "Toggle clipboard sync" },
+                { "<leader>xc", desc = "Yank to clipboard", mode = "v" },
+                { "<leader>d", desc = "Toggle display-line movement" },
+                { "<leader><CR>", desc = "Split sentences" },
+            })
         end,
     },
 
