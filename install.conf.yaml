@@ -27,8 +27,9 @@
     ~/.vim:
     ~/.config/nvim: nvim
     ~/.config/opencode/AGENTS.md: opencode/AGENTS.md
-    ~/.config/opencode/commands: opencode/commands
-    ~/.config/opencode/plugins: opencode/plugins
+    ~/.config/opencode/commands/analyze.md: opencode/commands/analyze.md
+    ~/.config/opencode/plugins/notify-on-idle.ts: opencode/plugins/notify-on-idle.ts
+    ~/.config/opencode/plugins/session-logger.ts: opencode/plugins/session-logger.ts
     ~/.zsh:
     ~/.zshenv:
     ~/.zshrc:
