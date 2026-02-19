@@ -30,7 +30,7 @@ alias eg='git config --global -e'
 # Command shortcuts
 alias g='git'
 alias v='$EDITOR -p'
-alias vs='nvim --cmd "let g:enable_session=1"'
+alias vs='NVIM_SESSION=1 nvim'
 alias pjson='python -m json.tool'
 alias llmview='nvim -R - -c "setf llmlog"'
 

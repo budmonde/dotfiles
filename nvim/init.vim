@@ -7,10 +7,10 @@
 " Skip colorscheme from vimrc (lazy.nvim handles it)
 let g:skip_colorscheme = 1
 
-" Session mode: disabled by default, enable with --cmd 'let g:enable_session=1'
-" Usage: nvim --cmd 'let g:enable_session=1'
+" Session mode: disabled by default, enable via env var NVIM_SESSION=1
+" Usage: NVIM_SESSION=1 nvim (or use the `vs` alias)
 if !exists('g:enable_session')
-    let g:enable_session = 0
+    let g:enable_session = !empty($NVIM_SESSION)
 endif
 
 source ~/.vim/vimrc.before
