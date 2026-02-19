@@ -470,6 +470,34 @@ local keybinding_plugins = {
             vim.keymap.set("n", "<leader>sL", function()
                 persistence.select()
             end, { desc = "Select session" })
+            vim.keymap.set("n", "<leader>sD", function()
+                local uv = vim.uv or vim.loop
+                local cfg = require("persistence.config")
+                local items = {}
+                local have = {}
+                for _, session in ipairs(persistence.list()) do
+                    if uv.fs_stat(session) then
+                        local file = session:sub(#cfg.options.dir + 1, -5)
+                        local dir, branch = unpack(vim.split(file, "%%", { plain = true }))
+                        dir = dir:gsub("%%", "/")
+                        if not have[dir] then
+                            have[dir] = true
+                            items[#items + 1] = { session = session, dir = dir, branch = branch }
+                        end
+                    end
+                end
+                vim.ui.select(items, {
+                    prompt = "Delete a session: ",
+                    format_item = function(item)
+                        return vim.fn.fnamemodify(item.dir, ":p:~")
+                    end,
+                }, function(item)
+                    if item then
+                        os.remove(item.session)
+                        vim.notify("Deleted session: " .. vim.fn.fnamemodify(item.dir, ":p:~"))
+                    end
+                end)
+            end, { desc = "Delete session" })
             vim.keymap.set("n", "<leader>sd", function()
                 persistence.stop()
                 vim.notify("Session recording stopped")
