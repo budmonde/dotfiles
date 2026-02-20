@@ -9,6 +9,11 @@ set nocompatible             " Disable Vi compatibility mode
 nmap Q <Nop>
 let mapleader = ","
 let maplocalleader = "\\"
+
+" Load device-specific vim config (e.g. dotfiles-local)
+if isdirectory(expand('~/.vim_local'))
+    set rtp+=~/.vim_local
+endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""" Apperance and Window Dynamics
