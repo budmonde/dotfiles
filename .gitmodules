@@ -65,3 +65,6 @@
 [submodule "shell/plugins/fzf"]
 	path = shell/plugins/fzf
 	url = https://github.com/junegunn/fzf
+[submodule "shell/plugins/nvm"]
+	path = shell/plugins/nvm
+	url = https://github.com/nvm-sh/nvm
