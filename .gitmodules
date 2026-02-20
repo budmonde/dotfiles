@@ -41,9 +41,6 @@
 [submodule "vim/pack/vendor/start/vim-easymotion"]
 	path = vim/pack/vendor/start/vim-easymotion
 	url = https://github.com/easymotion/vim-easymotion
-[submodule "shell/plugins/fzf"]
-	path = shell/plugins/fzf
-	url = https://github.com/junegunn/fzf
 [submodule "vim/pack/vendor/start/vim-abolish"]
 	path = vim/pack/vendor/start/vim-abolish
 	url = https://github.com/tpope/vim-abolish.git
@@ -65,3 +62,6 @@
 [submodule "tmux/plugins/tpm"]
 	path = tmux/plugins/tpm
 	url = https://github.com/tmux-plugins/tpm
+[submodule "shell/plugins/fzf"]
+	path = shell/plugins/fzf
+	url = https://github.com/junegunn/fzf

@@ -151,7 +151,7 @@ let g:NERDTreeChDirMode=2
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ PLUGIN : fzf
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set rtp+=~/.shell_local/plugins/fzf
+set rtp+=~/.shell/plugins/fzf
 " File finders (<Leader>f)
 nnoremap <silent> <C-p> :Files<CR>
 nnoremap <silent> <Leader>fp :GFiles<CR>
