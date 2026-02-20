@@ -26,16 +26,14 @@
     ~/.tmux/plugins/tpm: tmux/plugins/tpm
     ~/.vim:
     ~/.config/nvim: nvim
-    ~/.config/opencode/AGENTS.md: opencode/AGENTS.md
-    ~/.config/opencode/commands/analyze.md: opencode/commands/analyze.md
-    ~/.config/opencode/plugins/notify-on-idle.ts: opencode/plugins/notify-on-idle.ts
-    ~/.config/opencode/plugins/session-logger.ts: opencode/plugins/session-logger.ts
+    ~/.config/opencode: opencode
     ~/.zsh:
     ~/.zshenv:
     ~/.zshrc:
 
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
+    - [git config core.hooksPath .githooks, Setting up git hooks]
     - [./shell/plugins/fzf/install --bin, Installing fzf binary]
     - [./shell/plugins/miniconda3/install, Installing miniconda]
     - ['[ -s "$HOME/.shell/plugins/nvm/nvm.sh" ] && . "$HOME/.shell/plugins/nvm/nvm.sh" && nvm install --lts', Installing Node LTS via nvm]
