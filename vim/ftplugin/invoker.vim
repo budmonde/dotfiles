@@ -22,6 +22,6 @@ function! RunInvokerDebug()
     elseif empty($TMUX)
         execute '!' . l:command
     else
-        echo "Error: 'invoker_debug_pane' is empty. Use <localleader>e to create it."
+        echo "Error: 'invoker_debug_pane' is empty. Use <localleader>c to create it."
     endif
 endfunction
