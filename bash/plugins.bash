@@ -9,3 +9,8 @@ source "$HOME/.shell/plugins/fzf/shell/key-bindings.bash" 2>/dev/null
 ###############################################################################
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+###############################################################################
+# Miniconda
+###############################################################################
+[ -x "$HOME/.miniconda3/bin/conda" ] && eval "$($HOME/.miniconda3/bin/conda shell.bash hook)"

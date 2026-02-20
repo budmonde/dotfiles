@@ -21,6 +21,11 @@ source "$HOME/.shell/plugins/fzf/shell/key-bindings.zsh" 2>/dev/null
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 ###############################################################################
+# Miniconda
+###############################################################################
+[ -x "$HOME/.miniconda3/bin/conda" ] && eval "$($HOME/.miniconda3/bin/conda shell.zsh hook)"
+
+###############################################################################
 # Color Theme
 ###############################################################################
 if [[ "$(tput colors)" == "256" ]]; then
