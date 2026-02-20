@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Prevent committing symlinks to the dotfiles repo
+# Symlinks are created by dotbot from dotfiles-local and should not be tracked
+
+# Get list of staged symlinks (excluding submodules)
+symlinks=$(git diff --cached --name-only --diff-filter=A | while read file; do
+    if [ -L "$file" ]; then
+        echo "$file"
+    fi
+done)
+
+if [ -n "$symlinks" ]; then
+    echo "ERROR: Refusing to commit symlinks to dotfiles repo:"
+    echo "$symlinks" | sed 's/^/  /'
+    echo ""
+    echo "Symlinks are created by dotbot from dotfiles-local and should not be tracked."
+    echo "Use 'git reset HEAD <file>' to unstage, or add to .gitignore."
+    exit 1
+fi
+
+exit 0
