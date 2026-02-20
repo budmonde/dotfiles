@@ -6,3 +6,8 @@ autoload -Uz compinit && compinit
 for f in ~/.zsh/completions/*.zsh(N); do
     source "$f"
 done
+
+# Source completions from external repos (e.g. dotfiles-nvidia)
+for f in ~/.zsh/completions.d/*.zsh(N); do
+    source "$f"
+done
