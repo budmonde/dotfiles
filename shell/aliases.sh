@@ -16,9 +16,9 @@ alias ll='ls -lX --color'
 
 # Config file edits
 src() {
-    if [[ $SHELL = '/bin/zsh' ]]; then
+    if [ -n "$ZSH_VERSION" ]; then
         . ~/.zshrc
-    elif [[ $SHELL = '/bin/bash' ]]; then
+    elif [ -n "$BASH_VERSION" ]; then
         . ~/.bashrc
     fi
 }
