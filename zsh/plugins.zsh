@@ -10,6 +10,12 @@ ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern)
 source ~/.zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 
 ###############################################################################
+# Fuzzy Finder (fzf)
+###############################################################################
+[[ $- == *i* ]] && source "$HOME/.shell/plugins/fzf/shell/completion.zsh" 2>/dev/null
+source "$HOME/.shell/plugins/fzf/shell/key-bindings.zsh" 2>/dev/null
+
+###############################################################################
 # Color Theme
 ###############################################################################
 if [[ "$(tput colors)" == "256" ]]; then
