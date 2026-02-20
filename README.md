@@ -13,7 +13,7 @@ chmod +x ~/.local/bin/nvim.appimage
 ln -s nvim.appimage ~/.local/bin/nvim
 ```
 
-Ensure `~/.local/bin` is in your PATH (already configured in `shell/path.sh`).
+Ensure `~/.local/bin` is in your PATH (already configured in `shell/bootstrap.sh`).
 
 ## Neovim Plugins to Consider
 
