@@ -668,6 +668,17 @@ for _, group in ipairs({ appearance_plugins, filesystem_plugins, movement_plugin
     end
 end
 
+-- Load device-specific plugins from lazy_local.lua if it exists
+local lazy_local_path = vim.fn.stdpath("config") .. "/lua/config/lazy_local.lua"
+if vim.fn.filereadable(lazy_local_path) == 1 then
+    local local_plugins = require("config.lazy_local")
+    if type(local_plugins) == "table" then
+        for _, plugin in ipairs(local_plugins) do
+            table.insert(all_plugins, plugin)
+        end
+    end
+end
+
 require("lazy").setup(all_plugins, {
     performance = {
         rtp = {
