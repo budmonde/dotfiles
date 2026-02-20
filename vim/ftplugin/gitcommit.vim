@@ -1,3 +1,3 @@
-set spell
-set colorcolumn=72
-set textwidth=72
+setlocal spell
+setlocal colorcolumn=72
+setlocal textwidth=72
