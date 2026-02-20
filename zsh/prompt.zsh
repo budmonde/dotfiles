@@ -23,9 +23,9 @@ else
     fg[orange]=$fg[yellow]
     fg[violet]=$fg[magenta]
     fg[neon]=$fg[green]
-    fg[pink]=$kg[magenta]
+    fg[pink]=$fg[magenta]
 
-    fg[olive]=$FG[green]
+    fg[olive]=$fg[green]
 fi
 
 # Previous command error status
