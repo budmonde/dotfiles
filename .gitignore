@@ -6,3 +6,11 @@ tags
 
 # Machine-specific opencode config
 opencode.json
+
+# Symlinks created by dotfiles-local (should not be tracked)
+# These are device-specific and managed by dotfiles-local install
+nvim/lua/config/lazy_local.lua
+opencode/opencode.json
+opencode/plugins/retry-on-prefill-error.ts
+opencode/skills/nv-glean
+zsh/completions.d/
