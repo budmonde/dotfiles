@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+INSTALL_DIR="$HOME/.miniconda3"
+BASE_URL="https://repo.anaconda.com/miniconda"
+
+# Check if conda is already available in PATH
+if command -v conda &>/dev/null; then
+    echo "Conda is already installed at: $(command -v conda)"
+    exit 0
+fi
+
+# Check if Miniconda directory exists
+if [ -d "$INSTALL_DIR" ]; then
+    echo "Miniconda already exists at $INSTALL_DIR"
+    echo "Remove it manually if you want to reinstall."
+    exit 0
+fi
+
+# Detect OS and architecture
+detect_platform() {
+    local os arch
+    os="$(uname -s)"
+    arch="$(uname -m)"
+
+    case "$os" in
+        Linux)
+            case "$arch" in
+                x86_64)  echo "Linux-x86_64" ;;
+                aarch64) echo "Linux-aarch64" ;;
+                armv7l)  echo "Linux-armv7l" ;;
+                *)       echo "Linux-x86_64" ;;  # fallback
+            esac
+            ;;
+        Darwin)
+            case "$arch" in
+                x86_64) echo "MacOSX-x86_64" ;;
+                arm64)  echo "MacOSX-arm64" ;;
+                *)      echo "MacOSX-x86_64" ;;  # fallback
+            esac
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            # Windows via Git Bash / MSYS2 / Cygwin
+            case "$arch" in
+                x86_64) echo "Windows-x86_64" ;;
+                *)      echo "Windows-x86_64" ;;  # fallback
+            esac
+            ;;
+        *)
+            echo "Unsupported OS: $os" >&2
+            exit 1
+            ;;
+    esac
+}
+
+PLATFORM="$(detect_platform)"
+echo "Detected platform: $PLATFORM"
+
+if [[ "$PLATFORM" == Windows-* ]]; then
+    # Windows installation
+    INSTALLER="/tmp/miniconda.exe"
+    URL="$BASE_URL/Miniconda3-latest-${PLATFORM}.exe"
+
+    echo "Downloading Miniconda installer..."
+    curl -fsSL "$URL" -o "$INSTALLER"
+
+    # Convert INSTALL_DIR to Windows path for the installer
+    WIN_INSTALL_DIR="$(cygpath -w "$INSTALL_DIR")"
+
+    echo "Installing Miniconda to $INSTALL_DIR..."
+    # Silent install: /S=silent, /D=install directory (must be last, no quotes needed)
+    "$INSTALLER" /S /D="$WIN_INSTALL_DIR"
+
+    rm -f "$INSTALLER"
+else
+    # Unix installation (Linux/macOS)
+    INSTALLER="/tmp/miniconda.sh"
+    URL="$BASE_URL/Miniconda3-latest-${PLATFORM}.sh"
+
+    echo "Downloading Miniconda installer..."
+    curl -fsSL "$URL" -o "$INSTALLER"
+    chmod u+x "$INSTALLER"
+
+    echo "Installing Miniconda to $INSTALL_DIR..."
+    # -b: batch mode, -p: prefix/install dir, -s: skip prompts, -m: no PATH modification
+    "$INSTALLER" -b -p "$INSTALL_DIR" -s -m
+
+    rm -f "$INSTALLER"
+fi
+
+echo "Installation complete."
+echo "To activate conda, restart your shell or run:"
+echo "    source $INSTALL_DIR/etc/profile.d/conda.sh"

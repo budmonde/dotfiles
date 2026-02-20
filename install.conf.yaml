@@ -37,4 +37,5 @@
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
     - [./shell/plugins/fzf/install --bin, Installing fzf binary]
+    - [./shell/plugins/miniconda3/install, Installing miniconda]
     - ['[ -s "$HOME/.shell/plugins/nvm/nvm.sh" ] && . "$HOME/.shell/plugins/nvm/nvm.sh" && nvm install --lts', Installing Node LTS via nvm]
