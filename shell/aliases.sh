@@ -32,7 +32,6 @@ alias g='git'
 alias v='$EDITOR -p'
 alias vs='NVIM_SESSION=1 nvim'
 alias pjson='python -m json.tool'
-alias llmview='nvim -R - -c "setf llmlog"'
 
 alias cdr='cd "$(git rev-parse --show-toplevel)"'
 cdp() {
