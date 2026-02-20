@@ -28,7 +28,7 @@ if [[ "$(tput colors 2>/dev/null)" -ge 256 ]]; then
     RAW_COLOR_MAGENTA=$'\e[38;5;127m'
     RAW_COLOR_CYAN=$'\e[38;5;81m'
 
-    RAW_COLOR_TEAL=$'\e[38;5;33m'
+    RAW_COLOR_TEAL=$'\e[38;5;31m'
     RAW_COLOR_ORANGE=$'\e[38;5;166m'
     RAW_COLOR_OLIVE=$'\e[38;5;148m'
     RAW_COLOR_NEON=$'\e[38;5;120m'
