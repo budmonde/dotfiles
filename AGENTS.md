@@ -201,3 +201,7 @@ Add entry to `install.conf.yaml` under the `link` section:
     ~/.target: source/path  # Explicit source
     ~/.target:              # Implicit: uses filename without dot
 ```
+
+## Files to Never Commit
+
+- `REFACTOR.md` - Local tracking file for refactoring tasks; not part of the repo
