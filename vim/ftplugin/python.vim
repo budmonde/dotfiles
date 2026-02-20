@@ -1,3 +1,3 @@
-set colorcolumn=160
+setlocal colorcolumn=160
 
 nnoremap <silent> <localleader>e oimport pdb; pdb.set_trace()<esc>
