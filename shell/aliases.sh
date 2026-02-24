@@ -28,6 +28,14 @@ alias ea='$EDITOR ~/.shell/aliases.sh; src'
 alias eg='git config --global -e'
 
 # Command shortcuts
+if [ -n "$WSL_DISTRO_NAME" ]; then
+    git() {
+        case "$(pwd -P)" in
+            /mnt/*) git.exe "$@" ;;
+            *)      command git "$@" ;;
+        esac
+    }
+fi
 alias g='git'
 alias v='$EDITOR -p'
 alias vs='NVIM_SESSION=1 nvim'
