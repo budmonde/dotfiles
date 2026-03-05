@@ -7,6 +7,10 @@ tags
 # Machine-specific opencode config
 opencode.json
 
+# Opencode managed files
+opencode/bun.lock
+opencode/package.json
+
 # Symlinks created by dotfiles-local (should not be tracked)
 # These are device-specific and managed by dotfiles-local install
 nvim/lua/config/lazy_local.lua
