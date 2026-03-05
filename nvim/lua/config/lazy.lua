@@ -529,7 +529,7 @@ local ai_plugins = {
                 provider = {
                     enabled = "tmux",
                     tmux = {
-                        options = "-h -l 33% -f",
+                        options = "-h -l 40% -f",
                     },
                 },
             }
