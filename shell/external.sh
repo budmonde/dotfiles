@@ -7,3 +7,7 @@ if command -v nvim &> /dev/null; then
 else
     export EDITOR=vim
 fi
+
+if [ -n "$WSL_DISTRO_NAME" ]; then
+    export PDF_VIEWER=wslview
+fi

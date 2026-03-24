@@ -41,6 +41,10 @@ alias v='$EDITOR -p'
 alias vs='NVIM_SESSION=1 nvim'
 alias pjson='python -m json.tool'
 
+if [ -n "$WSL_DISTRO_NAME" ]; then
+    alias pdf-viewer-pipe="xargs $PDF_VIEWER"
+fi
+
 alias cdr='cd "$(git rev-parse --show-toplevel)"'
 cdp() {
     local target="$1"
