@@ -1,0 +1,13 @@
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "theme": "opencode",
+  "keybinds": {
+    "session_interrupt": "ctrl+c,escape",
+    "input_clear": "ctrl+u",
+    "app_exit": "ctrl+d,<leader>q",
+    "messages_line_up": "ctrl+alt+y,ctrl+k",
+    "messages_line_down": "ctrl+alt+e,ctrl+j",
+    "input_newline": "shift+return,ctrl+return",
+    "input_delete_to_line_end": "none"
+  }
+}
