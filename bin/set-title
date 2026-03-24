@@ -11,7 +11,7 @@ if [[ -z "$title" ]]; then
     exit 1
 fi
 
-if [[ -n "$WSL_DISTRO_NAME" ]] && [[ -n "$WT_SESSION" ]]; then
+if [[ -n "$IS_WSL" ]] && [[ -n "$WT_SESSION" ]]; then
     if [[ -n "$TMUX" ]]; then
         # Inside tmux - use tmux's built-in title setting
         tmux set-option -g set-titles on

@@ -28,7 +28,7 @@ alias ea='$EDITOR ~/.shell/aliases.sh; src'
 alias eg='git config --global -e'
 
 # Command shortcuts
-if [ -n "$WSL_DISTRO_NAME" ]; then
+if [ -n "$IS_WSL" ]; then
     git() {
         case "$(pwd -P)" in
             /mnt/*) git.exe "$@" ;;
@@ -41,7 +41,7 @@ alias v='$EDITOR -p'
 alias vs='NVIM_SESSION=1 nvim'
 alias pjson='python -m json.tool'
 
-if [ -n "$WSL_DISTRO_NAME" ]; then
+if [ -n "$IS_WSL" ]; then
     alias pdf-viewer-pipe="xargs $PDF_VIEWER"
 fi
 

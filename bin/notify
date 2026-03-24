@@ -8,7 +8,7 @@ title="${1:-Notification}"
 message="${2:-Task finished}"
 
 # Detect platform and send notification
-if [[ -n "$WSL_DISTRO_NAME" ]]; then
+if [[ -n "$IS_WSL" ]]; then
     # WSL - use Windows Toast notifications
     powershell.exe -NoLogo -NonInteractive -WindowStyle Hidden -Command \
     "[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > \$null;
@@ -22,7 +22,7 @@ if [[ -n "$WSL_DISTRO_NAME" ]]; then
     \$notifier.Show(\$toast);" \
     > /dev/null 2>&1
 
-elif [[ "$OSTYPE" == "darwin"* ]]; then
+elif [[ -n "$IS_MACOS" ]]; then
     # macOS - use osascript
     osascript -e "display notification \"$message\" with title \"$title\""
 
