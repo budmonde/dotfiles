@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# === Only run on Linux ===
+if [[ "$(uname -s)" != "Linux" ]]; then
+    echo "Skipping TeX Live install (not Linux)."
+    exit 0
+fi
+
+# === Configuration ===
+INSTALL_DIR="$HOME/.texlive"
+WORKDIR="/tmp"
+URL="https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz"
+TARBALL="$WORKDIR/install-tl-unx.tar.gz"
+
+# === Check if TeX Live is already installed ===
+if [ -d "$INSTALL_DIR/bin" ]; then
+    PLATFORM=$(ls "$INSTALL_DIR/bin" | head -1)
+    TEXLIVE_BIN="$INSTALL_DIR/bin/$PLATFORM"
+    echo "TeX Live already installed in $INSTALL_DIR."
+    echo "Add the following to your PATH to use it:"
+    echo "    export PATH=\"$TEXLIVE_BIN:\$PATH\""
+    exit 0
+fi
+
+# === Download installer ===
+cd "$WORKDIR"
+echo "Downloading TeX Live installer..."
+curl -L -o "$TARBALL" "$URL"
+
+# === Find top-level directory in tarball ===
+TAR_OUTPUT=$(tar -tzf install-tl-unx.tar.gz 2>/dev/null)
+INSTALLER_DIR=$(echo "$TAR_OUTPUT" | head -1 | cut -f1 -d"/")
+
+if [ -z "$INSTALLER_DIR" ]; then
+    echo "Error: could not determine installer directory from tarball."
+    exit 1
+fi
+
+# === Extract installer ===
+echo "Extracting installer..."
+zcat < install-tl-unx.tar.gz | tar xf -
+
+cd "$INSTALLER_DIR"
+
+# === Run installation ===
+echo "Installing TeX Live into $INSTALL_DIR (this may take several hours)..."
+perl ./install-tl --no-interaction --texdir="$INSTALL_DIR"
+
+# === Detect platform and print PATH ===
+PLATFORM=$(ls "$INSTALL_DIR/bin" | head -1)
+TEXLIVE_BIN="$INSTALL_DIR/bin/$PLATFORM"
+
+if [ ! -d "$TEXLIVE_BIN" ]; then
+    echo "Error: installation failed, bin directory not found."
+    exit 1
+fi
+
+# === Cleanup ===
+cd "$WORKDIR"
+rm -rf "$TARBALL" "$INSTALLER_DIR"
+
+echo ""
+echo "=========================================================="
+echo "TeX Live installation complete."
+echo "Add the following to your PATH to use TeX Live:"
+echo ""
+echo "    export PATH=\"$TEXLIVE_BIN:\$PATH\""
+echo "=========================================================="
