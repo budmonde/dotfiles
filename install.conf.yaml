@@ -38,3 +38,4 @@
     - [./shell/plugins/miniconda3/install, Installing miniconda]
     - [./shell/plugins/texlive/install, Installing texlive]
     - ['[ -s "$HOME/.shell/plugins/nvm/nvm.sh" ] && . "$HOME/.shell/plugins/nvm/nvm.sh" && nvm install --lts', Installing Node LTS via nvm]
+    - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL]
