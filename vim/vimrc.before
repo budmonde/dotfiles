@@ -16,7 +16,7 @@ if isdirectory(expand('~/.vim_local'))
 endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""" Apperance and Window Dynamics
+""""""""""""""""""""""""""""""""""""""""""""""""" Appearance and Window Dynamics
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Colorscheme setup (config must come before colorscheme)
@@ -186,15 +186,15 @@ if !has('nvim')
     endfor
 endif
 " Unbind increment and decrement due to tmux conflict
-map <C-a> <Nop>
-map <C-x> <Nop>
+noremap <C-a> <Nop>
+noremap <C-x> <Nop>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ Operator-Pending Mappings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Funciton parameters
+" Function parameters
 onoremap p i(
-" Function body
-onoremap b /return<CR>
+" Return statement (function exit point)
+onoremap r /return<CR>
 " Next open parentheses
 onoremap inp :<c-u>normal! f(vi(<CR>
 " Last close parentheses
@@ -271,7 +271,7 @@ function! SplitSentences()
     s/\([.!?;]\)\s\+/\1\r/ge
 endfunction
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Vim-jedi config
+""" PLUGIN : vim-jedi
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:jedi#popup_on_dot = 0
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -313,7 +313,7 @@ nnoremap <Leader>en :vsplit ~/.config/nvim/lua/config/lazy.lua<CR>
 " Reload vimrc when it's saved
 augroup myvimrc
     autocmd!
-    autocmd BufWritePost .vimrc,_vimrc,vimrc,.gvimrc,_gvimrc,gvimrc so $MYVIMRC | if has('gui_running') | so $MYGVIMRC | endif
+    autocmd BufWritePost .vimrc,_vimrc,**/vimrc,.gvimrc,_gvimrc,**/gvimrc so $MYVIMRC | if has('gui_running') | so $MYGVIMRC | endif
 augroup END
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""" External Application Interaction (<Leader>x)
