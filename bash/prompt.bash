@@ -56,7 +56,7 @@ else
     RAW_COLOR_MAGENTA=$'\e[35m'
     RAW_COLOR_CYAN=$'\e[36m'
 
-    RAW_COLOR_TEAL=$'\e[33m'
+    RAW_COLOR_TEAL=$'\e[34m'
     RAW_COLOR_ORANGE=$'\e[33m'
     RAW_COLOR_OLIVE=$'\e[32m'
     RAW_COLOR_NEON=$'\e[32m'
