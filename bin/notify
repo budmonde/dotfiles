@@ -10,13 +10,16 @@ message="${2:-Task finished}"
 # Detect platform and send notification
 if [[ -n "$IS_WSL" ]]; then
     # WSL - use Windows Toast notifications
+    # Escape single quotes for PowerShell string literals
+    ps_title="${title//\'/\'\'}"
+    ps_message="${message//\'/\'\'}"
     powershell.exe -NoLogo -NonInteractive -WindowStyle Hidden -Command \
     "[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > \$null;
     [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] > \$null;
     \$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02);
     \$textNodes = \$template.GetElementsByTagName('text');
-    \$textNodes.Item(0).AppendChild(\$template.CreateTextNode('$title')) > \$null;
-    \$textNodes.Item(1).AppendChild(\$template.CreateTextNode('$message')) > \$null;
+    \$textNodes.Item(0).AppendChild(\$template.CreateTextNode('$ps_title')) > \$null;
+    \$textNodes.Item(1).AppendChild(\$template.CreateTextNode('$ps_message')) > \$null;
     \$toast = [Windows.UI.Notifications.ToastNotification]::new(\$template);
     \$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('WSL');
     \$notifier.Show(\$toast);" \
