@@ -15,8 +15,7 @@
     ~/.gitconfig-crlf:
     ~/.gitignore:
     ~/.inputrc:
-    ~/.jupyter/jupyter_notebook_config.py: jupyter/jupyter_notebook_config.py
-    ~/.jupyter/nbconfig/notebook.json: jupyter/notebook.json
+    ~/.jupyter:
     ~/.local/share/jupyter/nbextensions: jupyter/nbextensions
     ~/.pdbrc:
     ~/.pythonrc:
