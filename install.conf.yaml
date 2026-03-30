@@ -18,6 +18,7 @@
     ~/.jupyter:
     ~/.local/share/jupyter/nbextensions: jupyter/nbextensions
     ~/.pdbrc:
+    ~/.profile:
     ~/.pythonrc:
     ~/.shell:
     ~/.ssh/config: ssh/config
