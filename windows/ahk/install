@@ -18,7 +18,7 @@ mkdir -p "$STARTUP_DIR"
 # Get the directory where this script lives
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Create symlink
-ln -sf "$SCRIPT_DIR/startup.ahk" "$STARTUP_DIR/startup.ahk"
+# Copy the script (symlinks don't work across WSL/Windows boundary)
+cp "$SCRIPT_DIR/startup.ahk" "$STARTUP_DIR/startup.ahk"
 
-echo "Linked startup.ahk to Windows Startup folder."
+echo "Copied startup.ahk to Windows Startup folder."
