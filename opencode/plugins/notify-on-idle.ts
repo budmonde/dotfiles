@@ -99,8 +99,8 @@ export const NotifyOnIdle: Plugin = async ({ $ }) => {
 
           const ctx = await getNotificationContext(sessionId)
           if (ctx.shouldSend) {
-            const title = `OpenCode - ${ctx.windowName}`
-            await sendNotification(title, ctx.sessionTitle)
+            const message = `Session: ${ctx.sessionTitle}\nEvent: Task completed`
+            await sendNotification(ctx.windowName, message)
           }
           pendingIdleTimeout = null
           pendingIdleSessionId = null
@@ -118,8 +118,9 @@ export const NotifyOnIdle: Plugin = async ({ $ }) => {
         const ctx = await getNotificationContext(sessionId)
         if (ctx.shouldSend) {
           const errorMessage = props?.error?.message || "An error occurred"
-          const truncated = errorMessage.length > 100 ? errorMessage.slice(0, 100) + "..." : errorMessage
-          await sendNotification("OpenCode Error", truncated, "Windows Critical Stop")
+          const truncated = errorMessage.length > 80 ? errorMessage.slice(0, 80) + "..." : errorMessage
+          const message = `Session: ${ctx.sessionTitle}\nEvent: Error - ${truncated}`
+          await sendNotification(ctx.windowName, message, "Windows Critical Stop")
         }
       }
 
@@ -135,7 +136,8 @@ export const NotifyOnIdle: Plugin = async ({ $ }) => {
 
         const ctx = await getNotificationContext(sessionId)
         if (ctx.shouldSend) {
-          await sendNotification("OpenCode Permission", "Approval needed", "Windows Exclamation")
+          const message = `Session: ${ctx.sessionTitle}\nEvent: Permission required`
+          await sendNotification(ctx.windowName, message, "Windows Exclamation")
         }
       }
     },
@@ -150,7 +152,8 @@ export const NotifyOnIdle: Plugin = async ({ $ }) => {
 
         const ctx = await getNotificationContext(null)
         if (ctx.shouldSend) {
-          sendNotification("OpenCode Question", "Input needed", "Windows Exclamation")
+          const message = `Session: ${ctx.sessionTitle}\nEvent: Input required`
+          sendNotification(ctx.windowName, message, "Windows Exclamation")
         }
       } catch {
         // Ignore errors to avoid breaking the tool
