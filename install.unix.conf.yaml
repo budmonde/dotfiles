@@ -1,0 +1,34 @@
+# Unix-specific configuration (Linux, macOS, WSL)
+# Run via: ./install (which loads this after install.conf.yaml)
+
+- defaults:
+    link:
+        create: true
+        relink: true
+
+- link:
+    # Shell configuration
+    ~/.bash:
+    ~/.bash_profile:
+    ~/.bashrc:
+    ~/.inputrc:
+    ~/.profile:
+    ~/.shell:
+    ~/.zsh:
+    ~/.zshenv:
+    ~/.zshrc:
+
+    # Tmux
+    ~/.tmux.conf:
+    ~/.tmux/plugins/tpm: tmux/plugins/tpm
+
+- shell:
+    - [git submodule update --init --recursive, Installing submodules]
+    - [git config core.hooksPath .githooks, Setting up git hooks]
+    - [./shell/plugins/fzf/install --bin, Installing fzf binary]
+    - [./shell/plugins/miniconda3/install, Installing miniconda]
+    - [./shell/plugins/texlive/install, Installing texlive]
+    - ['[ -s "$HOME/.shell/plugins/nvm/nvm.sh" ] && . "$HOME/.shell/plugins/nvm/nvm.sh" && nvm install --lts || true', Installing Node LTS via nvm]
+    - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL]
+    - [./windows/ahk/install, Installing Windows AHK startup script (WSL only)]
+    - [./shell/plugins/push-notify/install, Installing push-notify and protocol handler]

@@ -1,3 +1,6 @@
+# Common configuration for both Unix and Windows platforms
+# Platform-specific configs: install.unix.conf.yaml, install.windows.conf.yaml
+
 - defaults:
     link:
         create: true
@@ -6,40 +9,31 @@
 - clean: ['~']
 
 - link:
-    ~/.bash:
-    ~/.bash_profile:
-    ~/.bashrc:
-    ~/.claude/settings.json: claude/settings.json
-    ~/.claude/keybindings.json: claude/keybindings.json
-    ~/.condarc:
-    ~/.dotfiles: ''
+    # Git configuration
     ~/.gitconfig:
     ~/.gitconfig-crlf:
     ~/.gitignore:
-    ~/.inputrc:
-    ~/.jupyter:
-    ~/.local/share/jupyter/nbextensions: jupyter/nbextensions
-    ~/.pdbrc:
-    ~/.profile:
-    ~/.pythonrc:
-    ~/.shell:
+
+    # SSH configuration
     ~/.ssh/config: ssh/config
-    ~/.tmux.conf:
-    ~/.tmux/plugins/tpm: tmux/plugins/tpm
+
+    # Editor configuration (nvim depends on vim/)
     ~/.vim:
     ~/.config/nvim: nvim
-    ~/.config/opencode: opencode
-    ~/.zsh:
-    ~/.zshenv:
-    ~/.zshrc:
 
-- shell:
-    - [git submodule update --init --recursive, Installing submodules]
-    - [git config core.hooksPath .githooks, Setting up git hooks]
-    - [./shell/plugins/fzf/install --bin, Installing fzf binary]
-    - [./shell/plugins/miniconda3/install, Installing miniconda]
-    - [./shell/plugins/texlive/install, Installing texlive]
-    - ['[ -s "$HOME/.shell/plugins/nvm/nvm.sh" ] && . "$HOME/.shell/plugins/nvm/nvm.sh" && nvm install --lts', Installing Node LTS via nvm]
-    - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL]
-    - [./windows/ahk/install, Installing Windows AHK startup script]
-    - [./shell/plugins/push-notify/install, Installing push-notify and protocol handler]
+    # AI tools
+    ~/.claude/settings.json: claude/settings.json
+    ~/.claude/keybindings.json: claude/keybindings.json
+    ~/.config/opencode: opencode
+
+    # Python configuration
+    ~/.condarc:
+    ~/.pythonrc:
+    ~/.pdbrc:
+
+    # Jupyter
+    ~/.jupyter:
+    ~/.local/share/jupyter/nbextensions: jupyter/nbextensions
+
+    # Dotfiles self-reference
+    ~/.dotfiles: ''
