@@ -22,7 +22,7 @@ src() {
         . ~/.bashrc
     fi
 }
-alias et='$EDITOR ~/.tmux.conf'
+alias et='$EDITOR ~/.config/tmux/tmux.conf'
 alias ev='$EDITOR ~/.vim/vimrc'
 alias ea='$EDITOR ~/.shell/aliases.sh; src'
 alias eg='git config --global -e'
