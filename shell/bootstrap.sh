@@ -2,11 +2,11 @@
 path_append $HOME/.shell/plugins/fzf/bin
 
 # Texlive (dynamic platform detection)
-if [ -d "$HOME/.texlive/bin" ]; then
-    TEXLIVE_PLATFORM=$(ls "$HOME/.texlive/bin" | head -1)
-    path_append "$HOME/.texlive/bin/$TEXLIVE_PLATFORM"
-    manpath_append "$HOME/.texlive/texmf-dist/doc/man"
-    infopath_append "$HOME/.texlive/texmf-dist/doc/info"
+if [ -d "$TEXLIVE_DIR/bin" ]; then
+    TEXLIVE_PLATFORM=$(ls "$TEXLIVE_DIR/bin" | head -1)
+    path_append "$TEXLIVE_DIR/bin/$TEXLIVE_PLATFORM"
+    manpath_append "$TEXLIVE_DIR/texmf-dist/doc/man"
+    infopath_append "$TEXLIVE_DIR/texmf-dist/doc/info"
 fi
 
 # System paths
