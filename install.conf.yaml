@@ -26,7 +26,7 @@
 
     # Python configuration
     ~/.config/python: python
-    ~/.pdbrc:
+    ~/.pdbrc: python/pdbrc
 
     # Readline configuration
     ~/.config/readline: readline
