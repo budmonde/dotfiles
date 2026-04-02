@@ -16,7 +16,7 @@ foreach ($PYTHON in ('python', 'python3')) {
             ![string]::IsNullOrEmpty((&$PYTHON -V))
             $ErrorActionPreference = "Stop" }) {
         $DOTBOT_PATH = Join-Path $BASEDIR -ChildPath $DOTBOT_DIR | Join-Path -ChildPath $DOTBOT_BIN
-        &$PYTHON $DOTBOT_PATH -d $BASEDIR -c $COMMON_CONFIG -c $WINDOWS_CONFIG $Args
+        &$PYTHON $DOTBOT_PATH -d $BASEDIR -c $COMMON_CONFIG $WINDOWS_CONFIG $Args
         return
     }
 }
