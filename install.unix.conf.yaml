@@ -27,7 +27,7 @@
     - [git config core.hooksPath .githooks, Setting up git hooks]
     - [./shell/plugins/fzf/install --bin, Installing fzf binary]
     - [./shell/plugins/fnm/install, Installing fnm]
-    - ['$HOME/.local/share/fnm/fnm install --lts || true', Installing Node LTS via fnm]
+    - ['${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm install --lts || true', Installing Node LTS via fnm]
     - [./shell/plugins/miniconda3/install, Installing miniconda]
     - [./shell/plugins/texlive/install, Installing texlive]
     - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL]

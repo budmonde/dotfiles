@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-INSTALL_DIR="$HOME/.local/share/fnm"
+INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/fnm"
 
 if command -v fnm &>/dev/null; then
     echo "fnm is already installed: $(fnm --version)"
