@@ -10,9 +10,7 @@
 
 - link:
     # Git configuration
-    ~/.gitconfig:
-    ~/.gitconfig-crlf:
-    ~/.gitignore:
+    ~/.config/git: git
 
     # SSH configuration
     ~/.ssh/config: ssh/config

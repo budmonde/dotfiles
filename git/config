@@ -4,7 +4,7 @@
 
 [core]
 	editor = vi
-	excludesfile = ~/.gitignore
+	excludesfile = ~/.config/git/ignore
 
 [init]
 	defaultBranch = main
@@ -96,7 +96,7 @@
 
 # WSL: repos on Windows mounts (/mnt/) need CRLF and no filemode
 [includeIf "gitdir:/mnt/"]
-	path = ~/.gitconfig-crlf
+	path = ~/.config/git/config-crlf
 
 [include]
 	path = ~/.gitconfig_local
