@@ -99,4 +99,4 @@
 	path = ~/.config/git/config-crlf
 
 [include]
-	path = ~/.gitconfig_local
+	path = ~/.config/git/config.local

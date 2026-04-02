@@ -1,21 +1,21 @@
-# Common configuration for both Unix and Windows platforms
-# Platform-specific configs: install.unix.conf.yaml, install.windows.conf.yaml
+# Cross-platform configuration
+# Platform-specific: install.unix.conf.yaml, install.windows.conf.yaml
 
 - defaults:
     link:
         create: true
         relink: true
 
-- clean: ['~']
+- clean: ['~', '~/.config']
 
 - link:
-    # Git configuration
-    ~/.config/git: git
+    ~/.dotfiles: ''
 
-    # SSH configuration
+    # Git / SSH
+    ~/.config/git: git
     ~/.ssh/config: ssh/config
 
-    # Editor configuration (nvim depends on vim/)
+    # Editors
     ~/.vim:
     ~/.config/nvim: nvim
 
@@ -24,19 +24,12 @@
     ~/.config/claude/keybindings.json: claude/keybindings.json
     ~/.config/opencode: opencode
 
-    # Python configuration
+    # Languages
     ~/.config/python: python
     ~/.pdbrc: python/pdbrc
-
-    # Readline configuration
-    ~/.config/readline: readline
-
-    # Node.js configuration
     ~/.config/npm: npm
-
-    # Jupyter
     ~/.config/jupyter: jupyter
     ~/.local/share/jupyter/nbextensions: jupyter/nbextensions
 
-    # Dotfiles self-reference
-    ~/.dotfiles: ''
+    # Misc
+    ~/.config/readline: readline

@@ -7,31 +7,33 @@
         relink: true
 
 - link:
-    # Shell configuration (root rc files required by shell spec)
+    # Root rc files (required by shell spec)
     ~/.bash_profile:
     ~/.bashrc:
     ~/.profile:
     ~/.zshenv:
     ~/.zshrc:
 
-    # Shell modules (XDG compliant)
+    # Shell
     ~/.config/bash: bash
     ~/.config/zsh: zsh
     ~/.config/shell: shell
-
-    # Tmux
     ~/.config/tmux: tmux
 
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
     - [git config core.hooksPath .githooks, Setting up git hooks]
-    - [./shell/plugins/fzf/install --bin, Installing fzf binary]
+
+    # CLI tools
+    - [./shell/plugins/fzf/install --bin, Installing fzf]
     - [./shell/plugins/fnm/install, Installing fnm]
-    - ['${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm install --lts || true', Installing Node LTS via fnm]
+    - ['${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm install --lts || true', Installing Node LTS]
     - [./shell/plugins/nvim/install, Installing neovim]
     - ['curl -LsSf https://astral.sh/uv/install.sh | UV_NO_MODIFY_PATH=1 sh', Installing uv]
     - [./shell/plugins/texlive/install, Installing texlive]
     - ['curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path', Installing opencode]
+    - [./shell/plugins/push-notify/install, Installing push-notify]
+
+    # WSL-specific
     - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL]
-    - [./windows/ahk/install, Installing Windows AHK startup script (WSL only)]
-    - [./shell/plugins/push-notify/install, Installing push-notify and protocol handler]
+    - [./windows/ahk/install, Installing AHK startup script (WSL only)]
