@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nvim-install"
+BIN_DIR="$HOME/.local/bin"
+
+# Check if nvim is already installed via this method
+if [ -x "$INSTALL_DIR/bin/nvim" ]; then
+    echo "Neovim already installed at $INSTALL_DIR"
+    "$INSTALL_DIR/bin/nvim" --version | head -1
+    exit 0
+fi
+
+# Check if nvim exists elsewhere (system install)
+if command -v nvim &>/dev/null; then
+    echo "Neovim already available: $(command -v nvim)"
+    nvim --version | head -1
+    exit 0
+fi
+
+# Detect architecture
+ARCH="$(uname -m)"
+case "$ARCH" in
+    x86_64)  ARCH="x86_64" ;;
+    aarch64) ARCH="arm64" ;;
+    arm64)   ARCH="arm64" ;;
+    *)
+        echo "Unsupported architecture: $ARCH"
+        exit 1
+        ;;
+esac
+
+# Only support Linux for now
+OS="$(uname -s)"
+if [ "$OS" != "Linux" ]; then
+    echo "This installer only supports Linux. Use Homebrew on macOS."
+    exit 0
+fi
+
+FILENAME="nvim-linux-${ARCH}.tar.gz"
+URL="https://github.com/neovim/neovim/releases/latest/download/$FILENAME"
+
+echo "Downloading Neovim ($ARCH)..."
+TMPDIR=$(mktemp -d)
+curl -fsSL "$URL" -o "$TMPDIR/$FILENAME"
+
+echo "Extracting to $INSTALL_DIR..."
+mkdir -p "$INSTALL_DIR"
+tar -xzf "$TMPDIR/$FILENAME" -C "$TMPDIR"
+# The tarball extracts to nvim-linux-x86_64/ or similar
+mv "$TMPDIR"/nvim-linux-*/* "$INSTALL_DIR/"
+
+rm -rf "$TMPDIR"
+
+# Create symlink in ~/.local/bin
+mkdir -p "$BIN_DIR"
+ln -sf "$INSTALL_DIR/bin/nvim" "$BIN_DIR/nvim"
+
+echo ""
+echo "Neovim installed to $INSTALL_DIR"
+echo "Symlinked to $BIN_DIR/nvim"
+"$INSTALL_DIR/bin/nvim" --version | head -1
