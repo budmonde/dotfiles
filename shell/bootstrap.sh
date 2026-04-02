@@ -14,7 +14,7 @@ path_prepend /usr/local/cuda/bin
 path_prepend /usr/local/bin
 
 # Tool-managed paths
-path_prepend $HOME/.go/bin
+path_prepend ${XDG_DATA_HOME:-$HOME/.local/share}/go/bin
 path_prepend $HOME/.opencode/bin
 path_prepend ${XDG_DATA_HOME:-$HOME/.local/share}/fnm
 

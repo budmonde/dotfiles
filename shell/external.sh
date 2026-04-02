@@ -7,7 +7,8 @@ if [[ "$OSTYPE" == darwin* ]]; then
 fi
 
 export PYTHONSTARTUP=$HOME/.pythonrc
-export GOPATH="$HOME/.go"
+export GOPATH="${XDG_DATA_HOME:-$HOME/.local/share}/go"
+export GOMODCACHE="${XDG_CACHE_HOME:-$HOME/.cache}/go/mod"
 export TEXLIVE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/texlive"
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 
