@@ -23,6 +23,7 @@ export CUPY_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/cupy"
 export LESSHISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/less/history"
 export NODE_REPL_HISTORY="${XDG_STATE_HOME:-$HOME/.local/state}/node/history"
 export PYTHONHISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/python/history"
+export DOCKER_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/docker"
 
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 
