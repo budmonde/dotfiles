@@ -153,6 +153,8 @@ let g:NERDTreeFileLines = 1
 let g:NERDTreeShowBookmarks=1
 " NERDTree vim CWD when root is changed
 let g:NERDTreeChDirMode=2
+" NERDTree bookmarks file (XDG compliant)
+let g:NERDTreeBookmarksFile = expand('$HOME/.local/share/nvim/NERDTreeBookmarks')
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ PLUGIN : fzf
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
