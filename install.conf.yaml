@@ -20,8 +20,8 @@
     ~/.config/nvim: nvim
 
     # AI tools
-    ~/.claude/settings.json: claude/settings.json
-    ~/.claude/keybindings.json: claude/keybindings.json
+    ~/.config/claude/settings.json: claude/settings.json
+    ~/.config/claude/keybindings.json: claude/keybindings.json
     ~/.config/opencode: opencode
 
     # Python configuration
