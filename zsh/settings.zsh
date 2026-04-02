@@ -1,6 +1,6 @@
 # Improve History
 HISTSIZE=1048576
-HISTFILE="$HOME/.zsh_history"
+HISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/zsh/history"
 SAVEHIST=$HISTSIZE
 setopt appendhistory
 setopt incappendhistory
