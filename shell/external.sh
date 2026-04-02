@@ -11,6 +11,7 @@ export GOPATH="${XDG_DATA_HOME:-$HOME/.local/share}/go"
 export GOMODCACHE="${XDG_CACHE_HOME:-$HOME/.cache}/go/mod"
 export TEXLIVE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/texlive"
 export VIRTUAL_ENV_DISABLE_PROMPT=1
+export BUN_INSTALL_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/bun"
 
 if command -v nvim &> /dev/null; then
     export EDITOR=nvim
