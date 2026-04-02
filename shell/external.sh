@@ -11,12 +11,15 @@ fi
 export INPUTRC="${XDG_CONFIG_HOME:-$HOME/.config}/readline/inputrc"
 export CLAUDE_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/claude"
 export PYTHONSTARTUP="${XDG_CONFIG_HOME:-$HOME/.config}/python/pythonrc"
+export IPYTHONDIR="${XDG_CONFIG_HOME:-$HOME/.config}/ipython"
 export JUPYTER_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/jupyter"
 export NPM_CONFIG_USERCONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/npm/npmrc"
 export GOPATH="${XDG_DATA_HOME:-$HOME/.local/share}/go"
 export GOMODCACHE="${XDG_CACHE_HOME:-$HOME/.cache}/go/mod"
 export TEXLIVE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/texlive"
+export KERAS_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/keras"
 export BUN_INSTALL_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/bun"
+export CUPY_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/cupy"
 
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 
