@@ -8,7 +8,6 @@ fi
 
 export PYTHONSTARTUP=$HOME/.pythonrc
 export GOPATH="$HOME/.go"
-export CONDA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/miniconda3"
 export TEXLIVE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/texlive"
 
 if command -v nvim &> /dev/null; then

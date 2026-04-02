@@ -109,8 +109,6 @@ function PR_DIR() {
 
 
 function PYENV() {
-    if [[ -n $CONDA_DEFAULT_ENV ]]; then
-        echo "%{$fg[yellow]%}[conda:%{$fg[orange]%}${CONDA_DEFAULT_ENV}%{$fg[yellow]%}]%{$reset_color%} "
     fi
 }
 

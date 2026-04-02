@@ -152,8 +152,6 @@ git_branch_prompt() {
 
 
 PYENV() {
-    if [[ -n $CONDA_DEFAULT_ENV ]]; then
-        echo "${RAW_COLOR_YELLOW}[conda:${RAW_COLOR_ORANGE}${CONDA_DEFAULT_ENV}${RAW_COLOR_YELLOW}]${RAW_COLOR_DEFAULT} "
     fi
 }
 
