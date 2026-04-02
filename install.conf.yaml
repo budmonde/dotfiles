@@ -30,6 +30,9 @@
     ~/.pythonrc:
     ~/.pdbrc:
 
+    # Node.js configuration
+    ~/.npmrc:
+
     # Jupyter
     ~/.jupyter:
     ~/.local/share/jupyter/nbextensions: jupyter/nbextensions
