@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-INSTALL_DIR="$HOME/.miniconda3"
+INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/miniconda3"
 BASE_URL="https://repo.anaconda.com/miniconda"
 
 # Check if conda is already available in PATH

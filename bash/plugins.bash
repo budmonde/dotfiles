@@ -14,4 +14,4 @@ fi
 ###############################################################################
 # Miniconda
 ###############################################################################
-[ -x "$HOME/.miniconda3/bin/conda" ] && eval "$($HOME/.miniconda3/bin/conda shell.bash hook)"
+[ -x "$CONDA_DIR/bin/conda" ] && eval "$($CONDA_DIR/bin/conda shell.bash hook)"
