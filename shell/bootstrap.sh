@@ -16,6 +16,7 @@ path_prepend /usr/local/bin
 # Tool-managed paths
 path_prepend $HOME/.go/bin
 path_prepend $HOME/.opencode/bin
+path_prepend $HOME/.local/share/fnm
 
 # Personal paths
 path_prepend $HOME/.local/bin

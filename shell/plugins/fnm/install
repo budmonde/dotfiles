@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+INSTALL_DIR="$HOME/.local/share/fnm"
+
+if command -v fnm &>/dev/null; then
+    echo "fnm is already installed: $(fnm --version)"
+    exit 0
+fi
+
+if [ -x "$INSTALL_DIR/fnm" ]; then
+    echo "fnm binary exists at $INSTALL_DIR/fnm"
+    echo "Add $INSTALL_DIR to your PATH to use it."
+    exit 0
+fi
+
+echo "Installing fnm..."
+
+# --install-dir: where to put the binary
+# --skip-shell: we manage shell config ourselves in dotfiles
+curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$INSTALL_DIR" --skip-shell
+
+echo ""
+echo "fnm installed to $INSTALL_DIR"
+echo "Restart your shell to use fnm."
