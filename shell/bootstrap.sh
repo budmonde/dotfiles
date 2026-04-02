@@ -1,5 +1,5 @@
 # Lowest priority paths
-path_append $HOME/.shell/plugins/fzf/bin
+path_append $HOME/.config/shell/plugins/fzf/bin
 
 # Texlive (dynamic platform detection)
 if [ -d "$TEXLIVE_DIR/bin" ]; then

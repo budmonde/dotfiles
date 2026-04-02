@@ -1,10 +1,10 @@
 # zshenv is loaded for interactive (before zshrc) and non-interactive shells
 
-source ~/.shell/functions.sh
+source ~/.config/shell/functions.sh
 # PATH setup
-source ~/.shell/bootstrap.sh
+source ~/.config/shell/bootstrap.sh
 # External tool environment variables
-source ~/.shell/external.sh
+source ~/.config/shell/external.sh
 
 if [ -f ~/.shellenv_local ]; then
     source ~/.shellenv_local

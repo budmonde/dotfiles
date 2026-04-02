@@ -19,7 +19,7 @@ export KEYTIMEOUT=1 # 10ms
 bindkey -v
 
 # Enable completions
-source ~/.zsh/completion.zsh
+source ~/.config/zsh/completion.zsh
 
 # Enable edit-command-line
 autoload -U edit-command-line && zle -N edit-command-line

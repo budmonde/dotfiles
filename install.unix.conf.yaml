@@ -7,15 +7,17 @@
         relink: true
 
 - link:
-    # Shell configuration
-    ~/.bash:
+    # Shell configuration (root rc files required by shell spec)
     ~/.bash_profile:
     ~/.bashrc:
     ~/.profile:
-    ~/.shell:
-    ~/.zsh:
     ~/.zshenv:
     ~/.zshrc:
+
+    # Shell modules (XDG compliant)
+    ~/.config/bash: bash
+    ~/.config/zsh: zsh
+    ~/.config/shell: shell
 
     # Tmux
     ~/.config/tmux: tmux

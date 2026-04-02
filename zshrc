@@ -1,9 +1,9 @@
 # zshrc is not loaded for non-interactive shells
 
-source ~/.zsh/settings.zsh
-source ~/.zsh/plugins.zsh
-source ~/.shell/aliases.sh
-source ~/.zsh/prompt.zsh
+source ~/.config/zsh/settings.zsh
+source ~/.config/zsh/plugins.zsh
+source ~/.config/shell/aliases.sh
+source ~/.config/zsh/prompt.zsh
 
 if [ -f ~/.shellrc_local ]; then
     source ~/.shellrc_local

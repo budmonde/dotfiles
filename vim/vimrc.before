@@ -156,7 +156,7 @@ let g:NERDTreeChDirMode=2
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ PLUGIN : fzf
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set rtp+=~/.shell/plugins/fzf
+set rtp+=~/.config/shell/plugins/fzf
 " File finders (<Leader>f)
 nnoremap <silent> <C-p> :Files<CR>
 nnoremap <silent> <Leader>fp :GFiles<CR>
@@ -307,7 +307,7 @@ nnoremap <Leader>ls ]szg
 " <Leader>ev : Edit vimrc
 nnoremap <Leader>ev :vsplit $MYVIMRC<CR>
 " <Leader>ea : Edit shell aliases
-nnoremap <Leader>ea :vsplit ~/.shell/aliases.sh<CR>
+nnoremap <Leader>ea :vsplit ~/.config/shell/aliases.sh<CR>
 " <Leader>en : Edit neovim config (lazy.lua)
 nnoremap <Leader>en :vsplit ~/.config/nvim/lua/config/lazy.lua<CR>
 " Reload vimrc when it's saved

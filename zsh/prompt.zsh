@@ -3,7 +3,7 @@ setopt prompt_subst
 autoload -U colors && colors
 
 if [[ "$(tput colors 2>/dev/null)" -ge 256 ]]; then
-    source ~/.zsh/plugins/spectrum.zsh
+    source ~/.config/zsh/plugins/spectrum.zsh
     fg[red]=$FG[196]
     fg[green]=$FG[010]
     fg[yellow]=$FG[011]

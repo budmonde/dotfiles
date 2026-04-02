@@ -3,8 +3,8 @@
 # For zsh, ~/.zshenv is used instead.
 
 # Source shellenv for environment setup (PATH, etc.)
-if [ -f "$HOME/.shell/shellenv.sh" ]; then
-    . "$HOME/.shell/shellenv.sh"
+if [ -f "$HOME/.config/shell/shellenv.sh" ]; then
+    . "$HOME/.config/shell/shellenv.sh"
 fi
 
 # Source local overrides

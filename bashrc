@@ -1,20 +1,20 @@
 # Environment variables and PATH setup
 
-source ~/.shell/functions.sh
+source ~/.config/shell/functions.sh
 # PATH setup
-source ~/.shell/bootstrap.sh
+source ~/.config/shell/bootstrap.sh
 # External tool environment variables
-source ~/.shell/external.sh
+source ~/.config/shell/external.sh
 
 if [ -f ~/.shellenv_local ]; then
     source ~/.shellenv_local
 fi
 
 # Interactive shell setup
-source ~/.bash/settings.bash
-source ~/.bash/plugins.bash
-source ~/.shell/aliases.sh
-source ~/.bash/prompt.bash
+source ~/.config/bash/settings.bash
+source ~/.config/bash/plugins.bash
+source ~/.config/shell/aliases.sh
+source ~/.config/bash/prompt.bash
 
 if [ -f ~/.shellrc_local ]; then
     source ~/.shellrc_local
