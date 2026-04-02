@@ -21,6 +21,7 @@ export KERAS_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/keras"
 export BUN_INSTALL_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/bun"
 export CUPY_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/cupy"
 export LESSHISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/less/history"
+export NODE_REPL_HISTORY="${XDG_STATE_HOME:-$HOME/.local/state}/node/history"
 export PYTHONHISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/python/history"
 
 export VIRTUAL_ENV_DISABLE_PROMPT=1
