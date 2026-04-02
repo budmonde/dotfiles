@@ -6,6 +6,7 @@ if [[ "$OSTYPE" == darwin* ]]; then
     export IS_MACOS=1
 fi
 
+export INPUTRC="${XDG_CONFIG_HOME:-$HOME/.config}/readline/inputrc"
 export PYTHONSTARTUP="${XDG_CONFIG_HOME:-$HOME/.config}/python/pythonrc"
 export JUPYTER_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/jupyter"
 export NPM_CONFIG_USERCONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/npm/npmrc"

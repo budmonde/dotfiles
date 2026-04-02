@@ -28,6 +28,9 @@
     ~/.config/python: python
     ~/.pdbrc:
 
+    # Readline configuration
+    ~/.config/readline: readline
+
     # Node.js configuration
     ~/.config/npm: npm
 
