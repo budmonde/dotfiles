@@ -1,7 +1,9 @@
 # Persist pdb command history across sessions.
 # NOTE: Each line is a pdb command; `!` runs Python.
 !import atexit, os, pathlib, readline
-!histfile = os.path.expanduser('~/.pdb_history')
+!state_home = os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state"))
+!histfile = os.path.join(state_home, "python", "pdb_history")
+!pathlib.Path(histfile).parent.mkdir(parents=True, exist_ok=True)
 !pathlib.Path(histfile).touch(exist_ok=True)
 !readline.read_history_file(histfile)
 !readline.set_history_length(10000)

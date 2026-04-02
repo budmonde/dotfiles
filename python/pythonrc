@@ -10,7 +10,9 @@ else:
     readline.parse_and_bind("tab: complete")
 
 # Persistent history
-histfile = os.path.expanduser("~/.pyhistory")
+state_home = os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state"))
+histfile = os.path.join(state_home, "python", "history")
+os.makedirs(os.path.dirname(histfile), exist_ok=True)
 try:
     readline.read_history_file(histfile)
 except FileNotFoundError:
