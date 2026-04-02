@@ -45,6 +45,23 @@ if [ -n "$IS_WSL" ]; then
     alias pdf-viewer-pipe="xargs $PDF_VIEWER"
 fi
 
+# Python venv activation
+venv() {
+    local name="$1"
+    local venv_dir="${XDG_DATA_HOME:-$HOME/.local/share}/python-venvs"
+    if [ -z "$name" ]; then
+        echo "Available venvs:"
+        ls -1 "$venv_dir" 2>/dev/null || echo "  (none)"
+        return 0
+    fi
+    if [ -d "$venv_dir/$name" ]; then
+        source "$venv_dir/$name/bin/activate"
+    else
+        echo "Venv '$name' not found in $venv_dir"
+        return 1
+    fi
+}
+
 alias cdr='cd "$(git rev-parse --show-toplevel)"'
 cdp() {
     local target="$1"

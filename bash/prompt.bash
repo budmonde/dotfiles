@@ -152,6 +152,12 @@ git_branch_prompt() {
 
 
 PYENV() {
+    if [[ -n $VIRTUAL_ENV ]]; then
+        local venv_name="${VIRTUAL_ENV##*/}"
+        if [[ "$venv_name" == ".venv" ]]; then
+            venv_name="$(basename "$(dirname "$VIRTUAL_ENV")")"
+        fi
+        echo "${RAW_COLOR_YELLOW}[venv:${RAW_COLOR_ORANGE}${venv_name}${RAW_COLOR_YELLOW}]${RAW_COLOR_DEFAULT} "
     fi
 }
 

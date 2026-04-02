@@ -9,6 +9,7 @@ fi
 export PYTHONSTARTUP=$HOME/.pythonrc
 export GOPATH="$HOME/.go"
 export TEXLIVE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/texlive"
+export VIRTUAL_ENV_DISABLE_PROMPT=1
 
 if command -v nvim &> /dev/null; then
     export EDITOR=nvim

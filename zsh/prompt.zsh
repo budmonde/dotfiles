@@ -109,6 +109,12 @@ function PR_DIR() {
 
 
 function PYENV() {
+    if [[ -n $VIRTUAL_ENV ]]; then
+        local venv_name="${VIRTUAL_ENV:t}"
+        if [[ "$venv_name" == ".venv" ]]; then
+            venv_name="${VIRTUAL_ENV:h:t}"
+        fi
+        echo "%{$fg[yellow]%}[venv:%{$fg[orange]%}${venv_name}%{$fg[yellow]%}]%{$reset_color%} "
     fi
 }
 
