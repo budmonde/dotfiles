@@ -10,9 +10,11 @@ nmap Q <Nop>
 let mapleader = ","
 let maplocalleader = "\\"
 
-" XDG state directory for viminfo
-let s:state_dir = !empty($XDG_STATE_HOME) ? $XDG_STATE_HOME : expand('~/.local/state')
-let &viminfofile = s:state_dir . '/vim/viminfo'
+" XDG state directory for viminfo (Vim only; Neovim uses ShaDa)
+if !has('nvim')
+    let s:state_dir = !empty($XDG_STATE_HOME) ? $XDG_STATE_HOME : expand('~/.local/state')
+    let &viminfofile = s:state_dir . '/vim/viminfo'
+endif
 
 " Load device-specific vim config (e.g. dotfiles-local)
 if isdirectory(expand('~/.vim_local'))
