@@ -34,7 +34,7 @@
     ~/.npmrc:
 
     # Jupyter
-    ~/.jupyter:
+    ~/.config/jupyter: jupyter
     ~/.local/share/jupyter/nbextensions: jupyter/nbextensions
 
     # Dotfiles self-reference
