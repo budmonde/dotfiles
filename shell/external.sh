@@ -6,7 +6,7 @@ if [[ "$OSTYPE" == darwin* ]]; then
     export IS_MACOS=1
 fi
 
-export PYTHONSTARTUP=$HOME/.pythonrc
+export PYTHONSTARTUP="${XDG_CONFIG_HOME:-$HOME/.config}/python/pythonrc"
 export GOPATH="${XDG_DATA_HOME:-$HOME/.local/share}/go"
 export GOMODCACHE="${XDG_CACHE_HOME:-$HOME/.cache}/go/mod"
 export TEXLIVE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/texlive"

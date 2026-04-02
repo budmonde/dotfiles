@@ -27,7 +27,7 @@
     ~/.config/opencode: opencode
 
     # Python configuration
-    ~/.pythonrc:
+    ~/.config/python: python
     ~/.pdbrc:
 
     # Node.js configuration
