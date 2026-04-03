@@ -3,4 +3,4 @@ bun.lock
 package.json
 opencode.json
 plugins/retry-on-prefill-error.ts
-skills/nv-glean
+skills/glean-cli
