@@ -36,4 +36,3 @@
 
     # WSL-specific
     - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL]
-    - [./windows/ahk/install, Installing AHK startup script (WSL only)]
