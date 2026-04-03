@@ -9,7 +9,7 @@ PLUGIN_DIR="$(dirname "$SCRIPT_DIR")"
 
 WINDOWS_USER=$(powershell.exe -NoProfile -Command "[Environment]::UserName" 2>/dev/null | tr -d '\r\n')
 WINDOWS_HOME="/mnt/c/Users/$WINDOWS_USER"
-HANDLER_DIR="$WINDOWS_HOME/.wsl"
+HANDLER_DIR="$WINDOWS_HOME/.local/share/wsl"
 
 mkdir -p "$HANDLER_DIR"
 
