@@ -1,8 +1,41 @@
 # Windows-specific configuration (PowerShell)
 # Run via: .\install.ps1 (which loads this after install.conf.yaml)
+# Requires: admin shell (for symlinks), winget, python
 
 - shell:
     - command: git submodule update --init --recursive
       description: Installing submodules
     - command: git config core.hooksPath .githooks
       description: Setting up git hooks
+
+    # CLI tools (winget wrapper handles "already up-to-date" exit code)
+    - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId Schniz.fnm
+      description: Installing fnm
+    - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId Neovim.Neovim
+      description: Installing Neovim
+    - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId astral-sh.uv
+      description: Installing uv
+
+    # Node.js / npm (scripts refresh PATH and activate fnm)
+    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\node\install.ps1
+      description: Installing Node.js LTS
+    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\opencode\install.ps1
+      description: Installing opencode
+
+    # PowerShell modules
+    - command: powershell -NoProfile -Command "Install-Module -Name PSFzf -Scope CurrentUser -Force"
+      description: Installing PSFzf
+
+    # Symlinks (dotbot link: can't handle these because the target paths
+    # vary per machine: Documents may be redirected to OneDrive, and WT
+    # LocalState lives under a versioned package directory)
+    - command: >-
+        powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\mklink.ps1
+        -Special MyDocuments\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
+        -Target profile.ps1
+      description: Symlinking PowerShell profile
+    - command: >-
+        powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\mklink.ps1
+        -Env %LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json
+        -Target windows\terminal\settings.json
+      description: Symlinking Windows Terminal settings

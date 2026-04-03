@@ -106,6 +106,9 @@ local filesystem_plugins = {
                 view = { width = 60 },
                 sync_root_with_cwd = true,
                 respect_buf_cwd = true,
+                git = {
+                    timeout = vim.fn.has("win32") == 1 and 2000 or 400,
+                },
                 update_focused_file = {
                     enable = true,
                     update_root = true,
