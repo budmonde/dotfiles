@@ -30,7 +30,7 @@ function Get-GitBranch {
     $ref = git symbolic-ref -q --short HEAD 2>$null
     if (-not $ref) { $ref = git rev-parse --short HEAD 2>$null }
     if (-not $ref) { return '' }
-    return " $($Color.Cyan)git:$($Color.Reset)($($Color.Red)$ref$($Color.Reset))"
+    return $ref
 }
 
 function Get-VenvPrompt {
@@ -49,7 +49,8 @@ function prompt {
     $user = $env:USERNAME
     $machine = Get-MachineName
     $path = $executionContext.SessionState.Path.CurrentLocation.Path
-    $gitBranch = Get-GitBranch
+    $branch = Get-GitBranch
+    $gitBranch = if ($branch) { " $($Color.Cyan)git:$($Color.Reset)($($Color.Red)$branch$($Color.Reset))" } else { '' }
     $venv = Get-VenvPrompt
 
     $arrow = "$($Color.Bold)>$($Color.Reset)"
@@ -59,6 +60,10 @@ function prompt {
     # Tell Windows Terminal the current working directory (OSC 9;9)
     $Host.UI.Write("$ESC]9;9;`"$path`"$ESC\")
 
+    # Set terminal tab/pane title (OSC 2)
+    $dirName = Split-Path $path -Leaf
+    $titleBranch = if ($branch) { " : $branch" } else { '' }
+    $Host.UI.Write("$ESC]2;PS1 | $dirName$titleBranch$([char]7)")
     "`n" +
     "$statusChar " +
     "$($Color.Teal)$user$($Color.Reset) " +

@@ -48,7 +48,7 @@ set lazyredraw               " Enable skipping redraws sometimes
 set noerrorbells visualbell t_vb= " Remove error bell sound
 
 set title
-let &titlestring = (has('nvim') ? 'NVIM' : 'VIM') . ' | %{fnamemodify(getcwd(), ":t")}'
+let &titlestring = (has('nvim') ? 'NVIM' : 'VIM') . ' | %{fnamemodify(getcwd(), ":t")}%{exists("*FugitiveHead")&&len(FugitiveHead()) ? " : ".FugitiveHead() : ""}'
 
 set number                   " Show line numbers
 set relativenumber           " Line numbers are relative to currentline
