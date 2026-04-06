@@ -15,6 +15,8 @@
       description: Installing Neovim
     - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId astral-sh.uv
       description: Installing uv
+    - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId GitHub.cli
+      description: Installing GitHub CLI
 
     # Node.js / npm (scripts refresh PATH and activate fnm)
     - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\node\install.ps1
