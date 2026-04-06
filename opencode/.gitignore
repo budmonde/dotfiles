@@ -1,6 +1,7 @@
 node_modules/
 bun.lock
 package.json
+package-lock.json
 opencode.json
 plugins/retry-on-prefill-error.ts
 skills/glean-cli
