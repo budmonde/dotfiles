@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # push-notify installation script
-# Links binaries and runs platform-specific setup
+# Links the push-notify binary into ~/.local/bin
 
 set -euo pipefail
 
@@ -10,25 +10,4 @@ BIN_DIR="$HOME/.local/bin"
 mkdir -p "$BIN_DIR"
 
 ln -sf "$SCRIPT_DIR/bin/push-notify" "$BIN_DIR/push-notify"
-ln -sf "$SCRIPT_DIR/bin/push-notify-callback" "$BIN_DIR/push-notify-callback"
-echo "Linked push-notify scripts to $BIN_DIR"
-
-detect_platform() {
-    if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
-        echo "wsl"
-    elif [[ "$OSTYPE" == darwin* ]]; then
-        echo "macos"
-    else
-        echo "linux"
-    fi
-}
-
-platform=$(detect_platform)
-platform_script="$SCRIPT_DIR/install.d/$platform.sh"
-
-if [[ -f "$platform_script" ]]; then
-    echo "Running $platform-specific setup..."
-    source "$platform_script"
-else
-    echo "No platform-specific setup for $platform."
-fi
+echo "Linked push-notify to $BIN_DIR"

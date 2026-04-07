@@ -26,6 +26,9 @@
     - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\opencode\install.ps1
       description: Installing opencode
 
+    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\push-notify\install.ps1
+      description: Installing push-notify
+
     # PowerShell modules
     - command: powershell -NoProfile -Command "Install-Module -Name PSFzf -Scope CurrentUser -Force"
       description: Installing PSFzf

@@ -4,17 +4,14 @@
 #
 # Options:
 #   --sound <name>    Play specific sound (platform-dependent)
-#   --pane <id>       Focus this tmux pane when clicked (WSL only)
 #   --silent          No sound at all
+#
+# On WSL, delegates to the Windows push-notify.cmd.
+# macOS/Linux support is not yet implemented.
 
 set -e
 
-SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
-BACKENDS_DIR="$SCRIPT_DIR/../backends"
-
 sound=""
-pane=""
 silent=false
 
 while [[ $# -gt 0 ]]; do
@@ -24,7 +21,6 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --pane)
-            pane="$2"
             shift 2
             ;;
         --silent)
@@ -44,23 +40,17 @@ done
 title="${1:-Notification}"
 message="${2:-Task finished}"
 
-detect_backend() {
-    if [[ -n "$IS_WSL" ]]; then
-        echo "wsl"
-    elif [[ -n "$IS_MACOS" ]]; then
-        echo "macos"
-    else
-        echo "linux"
+if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+    args=()
+    if [[ -n "$sound" ]]; then
+        args+=(--sound "$sound")
     fi
-}
-
-backend=$(detect_backend)
-backend_script="$BACKENDS_DIR/$backend.sh"
-
-if [[ ! -f "$backend_script" ]]; then
-    echo "Error: Backend not found: $backend_script" >&2
+    if [[ "$silent" == true ]]; then
+        args+=(--silent)
+    fi
+    args+=("$title" "$message")
+    cmd.exe /C push-notify "${args[@]}" > /dev/null 2>&1
+else
+    echo "push-notify: no backend available for this platform" >&2
     exit 1
 fi
-
-source "$backend_script"
-send_notification "$title" "$message" "$sound" "$pane" "$silent"
