@@ -3,7 +3,8 @@ import { mkdirSync, appendFileSync, renameSync, existsSync, readFileSync, readdi
 import { homedir } from "os"
 import { join } from "path"
 
-const LOGS_ROOT = join(homedir(), ".local", "share", "opencode", "logs")
+const dataHome = process.env.XDG_DATA_HOME || join(homedir(), ".local", "share")
+const LOGS_ROOT = join(dataHome, "opencode", "logs")
 
 function sanitizePath(path: string): string {
   return path
