@@ -29,7 +29,12 @@
     ~/.pdbrc: python/pdbrc
     ~/.config/npm: npm
     ~/.config/jupyter: jupyter
-    ~/.local/share/jupyter/nbextensions: jupyter/nbextensions
+    $XDG_DATA_HOME/jupyter/nbextensions:
+        path: jupyter/nbextensions
+        if: '[ -n "$XDG_DATA_HOME" ]'
+    ~/.local/share/jupyter/nbextensions:
+        path: jupyter/nbextensions
+        if: '[ -z "$XDG_DATA_HOME" ]'
 
     # Misc
     ~/.config/readline: readline
