@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 # push-notify installation script
-# Links the push-notify binary into ~/.local/bin
+# Links the push-notify binary into ~/.local/bin (WSL only)
 
 set -euo pipefail
+
+if [[ -z "${WSL_DISTRO_NAME:-}" ]]; then
+    echo "Skipping push-notify install (not WSL)."
+    exit 0
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN_DIR="$HOME/.local/bin"

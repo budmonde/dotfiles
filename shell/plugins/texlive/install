@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# === Only run on Linux ===
+# === Only run on Linux (non-cluster) ===
 if [[ "$(uname -s)" != "Linux" ]]; then
     echo "Skipping TeX Live install (not Linux)."
+    exit 0
+fi
+
+if [[ -n "${SLURM_CONF:-}" ]]; then
+    echo "Skipping TeX Live install (cluster detected)."
     exit 0
 fi
 
