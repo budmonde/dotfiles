@@ -5,4 +5,5 @@ package-lock.json
 opencode.json
 plugins/retry-on-prefill-error.ts
 skills/glean-cli
+skills/imdex
 skills/ocmp-*
