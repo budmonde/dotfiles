@@ -29,8 +29,11 @@
     - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\push-notify\install.ps1
       description: Installing push-notify
 
-    # PowerShell modules
-    - command: powershell -NoProfile -Command "Install-Module -Name PSFzf -Scope CurrentUser -Force"
+    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\fonts\install.ps1
+      description: Installing fonts
+
+    # PowerShell modules (bootstraps PackageManagement if needed)
+    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\psfzf\install.ps1
       description: Installing PSFzf
 
     # Symlinks (dotbot link: can't handle these because the target paths
