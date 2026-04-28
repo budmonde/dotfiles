@@ -56,3 +56,7 @@
         -Special Startup\startup.ahk
         -Target windows\ahk\startup.ahk
       description: Symlinking AHK startup script
+
+    # Cleanup
+    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\debloat\cleanup.ps1
+      description: Removing bloatware
