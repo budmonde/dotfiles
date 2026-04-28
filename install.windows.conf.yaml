@@ -9,6 +9,8 @@
       description: Setting up git hooks
 
     # CLI tools (winget wrapper handles "already up-to-date" exit code)
+    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\fzf\install.ps1
+      description: Installing fzf
     - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId Schniz.fnm
       description: Installing fnm
     - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId Neovim.Neovim
