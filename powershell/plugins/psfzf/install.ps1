@@ -2,6 +2,7 @@
 # Bootstraps PackageManagement if needed (PowerShellGet 2.x requires >= 1.4.4,
 # but fresh Windows installs only ship 1.0.0.1)
 
+$ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $minVersion = [Version]'1.4.4'
@@ -26,6 +27,11 @@ if (-not $installed -or $installed.Version -lt $minVersion) {
 
     Import-Module PackageManagement -RequiredVersion $bootstrapVersion -Force
     Write-Host "PackageManagement $bootstrapVersion installed"
+}
+
+# Ensure NuGet provider is present (Install-Module prompts interactively without it)
+if (-not (Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue)) {
+    Install-PackageProvider -Name NuGet -Force -Scope CurrentUser | Out-Null
 }
 
 Install-Module -Name PSFzf -Scope CurrentUser -Force

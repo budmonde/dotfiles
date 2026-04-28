@@ -1,6 +1,7 @@
 # Font installation script (Windows)
 # Fetches font archives from GitHub and installs them to the user font directory.
 
+$ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $fonts = @(
