@@ -1,4 +1,17 @@
-# TODO
+# dotfiles
+
+## Windows Bootstrap
+
+On a fresh Windows machine, run in PowerShell (as admin):
+
+```powershell
+irm https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.ps1 | iex
+```
+
+This ensures winget is on PATH, installs git and python via winget, configures git to use Windows OpenSSH, and enables the ssh-agent service.
+Then follow the printed next steps to add SSH keys, clone, and run `install.ps1`.
+
+## TODO
 
 - Remove .spl file from vim spelling dir
 
