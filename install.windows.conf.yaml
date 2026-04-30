@@ -9,54 +9,54 @@
       description: Setting up git hooks
 
     # CLI tools (winget wrapper handles "already up-to-date" exit code)
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\fzf\install.ps1
+    - command: powershell -NoProfile -File powershell\plugins\fzf\install.ps1
       description: Installing fzf
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId Schniz.fnm
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Schniz.fnm
       description: Installing fnm
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId Neovim.Neovim
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Neovim.Neovim
       description: Installing Neovim
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId astral-sh.uv
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId astral-sh.uv
       description: Installing uv
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId GitHub.cli
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId GitHub.cli
       description: Installing GitHub CLI
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC
       description: Installing ripgrep
 
     # Node.js / npm (scripts refresh PATH and activate fnm)
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\node\install.ps1
+    - command: powershell -NoProfile -File powershell\plugins\node\install.ps1
       description: Installing Node.js LTS
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\opencode\install.ps1
+    - command: powershell -NoProfile -File powershell\plugins\opencode\install.ps1
       description: Installing opencode
 
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\push-notify\install.ps1
+    - command: powershell -NoProfile -File powershell\plugins\push-notify\install.ps1
       description: Installing push-notify
 
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\fonts\install.ps1
+    - command: powershell -NoProfile -File powershell\plugins\fonts\install.ps1
       description: Installing fonts
 
     # PowerShell modules (bootstraps PackageManagement if needed)
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\psfzf\install.ps1
+    - command: powershell -NoProfile -File powershell\plugins\psfzf\install.ps1
       description: Installing PSFzf
 
     # Symlinks (dotbot link: can't handle these because the target paths
     # vary per machine: Documents may be redirected to OneDrive, and WT
     # LocalState lives under a versioned package directory)
     - command: >-
-        powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\mklink.ps1
+        powershell -NoProfile -File windows\bin\mklink.ps1
         -Special MyDocuments\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
         -Target profile.ps1
       description: Symlinking PowerShell profile
     - command: >-
-        powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\mklink.ps1
+        powershell -NoProfile -File windows\bin\mklink.ps1
         -Env %LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json
         -Target windows\terminal\settings.json
       description: Symlinking Windows Terminal settings
     - command: >-
-        powershell -NoProfile -ExecutionPolicy Bypass -File windows\bin\mklink.ps1
+        powershell -NoProfile -File windows\bin\mklink.ps1
         -Special Startup\startup.ahk
         -Target windows\ahk\startup.ahk
       description: Symlinking AHK startup script
 
     # Cleanup
-    - command: powershell -NoProfile -ExecutionPolicy Bypass -File powershell\plugins\debloat\cleanup.ps1
+    - command: powershell -NoProfile -File powershell\plugins\debloat\cleanup.ps1
       description: Removing bloatware
