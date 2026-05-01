@@ -1,0 +1,9 @@
+# Profile: wsl — install WSL and configure Windows-side integration
+# Usage: .\install-extras.ps1 wsl
+# Note: WSL install requires admin privileges and may trigger a reboot.
+
+- shell:
+    - command: powershell -NoProfile -Command "wsl --install --no-launch"
+      description: Installing WSL
+    - command: powershell -NoProfile -File windows\bin\wsl-shortcut.ps1
+      description: Creating WSL terminal shortcut (Ctrl+Alt+T)

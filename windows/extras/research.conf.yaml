@@ -1,0 +1,6 @@
+# Profile: research — academic and research workflow tools
+# Usage: .\install-extras.ps1 research
+
+- shell:
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Mathpix.MathpixSnippingTool
+      description: Installing Mathpix Snipping Tool
