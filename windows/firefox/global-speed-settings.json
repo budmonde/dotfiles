@@ -1,0 +1,352 @@
+{
+  "browserKeybinds": [],
+  "darkTheme": true,
+  "enabled": true,
+  "firstUse": 1777657392540,
+  "hideMediaView": false,
+  "keybindsUrlCondition": {
+    "block": false,
+    "allowParts": [
+      {
+        "id": "9223347995",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.youtube.com",
+        "valueContains": "https://www.youtube.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "7443451841",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.netflix.com",
+        "valueContains": "https://www.netflix.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "7576181241",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.twitch.tv",
+        "valueContains": "https://www.twitch.tv",
+        "valueRegex": ""
+      },
+      {
+        "id": "508845219",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.hulu.com",
+        "valueContains": "https://www.hulu.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "7420823764",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.disneyplus.com",
+        "valueContains": "https://www.disneyplus.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "8841572071",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://play.max.com",
+        "valueContains": "https://play.max.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "445367287",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.amazon.com/gp/video",
+        "valueContains": "https://www.amazon.com/gp/video",
+        "valueRegex": ""
+      },
+      {
+        "id": "8184692266",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.peacocktv.com",
+        "valueContains": "https://www.peacocktv.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "8617054057",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://tv.apple.com",
+        "valueContains": "https://tv.apple.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "5353447937",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.paramountplus.com",
+        "valueContains": "https://www.paramountplus.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "7842312376",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.crunchyroll.com",
+        "valueContains": "https://www.crunchyroll.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "1114403574",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.dailymotion.com",
+        "valueContains": "https://www.dailymotion.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "8649310362",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.bilibili.com",
+        "valueContains": "https://www.bilibili.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "2240884574",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.iqiyi.com",
+        "valueContains": "https://www.iqiyi.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "8988602656",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://v.youku.com",
+        "valueContains": "https://v.youku.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "3948106031",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://v.qq.com",
+        "valueContains": "https://v.qq.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "9174374769",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://pan.baidu.com",
+        "valueContains": "https://pan.baidu.com",
+        "valueRegex": ""
+      },
+      {
+        "id": "1521675017",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.nicovideo.jp",
+        "valueContains": "https://www.nicovideo.jp",
+        "valueRegex": ""
+      },
+      {
+        "id": "5979322362",
+        "type": "STARTS_WITH",
+        "valueStartsWith": "https://www.bbc.com/video",
+        "valueContains": "https://www.bbc.com/video",
+        "valueRegex": ""
+      }
+    ],
+    "blockParts": []
+  },
+  "menuKeybinds": [
+    {
+      "id": "7804345303",
+      "command": "intoPopup",
+      "enabled": true,
+      "greedy": true,
+      "valuePopupRect": {
+        "width": 1000,
+        "height": 800,
+        "left": 1220,
+        "top": 320
+      },
+      "trigger": 2,
+      "labelGsm": "command.intoPopup",
+      "contextLabel": "Into popup",
+      "labelGsmLang": "en"
+    },
+    {
+      "id": "1411501686",
+      "command": "drawPage",
+      "enabled": true,
+      "greedy": true,
+      "trigger": 2,
+      "labelGsm": "command.drawPage",
+      "contextLabel": "Draw on page",
+      "labelGsmLang": "en"
+    },
+    {
+      "id": "8253791026",
+      "command": "cinema",
+      "enabled": true,
+      "greedy": true,
+      "valueState": "toggle",
+      "trigger": 2,
+      "labelGsm": "command.cinema",
+      "contextLabel": "Darken background",
+      "labelGsmLang": "en"
+    },
+    {
+      "id": "1057976309",
+      "command": "fxFilter",
+      "filterOption": "brightness",
+      "enabled": true,
+      "greedy": true,
+      "filterTarget": "element",
+      "adjustMode": 4,
+      "trigger": 2,
+      "labelGsm": "menuLabels.videoBrightness",
+      "labelGsmPrefix": "Fx :: ",
+      "valueItcMin": 0.5,
+      "valueItcMax": 2,
+      "contextLabel": "Fx :: Video brightness",
+      "labelGsmLang": "en"
+    },
+    {
+      "id": "5239730863",
+      "command": "fxFilter",
+      "filterOption": "contrast",
+      "enabled": true,
+      "greedy": true,
+      "filterTarget": "element",
+      "adjustMode": 4,
+      "trigger": 2,
+      "labelGsm": "menuLabels.videoContrast",
+      "labelGsmPrefix": "Fx :: ",
+      "valueItcMin": 0.75,
+      "valueItcMax": 1.25,
+      "contextLabel": "Fx :: Video contrast",
+      "labelGsmLang": "en"
+    },
+    {
+      "id": "7644150947",
+      "command": "fxReset",
+      "enabled": true,
+      "greedy": true,
+      "filterTarget": "both",
+      "trigger": 2,
+      "labelGsm": "token.reset",
+      "labelGsmPrefix": "Fx :: ",
+      "contextLabel": "Fx :: Reset",
+      "labelGsmLang": "en"
+    }
+  ],
+  "pageKeybinds": [
+    {
+      "id": "6494199864",
+      "command": "speed",
+      "enabled": true,
+      "greedy": true,
+      "key": "KeyA",
+      "adjustMode": 2,
+      "valueNumber": -0.1
+    },
+    {
+      "id": "7281156444",
+      "command": "speed",
+      "enabled": true,
+      "greedy": true,
+      "key": "KeyS",
+      "valueNumber": 1
+    },
+    {
+      "id": "43400326",
+      "command": "speed",
+      "enabled": true,
+      "greedy": true,
+      "key": "KeyD",
+      "adjustMode": 2,
+      "valueNumber": 0.1
+    },
+    {
+      "id": "5496674523",
+      "command": "temporarySpeed",
+      "enabled": true,
+      "greedy": true,
+      "valueNumber": 3,
+      "key": "KeyG",
+      "spacing": 1
+    },
+    {
+      "id": "7141023257",
+      "adjustMode": 2,
+      "command": "seek",
+      "enabled": true,
+      "greedy": true,
+      "valueNumber": -5,
+      "key": "KeyZ"
+    },
+    {
+      "id": "9388324057",
+      "adjustMode": 2,
+      "command": "seek",
+      "enabled": true,
+      "greedy": true,
+      "valueNumber": 10,
+      "key": "KeyX"
+    },
+    {
+      "id": "7284218975",
+      "adjustMode": 2,
+      "command": "seek",
+      "enabled": true,
+      "greedy": true,
+      "valueNumber": -1,
+      "key": {
+        "shiftKey": true,
+        "code": "KeyZ"
+      },
+      "duration": 2
+    },
+    {
+      "id": "7671255251",
+      "adjustMode": 2,
+      "command": "seek",
+      "enabled": true,
+      "greedy": true,
+      "valueNumber": 1,
+      "key": {
+        "shiftKey": true,
+        "code": "KeyX"
+      },
+      "duration": 2,
+      "spacing": 1
+    },
+    {
+      "id": "7899087004",
+      "command": "fullscreen",
+      "enabled": true,
+      "greedy": true,
+      "key": {
+        "shiftKey": true,
+        "code": "KeyF"
+      },
+      "direct": true
+    },
+    {
+      "id": "2097688535",
+      "command": "setMark",
+      "enabled": true,
+      "greedy": true,
+      "valueString": "mark1",
+      "key": {
+        "shiftKey": true,
+        "code": "KeyW"
+      }
+    },
+    {
+      "id": "6151185709",
+      "command": "seekMark",
+      "enabled": true,
+      "greedy": true,
+      "valueString": "mark1",
+      "key": "KeyW"
+    },
+    {
+      "id": "805018608",
+      "command": "loop",
+      "enabled": true,
+      "greedy": true,
+      "valueString": "mark1",
+      "key": "KeyR"
+    }
+  ],
+  "sawEnableShortcutOverlayCount": 1,
+  "speed": 1,
+  "version": 14
+}
