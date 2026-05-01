@@ -2,7 +2,10 @@
 
 ## Windows Bootstrap
 
-On a fresh Windows machine, run in PowerShell (as admin):
+On a fresh Windows machine:
+
+1. Set up a local account: upon initial boot, open command prompt (`Shift + F10`) and run `OOBE\BYPASSNRO`.
+2. Run in PowerShell (as admin):
 
 ```powershell
 irm https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.ps1 | iex
@@ -10,23 +13,6 @@ irm https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.ps1 | iex
 
 This ensures winget is on PATH, installs git and python via winget, configures git to use Windows OpenSSH, and enables the ssh-agent service.
 Then follow the printed next steps to add SSH keys, clone, and run `install.ps1`.
-
-## TODO
-
-- Remove .spl file from vim spelling dir
-
-## Installing Neovim on Remote Servers
-
-On servers without root access or where package managers have outdated versions, use the AppImage:
-
-```bash
-mkdir -p ~/.local/bin
-curl -L -o ~/.local/bin/nvim.appimage https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
-chmod +x ~/.local/bin/nvim.appimage
-ln -s nvim.appimage ~/.local/bin/nvim
-```
-
-Ensure `~/.local/bin` is in your PATH (already configured in `shell/bootstrap.sh`).
 
 ## Neovim Plugins to Consider
 
