@@ -8,7 +8,17 @@
     - command: git config core.hooksPath .githooks
       description: Setting up git hooks
 
-    # CLI tools (winget wrapper handles "already up-to-date" exit code)
+    # Desktop tools (winget wrapper handles "already up-to-date" exit code)
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId AutoHotkey.AutoHotkey
+      description: Installing AutoHotkey
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Microsoft.PowerToys
+      description: Installing PowerToys
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Mozilla.Firefox
+      description: Installing Firefox
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Microsoft.VisualStudioCode
+      description: Installing VS Code
+
+    # CLI tools
     - command: powershell -NoProfile -File powershell\plugins\fzf\install.ps1
       description: Installing fzf
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Schniz.fnm
