@@ -53,6 +53,11 @@
     # LocalState lives under a versioned package directory)
     - command: >-
         powershell -NoProfile -File windows\bin\mklink.ps1
+        -Link %USERPROFILE%\.local\bin\mklink.ps1
+        -Target windows\bin\mklink.ps1
+      description: Installing mklink.ps1 to .local/bin
+    - command: >-
+        powershell -NoProfile -File windows\bin\mklink.ps1
         -Special MyDocuments\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
         -Target profile.ps1
       description: Symlinking PowerShell profile

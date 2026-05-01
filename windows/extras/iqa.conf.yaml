@@ -1,0 +1,6 @@
+# Profile: iqa — image quality assessment tools
+# Usage: .\install-extras.ps1 iqa
+
+- shell:
+    - command: winget install --id VideoLAN.VLC --accept-package-agreements --accept-source-agreements
+      description: Installing VLC

@@ -12,7 +12,7 @@ $DOTBOT_DIR = "dotbot"
 $DOTBOT_BIN = "bin/dotbot"
 $BASEDIR = $PSScriptRoot
 
-$ValidProfiles = @("collab", "creative", "gamedev", "gaming", "research", "wsl")
+$ValidProfiles = @("collab", "creative", "gamedev", "gaming", "iqa", "research", "wsl")
 
 if ($Args.Count -eq 0) {
     Write-Host "Available profiles:"
