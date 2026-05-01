@@ -1,0 +1,10 @@
+# Profile: collab — online collaboration tools
+# Usage: .\install-extras.ps1 collab
+
+- shell:
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Discord.Discord
+      description: Installing Discord
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId SlackTechnologies.Slack
+      description: Installing Slack
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Google.GoogleDrive
+      description: Installing Google Drive

@@ -1,0 +1,6 @@
+# Profile: gaming
+# Usage: .\install-extras.ps1 gaming
+
+- shell:
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Valve.Steam
+      description: Installing Steam

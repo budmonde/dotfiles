@@ -1,0 +1,8 @@
+# Profile: creative — digital art and photography tools
+# Usage: .\install-extras.ps1 creative
+
+- shell:
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId BlenderFoundation.Blender
+      description: Installing Blender
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId darktable.darktable
+      description: Installing Darktable
