@@ -55,6 +55,19 @@ if ([string]::IsNullOrWhiteSpace($clonePath)) { $clonePath = $defaultPath }
 
 git clone https://github.com/budmonde/dotfiles.git $clonePath
 
+# --- Switch remote to SSH ------------------------------------------------
+# The clone above uses HTTPS (no auth needed for public repos). Once the
+# user has added their SSH key to the agent + GitHub, we switch to SSH so
+# pushes use the key.
+Write-Host "`nSSH key setup required to switch remote to SSH."
+Write-Host "If you haven't yet, run: ssh-keygen -t ed25519 -f ~/.ssh/git/github_ed25519"
+Write-Host "Then add the public key to GitHub and run: ssh-add ~/.ssh/git/github_ed25519"
+$switch = Read-Host "Switch remote to SSH now? [y/N]"
+if ($switch -eq 'y') {
+    git -C $clonePath remote set-url origin git@github.com:budmonde/dotfiles.git
+    Write-Host "Remote switched to SSH"
+}
+
 Write-Host "`nBootstrap complete. Next steps:"
 Write-Host "  1. cd $clonePath; .\install.ps1"
-Write-Host "  2. ssh-add your keys, then clone dotfiles-local"
+Write-Host "  2. Clone dotfiles-local"
