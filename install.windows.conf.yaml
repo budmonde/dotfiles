@@ -1,6 +1,19 @@
 # Windows-specific configuration (PowerShell)
 # Run via: .\install.ps1 (which loads this after install.conf.yaml)
 # Requires: admin shell (for symlinks), winget, python
+#
+# install.ps1 exports %DOCUMENTS% (via GetFolderPath) before invoking dotbot,
+# so link paths can reference it regardless of OneDrive redirection.
+
+- defaults:
+    link:
+        create: true
+        relink: true
+
+- link:
+    "%DOCUMENTS%\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1": profile.ps1
+    "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json": windows/terminal/settings.json
+    "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\startup.ahk": windows/ahk/startup.ahk
 
 - shell:
     - command: git submodule update --init --recursive
@@ -47,30 +60,6 @@
     # PowerShell modules (bootstraps PackageManagement if needed)
     - command: powershell -NoProfile -File powershell\plugins\psfzf\install.ps1
       description: Installing PSFzf
-
-    # Symlinks (dotbot link: can't handle these because the target paths
-    # vary per machine: Documents may be redirected to OneDrive, and WT
-    # LocalState lives under a versioned package directory)
-    - command: >-
-        powershell -NoProfile -File windows\bin\mklink.ps1
-        -Link %USERPROFILE%\.local\bin\mklink.ps1
-        -Target windows\bin\mklink.ps1
-      description: Installing mklink.ps1 to .local/bin
-    - command: >-
-        powershell -NoProfile -File windows\bin\mklink.ps1
-        -Special MyDocuments\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
-        -Target profile.ps1
-      description: Symlinking PowerShell profile
-    - command: >-
-        powershell -NoProfile -File windows\bin\mklink.ps1
-        -Env %LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json
-        -Target windows\terminal\settings.json
-      description: Symlinking Windows Terminal settings
-    - command: >-
-        powershell -NoProfile -File windows\bin\mklink.ps1
-        -Special Startup\startup.ahk
-        -Target windows\ahk\startup.ahk
-      description: Symlinking AHK startup script
 
     # Cleanup
     - command: powershell -NoProfile -File powershell\plugins\debloat\cleanup.ps1
