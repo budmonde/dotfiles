@@ -61,6 +61,12 @@
     - command: powershell -NoProfile -File powershell\plugins\psfzf\install.ps1
       description: Installing PSFzf
 
+    # Post-link actions
+    - command: >-
+        powershell -NoProfile -Command
+        "Start-Process '%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\startup.ahk' -ArgumentList '/restart'"
+      description: Restarting AHK startup script
+
     # Cleanup
     - command: powershell -NoProfile -File powershell\plugins\debloat\cleanup.ps1
       description: Removing bloatware

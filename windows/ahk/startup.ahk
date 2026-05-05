@@ -1,3 +1,5 @@
+#SingleInstance Force
+
 ; Re-program CapsLock key behavior
 
 CapsLock:: {
