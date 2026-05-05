@@ -1,0 +1,12 @@
+{
+    "properties": {
+        "modifierKey": { "value": 0 },
+        "shouldAbsorbAlt": { "value": true },
+        "showGeometry": { "value": false },
+        "useAltResize": { "value": true },
+        "doNotActivateOnGameMode": { "value": true },
+        "excluded_apps": { "value": "" }
+    },
+    "name": "GrabAndMove",
+    "version": "0.99.1.0"
+}

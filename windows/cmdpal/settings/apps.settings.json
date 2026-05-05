@@ -1,0 +1,9 @@
+{
+    "apps.EnableStartMenuSource": "true",
+    "apps.IncludeNonAppsInStartMenu": "true",
+    "apps.EnableDesktopSource": "true",
+    "apps.IncludeNonAppsOnDesktop": "false",
+    "apps.EnableRegistrySource": "true",
+    "apps.EnablePathEnvironmentVariableSource": "true",
+    "apps.SearchResultLimit": "-1"
+}

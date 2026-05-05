@@ -1,0 +1,23 @@
+{
+    "properties": {
+        "ShowCustomPreview": { "value": true },
+        "CloseAfterLosingFocus": { "value": false },
+        "EnableClipboardPreview": { "value": true },
+        "advanced-paste-ui-hotkey": {
+            "win": true,
+            "ctrl": false,
+            "alt": true,
+            "shift": false,
+            "code": 86,
+            "key": ""
+        },
+        "paste-as-plain-hotkey": {
+            "win": true,
+            "ctrl": true,
+            "alt": true,
+            "shift": false,
+            "code": 86,
+            "key": ""
+        }
+    }
+}
