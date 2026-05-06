@@ -2,5 +2,5 @@
 # Usage: .\install-extras.ps1 iqa
 
 - shell:
-    - command: winget install --id VideoLAN.VLC --accept-package-agreements --accept-source-agreements
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId VideoLAN.VLC
       description: Installing VLC
