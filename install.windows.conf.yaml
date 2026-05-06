@@ -34,7 +34,7 @@
       description: Installing VS Code
 
     # CLI tools
-    - command: powershell -NoProfile -File powershell\plugins\fzf\install.ps1
+    - command: powershell -NoProfile -File shell\plugins\fzf\install.ps1
       description: Installing fzf
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Schniz.fnm
       description: Installing fnm
