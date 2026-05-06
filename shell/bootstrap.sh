@@ -1,6 +1,3 @@
-# Lowest priority paths
-path_append $HOME/.config/shell/plugins/fzf/bin
-
 # Texlive (dynamic platform detection)
 if [ -d "$TEXLIVE_DIR/bin" ]; then
     TEXLIVE_PLATFORM=$(ls "$TEXLIVE_DIR/bin" | head -1)
@@ -20,5 +17,4 @@ path_prepend ${XDG_DATA_HOME:-$HOME/.local/share}/fnm
 
 # Personal paths
 path_prepend $HOME/.local/bin
-path_prepend $HOME/.dotfiles/bin
 path_prepend $HOME/bin

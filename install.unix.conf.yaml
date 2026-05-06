@@ -36,3 +36,7 @@
 
     # WSL-specific
     - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL]
+
+# Symlinks for binaries installed above
+- link:
+    ~/.local/bin/fzf: shell/plugins/fzf/bin/fzf

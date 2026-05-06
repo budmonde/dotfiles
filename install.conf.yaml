@@ -9,8 +9,6 @@
 - clean: ['~', '~/.config']
 
 - link:
-    ~/.dotfiles: ''
-
     # Git / SSH
     ~/.config/git: git
     ~/.ssh/config: ssh/config
@@ -38,3 +36,9 @@
 
     # Misc
     ~/.config/readline: readline
+
+    # Personal bin scripts
+    ~/.local/bin/git-fetch-repos: bin/git-fetch-repos
+    ~/.local/bin/git-filter-repo: bin/git-filter-repo
+    ~/.local/bin/reddit: bin/reddit
+    ~/.local/bin/set-title: bin/set-title

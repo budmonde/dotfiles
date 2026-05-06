@@ -49,7 +49,7 @@ if ((Get-Service ssh-agent).StartType -ne 'Automatic') {
 Start-Service ssh-agent -ErrorAction SilentlyContinue
 
 # --- Clone and install -------------------------------------------------
-$defaultPath = "$HOME\.dotfiles"
+$defaultPath = "$HOME\dotfiles\common"
 $clonePath = Read-Host "Clone path [$defaultPath]"
 if ([string]::IsNullOrWhiteSpace($clonePath)) { $clonePath = $defaultPath }
 
@@ -70,4 +70,4 @@ if ($switch -eq 'y') {
 
 Write-Host "`nBootstrap complete. Next steps:"
 Write-Host "  1. cd $clonePath; .\install.ps1"
-Write-Host "  2. Clone dotfiles-local"
+Write-Host "  2. Clone dotfiles-local into $HOME\dotfiles\local"

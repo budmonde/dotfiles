@@ -76,3 +76,12 @@
     # Cleanup
     - command: powershell -NoProfile -File powershell\plugins\debloat\cleanup.ps1
       description: Removing bloatware
+
+# Symlinks for binaries installed above
+- defaults:
+    link:
+        create: true
+        relink: true
+
+- link:
+    ~/.local/bin/fzf.exe: shell/plugins/fzf/bin/fzf.exe
