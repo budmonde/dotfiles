@@ -26,6 +26,11 @@ export NODE_REPL_HISTORY="${XDG_STATE_HOME:-$HOME/.local/state}/node/history"
 export PYTHONHISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/python/history"
 export DOCKER_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/docker"
 
+# opencode: skip ~/.claude/skills and ~/.agents/skills discovery (IT-pushed
+# skills like managing-omnistation and nvinfo-cli land there). Pull desired
+# skills into ~/.config/opencode/skills/ individually instead.
+export OPENCODE_DISABLE_EXTERNAL_SKILLS=1
+
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 
 if command -v nvim &> /dev/null; then

@@ -13,6 +13,11 @@ $env:DOCKER_CONFIG = "$env:XDG_CONFIG_HOME\docker"
 $env:BUN_INSTALL_CACHE_DIR = "$env:XDG_CACHE_HOME\bun"
 $env:MPLCONFIGDIR = "$env:XDG_CACHE_HOME\matplotlib"
 
+# opencode: skip ~/.claude/skills and ~/.agents/skills discovery (IT-pushed
+# skills like managing-omnistation and nvinfo-cli land there). Pull desired
+# skills into ~/.config/opencode/skills/ individually instead.
+$env:OPENCODE_DISABLE_EXTERNAL_SKILLS = 1
+
 $env:VIRTUAL_ENV_DISABLE_PROMPT = 1
 
 if (Get-Command nvim -ErrorAction SilentlyContinue) {
