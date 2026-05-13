@@ -95,3 +95,4 @@
 
 - link:
     ~/.local/bin/fzf.exe: shell/plugins/fzf/bin/fzf.exe
+    ~/.local/bin/winget-install.ps1: windows/bin/winget-install.ps1
