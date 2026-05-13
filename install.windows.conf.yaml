@@ -17,6 +17,16 @@
     ~/.config/powertoys/settings: windows/powertoys/settings
     ~/.local/bin/Sync-PowerToysSettings.ps1: windows/powertoys/Sync-PowerToysSettings.ps1
 
+    # Git Bash support: minimal bash config so rare bash sessions write history
+    # to XDG-compliant paths (~/.local/state/bash/history) instead of
+    # ~/.bash_history. No content changes needed; .bashrc / .bash_profile
+    # already source ~/.config/{bash,shell}/.
+    ~/.bashrc: bashrc
+    ~/.bash_profile: bash_profile
+    ~/.profile: profile
+    ~/.config/bash: bash
+    ~/.config/shell: shell
+
 - shell:
     - command: git submodule update --init --recursive
       description: Installing submodules
