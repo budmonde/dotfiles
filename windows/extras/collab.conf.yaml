@@ -8,3 +8,5 @@
       description: Installing Slack
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Google.GoogleDrive
       description: Installing Google Drive
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Zoom.Zoom
+      description: Installing Zoom

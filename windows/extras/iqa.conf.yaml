@@ -4,3 +4,5 @@
 - shell:
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId VideoLAN.VLC
       description: Installing VLC
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Gyan.FFmpeg
+      description: Installing FFmpeg
