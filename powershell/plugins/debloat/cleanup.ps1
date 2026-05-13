@@ -14,7 +14,10 @@ $BloatApps = @(
     "Microsoft.WindowsCamera"
     "MicrosoftCorporationII.MicrosoftFamily"
     "MicrosoftCorporationII.QuickAssist"
-    "Microsoft.CommandPalette"
+    "Microsoft.MicrosoftOfficeHub"        # Microsoft 365 Copilot hub
+    "Microsoft.Todos"
+    "Microsoft.WidgetsPlatformRuntime"
+    "MicrosoftWindows.Client.WebExperience" # Windows Web Experience Pack (Widgets)
     "AppUp.IntelTechnologyMDE"          # Intel Unison (phone mirroring)
     "AppUp.IntelManagementandSecurityStatus"
     "aimgr"                             # Local AI Manager for Microsoft 365
