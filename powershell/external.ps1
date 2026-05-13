@@ -11,6 +11,7 @@ $env:GOPATH = "$env:XDG_DATA_HOME\go"
 $env:GOMODCACHE = "$env:XDG_CACHE_HOME\go\mod"
 $env:DOCKER_CONFIG = "$env:XDG_CONFIG_HOME\docker"
 $env:BUN_INSTALL_CACHE_DIR = "$env:XDG_CACHE_HOME\bun"
+$env:MPLCONFIGDIR = "$env:XDG_CACHE_HOME\matplotlib"
 
 $env:VIRTUAL_ENV_DISABLE_PROMPT = 1
 
