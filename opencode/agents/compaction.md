@@ -19,6 +19,7 @@ When compacting conversation context, follow these rules:
 
 4. **Preserve task state**: Keep the current task list, what has been completed, what is in progress, and what is pending.
    Include file paths that were modified.
+   Use the `#DOC<NNN>` / `#TKT<NNN>` handle form when referring to design docs or tickets — handles survive archival renames; full filenames do not.
 
 5. **Discard noise**: Remove pleasantries, repeated confirmations, and intermediate exploration that led to dead ends (unless the dead end itself is informative).
 
@@ -35,7 +36,7 @@ When compacting conversation context, follow these rules:
    b. **Un-persisted state**: If research findings, design decisions, implementation progress, or other intermediate state existed in the conversation but was NOT yet written to any file (AGENTS/ docs, source code, etc.), summarize it here.
       Be specific: "Research on X found Y and Z, not yet recorded in AGENTS/design/."
 
-   c. **Dirty files**: If AGENTS/ documentation may be out of sync with changes made during the session (e.g., architecture changed but ARCHITECTURE.md not updated, tasks completed but TODO.md not flushed), list the files that need reconciliation.
+   c. **Dirty files**: If AGENTS/ documentation may be out of sync with changes made during the session (e.g., architecture changed but `architecture.md` not updated, tasks completed but `todo.md` not flushed), list the files that need reconciliation.
 
    d. **Next action**: State what the agent was doing when compaction occurred and what it should resume doing.
-      Be specific: "Was implementing phase 2 of design doc 042, had completed steps 1-3, next step is 4."
+      Be specific: "Was implementing phase 2 of #DOC042, had completed steps 1-3, next step is 4."
