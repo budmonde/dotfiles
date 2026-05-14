@@ -8,6 +8,10 @@ Only include comments when they provide necessary context or explanation that is
 If the code is human-readable and self-explanatory, omit the comment.
 Prefer clear, descriptive names over comments that restate what the code does.
 
+### Markdown Authoring
+
+Whenever a markdown file is being authored or edited — including `AGENTS.md`, files inside `AGENTS/`, README files, design docs, research artifacts, tickets, and any other `.md` content — load the `markdown` skill first and follow its formatting conventions. This applies to both new files and edits to existing ones.
+
 ## Project Memory Protocol
 
 ### Overview
