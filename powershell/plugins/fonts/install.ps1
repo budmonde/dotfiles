@@ -9,6 +9,11 @@ $fonts = @(
         Repo    = 'microsoft/cascadia-code'
         Pattern = 'CascadiaCode-*.zip'
         Filter  = '*NF*.ttf'
+    },
+    @{
+        Repo    = 'alerque/libertinus'
+        Pattern = 'Libertinus-*.zip'
+        Filter  = '*.otf'
     }
 )
 
@@ -18,8 +23,12 @@ if (-not (Test-Path $fontDir)) { New-Item -ItemType Directory -Path $fontDir -Fo
 $regKey = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
 
 foreach ($font in $fonts) {
+    # Derive file extension from the Filter pattern (e.g. '*.otf' -> '.otf').
+    $ext = [System.IO.Path]::GetExtension($font.Filter)
+    $regSuffix = if ($ext -eq '.otf') { 'OpenType' } else { 'TrueType' }
+
     # Skip download if matching fonts are already installed.
-    $existing = Get-ChildItem $fontDir -Filter '*.ttf' -ErrorAction SilentlyContinue |
+    $existing = Get-ChildItem $fontDir -Filter "*$ext" -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -like $font.Filter }
     if ($existing) {
         Write-Host "Fonts from $($font.Repo) already installed"
@@ -41,14 +50,14 @@ foreach ($font in $fonts) {
     Expand-Archive -Path $zip -DestinationPath $extractDir -Force
 
     $installed = 0
-    Get-ChildItem $extractDir -Recurse -Filter '*.ttf' |
+    Get-ChildItem $extractDir -Recurse -Filter "*$ext" |
         Where-Object { $_.Name -like $font.Filter } |
         ForEach-Object {
             $dest = Join-Path $fontDir $_.Name
             if (-not (Test-Path $dest)) {
                 Copy-Item $_.FullName $dest
                 $fontName = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
-                Set-ItemProperty -Path $regKey -Name "$fontName (TrueType)" -Value $dest
+                Set-ItemProperty -Path $regKey -Name "$fontName ($regSuffix)" -Value $dest
                 $installed++
             }
         }
