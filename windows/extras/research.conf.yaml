@@ -2,9 +2,7 @@
 # Usage: .\install-extras.ps1 research
 
 - shell:
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Mathpix.MathpixSnippingTool
-      description: Installing Mathpix Snipping Tool
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId TeXstudio.TeXstudio
-      description: Installing TeXstudio
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId MiKTeX.MiKTeX
+      description: Installing MiKTeX
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Google.Chrome
       description: Installing Google Chrome
