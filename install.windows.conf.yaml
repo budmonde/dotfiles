@@ -95,4 +95,5 @@
 
 - link:
     ~/.local/bin/fzf.exe: shell/plugins/fzf/bin/fzf.exe
+    ~/.local/bin/imgen.cmd: windows/bin/imgen.cmd
     ~/.local/bin/winget-install.ps1: windows/bin/winget-install.ps1

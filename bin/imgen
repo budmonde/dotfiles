@@ -1,0 +1,232 @@
+#!/usr/bin/env python3
+# ========================================================
+# imgen - Generate images from text prompts
+#
+# A minimal, dependency-free CLI for OpenAI-compatible image
+# generation endpoints (POST /v1/images/generations). Writes
+# the resulting image bytes to a file on disk.
+#
+# Configuration (env vars, both required):
+#   IMGEN_BASE_URL   Base URL of the inference endpoint, with
+#                    the /v1 suffix included. Example:
+#                      https://api.openai.com/v1
+#   IMGEN_API_KEY    Bearer token for the endpoint. Typically
+#                    sourced from an existing secret in your
+#                    shell profile, e.g. on PowerShell:
+#                      $env:IMGEN_API_KEY = $env:OPENAI_API_KEY
+#                    or on POSIX:
+#                      export IMGEN_API_KEY="$OPENAI_API_KEY"
+#
+# Optional:
+#   IMGEN_DEFAULT_MODEL  Default --model when not supplied on
+#                        the command line.
+#
+# Usage:
+#   imgen [-m MODEL] [-s SIZE] [-n N] [-q QUALITY] -o OUTPUT (PROMPT | -p FILE)
+#
+# Options:
+#   -p, --prompt-file PATH Read the prompt from this file instead of the
+#                          positional argument. The file's contents are used
+#                          verbatim (outer whitespace trimmed). Exactly one
+#                          of PROMPT or --prompt-file must be supplied.
+#   -m, --model MODEL      Model id as understood by the configured endpoint
+#                          (e.g. gpt-image-1). Falls back to
+#                          $IMGEN_DEFAULT_MODEL.
+#   -s, --size SIZE        Image size, e.g. 1024x1024 (default:
+#                          server default; many models accept
+#                          1024x1024, 1024x1792, 1792x1024).
+#   -n, --count N          Number of images (default: 1). When >1,
+#                          OUTPUT is treated as a stem and files
+#                          are named OUTPUT, OUTPUT-1, OUTPUT-2, ...
+#   -q, --quality QUALITY  Optional quality hint (e.g. standard,
+#                          hd, low, medium, high) - passed through
+#                          only if specified.
+#   -o, --output PATH      Output file path (required). Parent
+#                          directory is created if missing.
+#       --dry-run          Print the request URL, headers (with the
+#                          key redacted), and body; do not send.
+#       --timeout SECONDS  Request timeout (default: 300). Image generation
+#                          is a single blocking request with no streaming or
+#                          progress events; this is the maximum total wait.
+#   -h, --help             Show this help.
+#
+# Examples:
+#   imgen -o cat.png "a red cat on a sunny windowsill"
+#   imgen -p cat.prompt.md -o cat.png
+#   imgen -m gpt-image-1 -s 1024x1024 \
+#         -o out.png "isometric pixel-art cottage"
+#   imgen --dry-run -p cat.prompt.md -o cat.png   # verify the request
+#
+# Exit codes:
+#   0  success
+#   1  usage / config error
+#   2  network error
+#   3  API error (non-2xx response)
+#   4  malformed response (no image data)
+# ========================================================
+
+from __future__ import annotations
+
+import argparse
+import base64
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+
+def die(code: int, msg: str) -> "None":
+    print(f"imgen: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        prog="imgen",
+        description="Generate images via an OpenAI-compatible /v1/images/generations endpoint.",
+        add_help=True,
+    )
+    p.add_argument("prompt", nargs="?", default=None, help="Text prompt for the image (omit if using --prompt-file).")
+    p.add_argument("-o", "--output", required=True, help="Output file path.")
+    p.add_argument("-p", "--prompt-file", default=None, help="Read the prompt from this file instead of the positional arg.")
+    p.add_argument("-m", "--model", default=None, help="Model id (overrides IMGEN_DEFAULT_MODEL).")
+    p.add_argument("-s", "--size", default=None, help="Image size, e.g. 1024x1024.")
+    p.add_argument("-n", "--count", type=int, default=1, help="Number of images (default: 1).")
+    p.add_argument("-q", "--quality", default=None, help="Optional quality hint.")
+    p.add_argument("--timeout", type=float, default=300.0, help="Request timeout in seconds.")
+    p.add_argument("--dry-run", action="store_true", help="Print the request and exit without sending.")
+    return p.parse_args()
+
+
+def load_prompt(args: argparse.Namespace) -> str:
+    if args.prompt is not None and args.prompt_file is not None:
+        die(1, "specify either a positional prompt or --prompt-file, not both.")
+    if args.prompt_file is not None:
+        try:
+            text = Path(args.prompt_file).read_text(encoding="utf-8")
+        except OSError as e:
+            die(1, f"could not read --prompt-file {args.prompt_file!r}: {e}")
+        text = text.strip()
+        if not text:
+            die(1, f"--prompt-file {args.prompt_file!r} is empty.")
+        return text
+    if args.prompt is None:
+        die(1, "no prompt provided (pass a positional prompt or --prompt-file).")
+    return args.prompt
+
+
+def resolve_config(args: argparse.Namespace) -> tuple[str, str, str]:
+    base_url = os.environ.get("IMGEN_BASE_URL", "").rstrip("/")
+    api_key = os.environ.get("IMGEN_API_KEY", "")
+    if not base_url:
+        die(1, "IMGEN_BASE_URL is not set. Example: https://api.openai.com/v1")
+    if not api_key:
+        die(1, "IMGEN_API_KEY is not set.")
+    model = args.model or os.environ.get("IMGEN_DEFAULT_MODEL", "")
+    if not model:
+        die(1, "no model specified (use --model or set IMGEN_DEFAULT_MODEL).")
+    return base_url, api_key, model
+
+
+def build_body(prompt: str, model: str, size: str | None, n: int, quality: str | None) -> dict:
+    body: dict = {
+        "model": model,
+        "prompt": prompt,
+        "n": n,
+        "response_format": "b64_json",
+    }
+    if size:
+        body["size"] = size
+    if quality:
+        body["quality"] = quality
+    return body
+
+
+def write_image(b64: str, path: Path) -> None:
+    try:
+        bytes_ = base64.b64decode(b64, validate=True)
+    except (ValueError, base64.binascii.Error) as e:
+        die(4, f"failed to decode base64 image data: {e}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(bytes_)
+
+
+def output_paths(stem: Path, n: int) -> list[Path]:
+    if n <= 1:
+        return [stem]
+    suffix = stem.suffix
+    base = stem.with_suffix("")
+    return [stem] + [base.with_name(f"{base.name}-{i}{suffix}") for i in range(1, n)]
+
+
+def main() -> None:
+    args = parse_args()
+    base_url, api_key, model = resolve_config(args)
+    prompt = load_prompt(args)
+
+    if args.count < 1:
+        die(1, "--count must be >= 1")
+
+    url = f"{base_url}/images/generations"
+    body = build_body(prompt, model, args.size, args.count, args.quality)
+    body_bytes = json.dumps(body).encode("utf-8")
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    if args.dry_run:
+        redacted = dict(headers)
+        redacted["Authorization"] = "Bearer <redacted>"
+        print(f"POST {url}")
+        for k, v in redacted.items():
+            print(f"{k}: {v}")
+        print()
+        print(json.dumps(body, indent=2))
+        return
+
+    req = urllib.request.Request(url, data=body_bytes, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=args.timeout) as resp:
+            raw = resp.read()
+    except urllib.error.HTTPError as e:
+        try:
+            err_body = e.read().decode("utf-8", errors="replace")
+        except Exception:
+            err_body = ""
+        die(3, f"HTTP {e.code} from {url}: {err_body or e.reason}")
+    except urllib.error.URLError as e:
+        die(2, f"network error contacting {url}: {e.reason}")
+    except TimeoutError:
+        die(2, f"request to {url} timed out after {args.timeout}s")
+
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as e:
+        die(4, f"response was not JSON: {e}")
+
+    data = payload.get("data")
+    if not isinstance(data, list) or not data:
+        die(4, f"response missing 'data' array: {payload!r}")
+
+    out_stem = Path(args.output)
+    targets = output_paths(out_stem, args.count)
+
+    for i, item in enumerate(data):
+        if i >= len(targets):
+            break
+        b64 = item.get("b64_json")
+        if not b64:
+            url_field = item.get("url")
+            if url_field:
+                die(4, f"server returned a URL instead of b64_json (not supported): {url_field}")
+            die(4, f"image {i} has neither b64_json nor url: {item!r}")
+        write_image(b64, targets[i])
+        print(str(targets[i]))
+
+
+if __name__ == "__main__":
+    main()

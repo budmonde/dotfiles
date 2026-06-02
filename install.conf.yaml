@@ -40,5 +40,6 @@
     # Personal bin scripts
     ~/.local/bin/git-fetch-repos: bin/git-fetch-repos
     ~/.local/bin/git-filter-repo: bin/git-filter-repo
+    ~/.local/bin/imgen: bin/imgen
     ~/.local/bin/reddit: bin/reddit
     ~/.local/bin/set-title: bin/set-title
