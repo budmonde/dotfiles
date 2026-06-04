@@ -1,0 +1,10 @@
+# Profile: agentic — agentic-coding CLI tooling
+# Usage: .\install-extras.ps1 agentic
+#
+# Installs the upstream opencode CLI via npm. The local repo's `agentic`
+# profile installs the NVIDIA-internal fork instead; the two are mutually
+# exclusive — pick whichever is appropriate for the machine.
+
+- shell:
+    - command: powershell -NoProfile -File powershell\plugins\opencode\install.ps1
+      description: Installing opencode

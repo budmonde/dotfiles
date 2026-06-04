@@ -60,8 +60,6 @@
     # Node.js / npm (scripts refresh PATH and activate fnm)
     - command: powershell -NoProfile -File powershell\plugins\node\install.ps1
       description: Installing Node.js LTS
-    - command: powershell -NoProfile -File powershell\plugins\opencode\install.ps1
-      description: Installing opencode
 
     - command: powershell -NoProfile -File powershell\plugins\push-notify\install.ps1
       description: Installing push-notify

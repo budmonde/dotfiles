@@ -1,6 +1,6 @@
 # Install optional application profiles via dotbot.
 # Usage: .\install-extras.ps1 <profile> [profile...]
-# Profiles: collab, gaming, creative, gamedev
+# Profiles: agentic, collab, creative, dev, gamedev, gaming, iqa, research, wsl
 #
 # Examples:
 #   .\install-extras.ps1 collab
@@ -12,7 +12,7 @@ $DOTBOT_DIR = "dotbot"
 $DOTBOT_BIN = "bin/dotbot"
 $BASEDIR = $PSScriptRoot
 
-$ValidProfiles = @("collab", "creative", "dev", "gamedev", "gaming", "iqa", "research", "wsl")
+$ValidProfiles = @("agentic", "collab", "creative", "dev", "gamedev", "gaming", "iqa", "research", "wsl")
 
 if ($Args.Count -eq 0) {
     Write-Host "Available profiles:"
