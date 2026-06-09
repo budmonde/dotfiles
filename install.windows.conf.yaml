@@ -32,6 +32,8 @@
       description: Installing submodules
     - command: git config core.hooksPath .githooks
       description: Setting up git hooks
+    - command: powershell -NoProfile -Command "foreach ($h in 'commit-msg','post-commit') { New-Item -ItemType SymbolicLink -Force -Path \".githooks/$h\" -Target \"$HOME/.config/git/hooks/$h\" | Out-Null }"
+      description: Linking global git hooks into .githooks
 
     # Desktop tools (winget wrapper handles "already up-to-date" exit code)
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId AutoHotkey.AutoHotkey

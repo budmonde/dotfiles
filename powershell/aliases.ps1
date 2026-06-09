@@ -18,3 +18,4 @@ function cdp {
         Write-Host "Error: '$Target' is not a valid file or directory"
     }
 }
+function opencode { & opencode.exe --hostname 127.0.0.1 @args }

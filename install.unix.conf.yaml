@@ -23,6 +23,8 @@
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
     - [git config core.hooksPath .githooks, Setting up git hooks]
+    - ['for h in commit-msg post-commit; do ln -sfn "$HOME/.config/git/hooks/$h" ".githooks/$h"; done', Linking global git hooks into .githooks]
+    - ['chmod +x git/hooks/commit-msg git/hooks/post-commit 2>/dev/null || true', Marking global hook scripts executable]
 
     # CLI tools
     - [./shell/plugins/fzf/install --bin, Installing fzf]

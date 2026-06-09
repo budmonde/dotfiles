@@ -1,0 +1,289 @@
+#!/usr/bin/env node
+// Audit a proposed commit message via the OpenCode HTTP server.
+//
+// Reads the canonical message from $1 ($GIT_DIR/COMMIT_EDITMSG), dispatches
+// the auditor agent through the OpenCode server identified by
+// OPENCODE_SERVER_URL (injected by the opencode-env plugin's shell.env hook),
+// parses the verdict, and applies it: rewrite the file in place for REWRITE,
+// exit non-zero with rationale on stderr for REJECT, no-op for APPROVE.
+//
+// Discovery env vars (set by the OpenCode plugin):
+//   OPENCODE_SERVER_URL       required to dispatch the auditor
+//   OPENCODE_SESSION_ID       parent session for the auditor child-session
+//   OPENCODE_CALL_ID          correlation ID for debug logging
+//   OPENCODE_PROJECT_DIR      project directory the session is bound to
+//   OPENCODE_SERVER_USERNAME  HTTP Basic auth user (pass-through)
+//   OPENCODE_SERVER_PASSWORD  HTTP Basic auth password (pass-through)
+//
+// When OPENCODE_SERVER_URL is unset (commit issued outside opencode), the
+// hook runs in local-policy-only mode: a fast textual check against the
+// [TAG] convention, then exit 0 with a hint.
+//
+// When OPENCODE_SERVER_URL is set but the server is unreachable, the hook
+// fails open: print a warning that the commit was not audited, exit 0.
+
+"use strict";
+
+const fs = require("fs");
+const path = require("path");
+const { makeDebug, gitOutput, httpJson, withTimeout } = require(path.join(__dirname, "lib"));
+
+const HOOK_TAG = "[commit-msg]";
+const AUDITOR_AGENT = process.env.OPENCODE_AUDITOR_AGENT || "commit-auditor";
+const MSG_FILE = process.argv[2];
+
+const debug = makeDebug(HOOK_TAG);
+
+function isSpecialCommit() {
+    const gitDir = gitOutput("rev-parse --git-dir");
+    if (!gitDir) return false;
+    for (const marker of ["MERGE_MSG", "SQUASH_MSG", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply"]) {
+        if (fs.existsSync(path.join(gitDir, marker))) {
+            debug(`skipping audit: ${marker} present`);
+            return true;
+        }
+    }
+    return false;
+}
+
+function stripComments(text) {
+    return text
+        .split(/\r?\n/)
+        .filter((line) => !/^\s*#/.test(line))
+        .join("\n")
+        .replace(/\n+$/, "");
+}
+
+function localPolicyCheck() {
+    let body;
+    try {
+        body = fs.readFileSync(MSG_FILE, "utf8");
+    } catch {
+        return;
+    }
+    const subject = stripComments(body).split(/\r?\n/)[0] || "";
+    if (!subject) return;
+    if (!/^\[[^\]]+\] /.test(subject)) {
+        process.stderr.write(
+            `${HOOK_TAG} local-policy warning: subject missing [TAG] prefix per wiki/workflow.md commit convention.\n`,
+        );
+    }
+}
+
+function buildPrompt(messageText, cwd, repo) {
+    return `You are auditing a proposed commit message captured by the \`commit-msg\` git hook.
+Your role, disposition, mandatory pre-verdict checklist, convention-discovery routing, and self-check gates are defined in your agent definition (\`commit-auditor.md\`). Apply them now.
+
+Read the staged diff with \`git diff --cached\` (or \`git -C <repo> diff --cached\` if the cwd differs from the target repo) and consult the project convention before emitting a verdict.
+
+cwd: ${cwd}
+repo: ${repo}
+
+Proposed commit message:
+
+\`\`\`
+${messageText}
+\`\`\`
+
+Return EXACTLY one of three verdicts, with no preamble or trailing text. The calling git hook parses these tokens mechanically.
+
+1. APPROVE — the staged diff is non-empty and the proposed message conforms to every applicable convention rule with positive evidence from every checklist step:
+
+APPROVE
+
+2. REWRITE — the message needs correction. Emit the corrected message text (NOT a shell command — the hook will write it back to COMMIT_EDITMSG verbatim). The rewritten message must include a real subject grounded in the diff, the correct [TAG], and a body if the convention requires provenance. Format:
+
+REWRITE
+<the full corrected commit message text, including subject, blank line, and body if needed>
+---
+<rationale>
+
+3. REJECT — the commit should not happen at all (empty staged index; diff contains files that violate a hygiene/scope rule; branch policy forbids commits to the current branch; any condition where no message rewrite would make the commit valid). Format:
+
+REJECT
+---
+<rationale>
+
+The rationale must name the specific convention rule(s) violated, name the specific files in the diff that justify the chosen tag, and avoid hedge language.
+`;
+}
+
+function parseVerdict(raw) {
+    const rejectMatch = raw.match(/(?:^|\n)REJECT\b\s*\r?\n---\r?\n([\s\S]*?)\s*$/i);
+    if (rejectMatch) {
+        return { kind: "REJECT", rationale: rejectMatch[1].trim() };
+    }
+    const rewriteMatch = raw.match(/(?:^|\n)REWRITE\b\s*\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*?)\s*$/i);
+    if (rewriteMatch) {
+        return { kind: "REWRITE", message: rewriteMatch[1].trim(), rationale: rewriteMatch[2].trim() };
+    }
+    if (/(?:^|\n)APPROVE\s*$/im.test(raw)) {
+        return { kind: "APPROVE" };
+    }
+    return { kind: "UNKNOWN" };
+}
+
+function extractVerdictText(promptResponseData) {
+    if (!promptResponseData) return "";
+    const parts = promptResponseData.parts || [];
+    for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        if (p && p.type === "text" && typeof p.text === "string" && p.text.length > 0) {
+            return p.text.trim();
+        }
+    }
+    return "";
+}
+
+async function main() {
+    if (!MSG_FILE) {
+        process.stderr.write(`${HOOK_TAG} usage: commit-msg <message-file>\n`);
+        process.exit(0);
+    }
+
+    if (isSpecialCommit()) {
+        process.exit(0);
+    }
+
+    if (!process.env.OPENCODE_SERVER_URL) {
+        localPolicyCheck();
+        debug(`outside-opencode commit, local policy mode`);
+        process.exit(0);
+    }
+
+    let messageText;
+    try {
+        messageText = fs.readFileSync(MSG_FILE, "utf8");
+    } catch (err) {
+        process.stderr.write(`${HOOK_TAG} WARNING: cannot read message file (${err.message}); commit NOT audited.\n`);
+        process.exit(0);
+    }
+
+    const repoToplevel = gitOutput("rev-parse --show-toplevel") || process.cwd();
+    const projectDir = process.env.OPENCODE_PROJECT_DIR || repoToplevel;
+    const serverBase = process.env.OPENCODE_SERVER_URL.replace(/\/$/, "");
+    const directoryQuery = `?directory=${encodeURIComponent(projectDir)}`;
+
+    debug(
+        `dispatching auditor: server=${serverBase} session=${process.env.OPENCODE_SESSION_ID || "<none>"} call=${process.env.OPENCODE_CALL_ID || "<none>"}`,
+    );
+
+    const createBody = { title: "[git-hook:commit-msg] running" };
+    if (process.env.OPENCODE_SESSION_ID) createBody.parentID = process.env.OPENCODE_SESSION_ID;
+
+    let createRes;
+    try {
+        createRes = await withTimeout(
+            httpJson("POST", `${serverBase}/session${directoryQuery}`, createBody),
+            10_000,
+            "session.create",
+        );
+    } catch (err) {
+        process.stderr.write(`${HOOK_TAG} WARNING: opencode server unreachable (${err.message}); commit NOT audited.\n`);
+        debug(`session.create failed: ${err.message}`);
+        process.exit(0);
+    }
+
+    if (!createRes.ok || !createRes.data || !createRes.data.id) {
+        process.stderr.write(
+            `${HOOK_TAG} WARNING: opencode session creation failed (status=${createRes.status}); commit NOT audited.\n`,
+        );
+        debug(`session.create bad response: ${createRes.text}`);
+        process.exit(0);
+    }
+
+    const auditorSessionId = createRes.data.id;
+    debug(`created auditor session ${auditorSessionId}`);
+
+    const promptBody = {
+        agent: AUDITOR_AGENT,
+        parts: [{ type: "text", text: buildPrompt(messageText, process.cwd(), repoToplevel) }],
+    };
+
+    let promptRes;
+    try {
+        promptRes = await withTimeout(
+            httpJson("POST", `${serverBase}/session/${auditorSessionId}/message${directoryQuery}`, promptBody),
+            300_000,
+            "session.prompt",
+        );
+    } catch (err) {
+        process.stderr.write(`${HOOK_TAG} WARNING: auditor dispatch failed (${err.message}); commit NOT audited.\n`);
+        process.stderr.write(`${HOOK_TAG} auditor session: ${auditorSessionId}\n`);
+        debug(`session.prompt failed: ${err.message}`);
+        process.exit(0);
+    }
+
+    if (!promptRes.ok) {
+        process.stderr.write(
+            `${HOOK_TAG} WARNING: auditor dispatch returned status ${promptRes.status}; commit NOT audited.\n`,
+        );
+        process.stderr.write(`${HOOK_TAG} auditor session: ${auditorSessionId}\n`);
+        debug(`session.prompt bad status: ${promptRes.text}`);
+        process.exit(0);
+    }
+
+    const verdictText = extractVerdictText(promptRes.data);
+    if (!verdictText) {
+        process.stderr.write(`${HOOK_TAG} WARNING: auditor returned no verdict; commit NOT audited.\n`);
+        process.stderr.write(`${HOOK_TAG} auditor session: ${auditorSessionId}\n`);
+        debug(`empty verdict, resp=${promptRes.text.slice(0, 500)}`);
+        process.exit(0);
+    }
+
+    debug(`verdict text length=${verdictText.length}`);
+
+    const verdict = parseVerdict(verdictText);
+
+    if (verdict.kind === "APPROVE") {
+        const subject = stripComments(fs.readFileSync(MSG_FILE, "utf8")).split(/\r?\n/)[0] || "";
+        process.stdout.write(`${HOOK_TAG} APPROVE: ${subject}\n`);
+        process.stdout.write(`${HOOK_TAG} auditor session: ${auditorSessionId}\n`);
+        debug(`APPROVE`);
+        process.exit(0);
+    }
+
+    if (verdict.kind === "REWRITE") {
+        if (!verdict.message) {
+            process.stderr.write(`${HOOK_TAG} WARNING: REWRITE verdict had empty message; commit NOT audited.\n`);
+            process.stderr.write(`${HOOK_TAG} auditor session: ${auditorSessionId}\n`);
+            process.exit(0);
+        }
+        const originalSubject = stripComments(fs.readFileSync(MSG_FILE, "utf8")).split(/\r?\n/)[0] || "";
+        fs.writeFileSync(MSG_FILE, verdict.message.endsWith("\n") ? verdict.message : verdict.message + "\n");
+        const newSubject = stripComments(verdict.message).split(/\r?\n/)[0] || "";
+        process.stdout.write(`${HOOK_TAG} REWRITE\n`);
+        process.stdout.write(`${HOOK_TAG}   original: ${originalSubject}\n`);
+        process.stdout.write(`${HOOK_TAG}   rewritten: ${newSubject}\n`);
+        process.stdout.write(`${HOOK_TAG} rationale:\n`);
+        for (const line of verdict.rationale.split(/\r?\n/)) {
+            process.stdout.write(`${HOOK_TAG}   ${line}\n`);
+        }
+        process.stdout.write(`${HOOK_TAG} auditor session: ${auditorSessionId}\n`);
+        debug(`REWRITE applied`);
+        process.exit(0);
+    }
+
+    if (verdict.kind === "REJECT") {
+        process.stderr.write(`${HOOK_TAG} REJECT\n`);
+        process.stderr.write(`${HOOK_TAG} rationale:\n`);
+        for (const line of verdict.rationale.split(/\r?\n/)) {
+            process.stderr.write(`${HOOK_TAG}   ${line}\n`);
+        }
+        process.stderr.write(`${HOOK_TAG} auditor session: ${auditorSessionId}\n`);
+        process.stderr.write(`${HOOK_TAG} address the rationale before retrying.\n`);
+        debug(`REJECT`);
+        process.exit(1);
+    }
+
+    process.stderr.write(`${HOOK_TAG} WARNING: auditor verdict unparseable; commit NOT audited.\n`);
+    process.stderr.write(`${HOOK_TAG} auditor session: ${auditorSessionId}\n`);
+    debug(`unparseable verdict: ${verdictText.slice(0, 500)}`);
+    process.exit(0);
+}
+
+main().catch((err) => {
+    process.stderr.write(`${HOOK_TAG} WARNING: unexpected error (${err.message}); commit NOT audited.\n`);
+    debug(`unexpected error: ${err.stack || err.message}`);
+    process.exit(0);
+});

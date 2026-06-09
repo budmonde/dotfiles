@@ -3,3 +3,5 @@ tags
 opencode.json
 opencode/agents/nv_*.md
 __pycache__/
+.githooks/commit-msg
+.githooks/post-commit

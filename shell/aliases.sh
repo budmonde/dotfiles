@@ -41,6 +41,10 @@ alias v='$EDITOR -p'
 alias vs='NVIM_SESSION=1 nvim'
 alias pjson='python -m json.tool'
 
+opencode() {
+    command opencode --hostname 127.0.0.1 "$@"
+}
+
 if [ -n "$IS_WSL" ]; then
     alias pdf-viewer-pipe="xargs $PDF_VIEWER"
 fi

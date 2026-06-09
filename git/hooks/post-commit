@@ -1,0 +1,97 @@
+#!/usr/bin/env node
+// Rename the auditor session created by the commit-msg hook so it carries
+// the commit hash and subject. Non-blocking by design: git ignores this
+// hook's exit code, and a missed rename leaves the auditor session with
+// its create-time title, which is still readable.
+
+"use strict";
+
+const path = require("path");
+const { makeDebug, gitOutput, httpJson, withTimeout } = require(path.join(__dirname, "lib"));
+
+const HOOK_TAG = "[post-commit]";
+const debug = makeDebug(HOOK_TAG);
+
+async function main() {
+    if (!process.env.OPENCODE_SERVER_URL) process.exit(0);
+
+    const info = gitOutput("log -1 --format=%H%x00%s HEAD");
+    if (!info) process.exit(0);
+    const [hash, ...subjParts] = info.split("\0");
+    const subject = subjParts.join("\0").trim();
+    if (!hash) process.exit(0);
+
+    const shortHash = hash.slice(0, 12);
+    const title = `[git-hook:commit-msg] ${shortHash}: ${subject}`;
+    const serverBase = process.env.OPENCODE_SERVER_URL.replace(/\/$/, "");
+    const projectDir =
+        process.env.OPENCODE_PROJECT_DIR || gitOutput("rev-parse --show-toplevel") || process.cwd();
+    const directoryQuery = `?directory=${encodeURIComponent(projectDir)}`;
+
+    let listRes;
+    try {
+        listRes = await withTimeout(
+            httpJson("GET", `${serverBase}/session${directoryQuery}`),
+            5_000,
+            "session.list",
+        );
+    } catch (err) {
+        debug(`session.list failed: ${err.message}`);
+        process.exit(0);
+    }
+
+    if (!listRes.ok || !Array.isArray(listRes.data)) {
+        debug(`session.list bad response status=${listRes.status}`);
+        process.exit(0);
+    }
+
+    const titlePrefix = "[git-hook:commit-msg] running";
+    const parentId = process.env.OPENCODE_SESSION_ID || null;
+    const candidates = listRes.data.filter((s) => {
+        if (!s || typeof s.title !== "string") return false;
+        if (!s.title.startsWith(titlePrefix)) return false;
+        if (parentId && s.parentID !== parentId) return false;
+        return true;
+    });
+    candidates.sort((a, b) => {
+        const at = (a.time && (a.time.updated || a.time.created)) || 0;
+        const bt = (b.time && (b.time.updated || b.time.created)) || 0;
+        return bt - at;
+    });
+
+    const target = candidates[0];
+    if (!target || !target.id) {
+        debug(`no matching auditor session found`);
+        process.exit(0);
+    }
+
+    let updateRes;
+    try {
+        updateRes = await withTimeout(
+            httpJson("PATCH", `${serverBase}/session/${target.id}${directoryQuery}`, { title }),
+            5_000,
+            "session.update",
+        );
+    } catch (err) {
+        process.stderr.write(`${HOOK_TAG} WARNING: failed to rename auditor session ${target.id} (${err.message})\n`);
+        debug(`session.update failed: ${err.message}`);
+        process.exit(0);
+    }
+
+    if (!updateRes.ok) {
+        process.stderr.write(
+            `${HOOK_TAG} WARNING: failed to rename auditor session ${target.id} (status ${updateRes.status})\n`,
+        );
+        debug(`session.update bad status: ${updateRes.text}`);
+        process.exit(0);
+    }
+
+    process.stdout.write(`${HOOK_TAG} renamed auditor session ${target.id} -> "${title}"\n`);
+    debug(`renamed ${target.id}`);
+    process.exit(0);
+}
+
+main().catch((err) => {
+    debug(`unexpected error: ${err.stack || err.message}`);
+    process.exit(0);
+});
