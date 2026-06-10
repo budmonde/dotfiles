@@ -26,7 +26,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { makeDebug, gitOutput, httpJson, withTimeout } = require(path.join(__dirname, "lib"));
+const { makeDebug, gitOutput, httpJson, withTimeout, sanitizeToAscii } = require(path.join(__dirname, "lib"));
 
 const HOOK_TAG = "[commit-msg]";
 const AUDITOR_AGENT = process.env.OPENCODE_AUDITOR_AGENT || "commit-auditor";
@@ -112,9 +112,36 @@ function extractVerdictText(promptResponseData) {
     return "";
 }
 
+async function sanitizeMessageFile() {
+    let raw;
+    try {
+        raw = fs.readFileSync(MSG_FILE, "utf8");
+    } catch (err) {
+        return { ok: false, error: err.message, text: "" };
+    }
+    const { text: sanitized, changed } = await sanitizeToAscii(raw);
+    if (changed) {
+        try {
+            fs.writeFileSync(MSG_FILE, sanitized);
+            process.stdout.write(`${HOOK_TAG} sanitized non-ASCII characters in commit message (see wiki/workflow.md ASCII rule).\n`);
+            debug(`sanitized ${raw.length - sanitized.length} byte delta`);
+        } catch (err) {
+            process.stderr.write(`${HOOK_TAG} WARNING: failed to write sanitized message (${err.message}); proceeding with original.\n`);
+            return { ok: true, text: raw };
+        }
+    }
+    return { ok: true, text: sanitized };
+}
+
 async function main() {
     if (!MSG_FILE) {
         process.stderr.write(`${HOOK_TAG} usage: commit-msg <message-file>\n`);
+        process.exit(0);
+    }
+
+    const sanitizeResult = await sanitizeMessageFile();
+    if (!sanitizeResult.ok) {
+        process.stderr.write(`${HOOK_TAG} WARNING: cannot read message file (${sanitizeResult.error}); commit NOT audited.\n`);
         process.exit(0);
     }
 
@@ -128,13 +155,7 @@ async function main() {
         process.exit(0);
     }
 
-    let messageText;
-    try {
-        messageText = fs.readFileSync(MSG_FILE, "utf8");
-    } catch (err) {
-        process.stderr.write(`${HOOK_TAG} WARNING: cannot read message file (${err.message}); commit NOT audited.\n`);
-        process.exit(0);
-    }
+    const messageText = sanitizeResult.text;
 
     const repoToplevel = gitOutput("rev-parse --show-toplevel") || process.cwd();
     const projectDir = process.env.OPENCODE_PROJECT_DIR || repoToplevel;
@@ -227,8 +248,13 @@ async function main() {
             process.exit(0);
         }
         const originalSubject = stripComments(fs.readFileSync(MSG_FILE, "utf8")).split(/\r?\n/)[0] || "";
-        fs.writeFileSync(MSG_FILE, verdict.message.endsWith("\n") ? verdict.message : verdict.message + "\n");
-        const newSubject = stripComments(verdict.message).split(/\r?\n/)[0] || "";
+        const rewriteSanitized = await sanitizeToAscii(verdict.message);
+        if (rewriteSanitized.changed) {
+            debug(`sanitized auditor REWRITE output`);
+        }
+        const finalMessage = rewriteSanitized.text;
+        fs.writeFileSync(MSG_FILE, finalMessage.endsWith("\n") ? finalMessage : finalMessage + "\n");
+        const newSubject = stripComments(finalMessage).split(/\r?\n/)[0] || "";
         process.stdout.write(`${HOOK_TAG} REWRITE\n`);
         process.stdout.write(`${HOOK_TAG}   original: ${originalSubject}\n`);
         process.stdout.write(`${HOOK_TAG}   rewritten: ${newSubject}\n`);

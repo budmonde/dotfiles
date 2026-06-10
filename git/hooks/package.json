@@ -1,0 +1,9 @@
+{
+    "name": "dotfiles-git-hooks",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Runtime dependencies for the global commit-msg and post-commit git hooks.",
+    "dependencies": {
+        "any-ascii": "^0.3.3"
+    }
+}

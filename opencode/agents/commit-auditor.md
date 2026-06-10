@@ -187,6 +187,11 @@ Requirements for the corrected message:
   Do not wrap the message in single or double quotes.
   Do not escape characters for any shell.
   The hook writes the bytes between `REWRITE\n` and `\n---\n` directly into `COMMIT_EDITMSG`.
+- **ASCII only.**
+  Every byte of the corrected message must be in the printable ASCII range (`0x20`-`0x7E`) plus `\n` and `\t`.
+  Do not emit em-dashes (`---` is the ASCII substitute), en-dashes (`-`), ellipses (`...`), smart quotes (`'` and `"`), arrows (`->`, `<-`, `=>`), bullets (`*`), accented letters (`cafe`, not `café`), emoji, CJK, or any other non-ASCII character.
+  The hook sanitizes the message after you return it as a defensive measure, but a clean rewrite avoids the sanitization step entirely and produces predictable output.
+  If the staged diff contains non-ASCII content that the message must quote (e.g. a string literal in source code), transliterate it in prose rather than reproducing the raw bytes.
 
 Requirements for the rationale:
 
@@ -245,6 +250,9 @@ Before sending your verdict, verify:
   If no body, the rewrite is incomplete.
 - If `REWRITE`: is my output the literal message text (no shell quoting, no `-m` wrapping, no `git commit` invocation)?
   If anything other than literal message text, the hook will write a malformed message to `COMMIT_EDITMSG`.
+- If `REWRITE`: is every character in my output printable ASCII?
+  Scan for em-dashes, en-dashes, ellipses, smart quotes, arrows, bullets, accented letters, emoji, or CJK.
+  If any are present, replace them with their ASCII equivalents before emitting.
 - If `APPROVE`: am I certain, or am I optimizing for a short response?
   If uncertain, the verdict is `REWRITE` with the uncertainty named as the blocker.
 - If `REJECT`: have I confirmed the rejection cause cannot be fixed by a message rewrite?

@@ -63,6 +63,9 @@
     - command: powershell -NoProfile -File powershell\plugins\node\install.ps1
       description: Installing Node.js LTS
 
+    - command: powershell -NoProfile -File git\hooks\install.ps1
+      description: Installing git hook dependencies
+
     - command: powershell -NoProfile -File powershell\plugins\push-notify\install.ps1
       description: Installing push-notify
 

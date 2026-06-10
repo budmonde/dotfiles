@@ -8,6 +8,75 @@ const { execSync } = require("child_process");
 const dataHome = process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share");
 const DEBUG_LOG = path.join(dataHome, "opencode", "git-hook-debug.log");
 
+const ASCII_REPLACEMENTS = new Map([
+    ["\u2014", "---"],
+    ["\u2013", "-"],
+    ["\u2212", "-"],
+    ["\u2026", "..."],
+    ["\u2018", "'"],
+    ["\u2019", "'"],
+    ["\u201A", "'"],
+    ["\u201B", "'"],
+    ["\u2032", "'"],
+    ["\u201C", '"'],
+    ["\u201D", '"'],
+    ["\u201E", '"'],
+    ["\u201F", '"'],
+    ["\u2033", '"'],
+    ["\u2192", "->"],
+    ["\u2190", "<-"],
+    ["\u2194", "<->"],
+    ["\u21D2", "=>"],
+    ["\u21D0", "<="],
+    ["\u21D4", "<=>"],
+    ["\u2022", "*"],
+    ["\u00B7", "*"],
+    ["\u25CF", "*"],
+    ["\u00A9", "(c)"],
+    ["\u00AE", "(R)"],
+    ["\u2122", "(TM)"],
+]);
+
+const ZERO_WIDTH_RE = /[\uFEFF\u200B\u200C\u200D\u2060]/g;
+const SPACE_VARIANTS_RE = /[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g;
+
+let anyAsciiPromise = null;
+function loadAnyAscii() {
+    if (!anyAsciiPromise) {
+        anyAsciiPromise = import("any-ascii").then((m) => m.default).catch(() => null);
+    }
+    return anyAsciiPromise;
+}
+
+async function sanitizeToAscii(text) {
+    if (typeof text !== "string" || text.length === 0) return { text: text || "", changed: false };
+
+    let s = text.replace(ZERO_WIDTH_RE, "");
+    s = s.replace(SPACE_VARIANTS_RE, " ");
+
+    let mapped = "";
+    for (const ch of s) {
+        const repl = ASCII_REPLACEMENTS.get(ch);
+        mapped += repl !== undefined ? repl : ch;
+    }
+    s = mapped;
+
+    if (/[^\x00-\x7F]/.test(s)) {
+        const anyAscii = await loadAnyAscii();
+        if (anyAscii) {
+            s = anyAscii(s);
+        }
+    }
+
+    if (/[^\x00-\x7F]/.test(s)) {
+        s = s.replace(/[^\x00-\x7F]/g, "?");
+    }
+
+    s = s.replace(/[ \t]+\n/g, "\n");
+
+    return { text: s, changed: s !== text };
+}
+
 function makeDebug(hookTag) {
     return function debug(msg) {
         if (process.env.OPENCODE_GIT_HOOK_DEBUG !== "1") return;
@@ -51,4 +120,4 @@ async function httpJson(method, urlStr, body) {
     return { status: res.status, ok: res.ok, text, data };
 }
 
-module.exports = { makeDebug, gitOutput, withTimeout, httpJson };
+module.exports = { makeDebug, gitOutput, withTimeout, httpJson, sanitizeToAscii };
