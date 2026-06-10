@@ -72,9 +72,7 @@ function localPolicyCheck() {
 
 function buildPrompt(messageText, cwd, repo) {
     return `You are auditing a proposed commit message captured by the \`commit-msg\` git hook.
-Your role, disposition, mandatory pre-verdict checklist, convention-discovery routing, and self-check gates are defined in your agent definition (\`commit-auditor.md\`). Apply them now.
-
-Read the staged diff with \`git diff --cached\` (or \`git -C <repo> diff --cached\` if the cwd differs from the target repo) and consult the project convention before emitting a verdict.
+Apply your agent definition (\`commit-auditor.md\`): mandatory pre-verdict checklist, convention-discovery routing, verdict format (APPROVE / REWRITE / REJECT), and self-check gates.
 
 cwd: ${cwd}
 repo: ${repo}
@@ -84,27 +82,6 @@ Proposed commit message:
 \`\`\`
 ${messageText}
 \`\`\`
-
-Return EXACTLY one of three verdicts, with no preamble or trailing text. The calling git hook parses these tokens mechanically.
-
-1. APPROVE — the staged diff is non-empty and the proposed message conforms to every applicable convention rule with positive evidence from every checklist step:
-
-APPROVE
-
-2. REWRITE — the message needs correction. Emit the corrected message text (NOT a shell command — the hook will write it back to COMMIT_EDITMSG verbatim). The rewritten message must include a real subject grounded in the diff, the correct [TAG], and a body if the convention requires provenance. Format:
-
-REWRITE
-<the full corrected commit message text, including subject, blank line, and body if needed>
----
-<rationale>
-
-3. REJECT — the commit should not happen at all (empty staged index; diff contains files that violate a hygiene/scope rule; branch policy forbids commits to the current branch; any condition where no message rewrite would make the commit valid). Format:
-
-REJECT
----
-<rationale>
-
-The rationale must name the specific convention rule(s) violated, name the specific files in the diff that justify the chosen tag, and avoid hedge language.
 `;
 }
 
