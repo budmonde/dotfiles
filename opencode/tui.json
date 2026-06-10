@@ -2,7 +2,8 @@
   "$schema": "https://opencode.ai/tui.json",
   "theme": "opencode",
   "plugin": [
-    "./plugins/subagent-banner.tsx"
+    "./plugins/subagent-banner.tsx",
+    "./plugins/terminal-title.tsx"
   ],
   "keybinds": {
     "session_interrupt": "ctrl+c,escape",

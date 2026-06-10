@@ -31,6 +31,11 @@ export DOCKER_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/docker"
 # skills into ~/.config/opencode/skills/ individually instead.
 export OPENCODE_DISABLE_EXTERNAL_SKILLS=1
 
+# opencode: disable built-in terminal title writer; the terminal-title.tsx
+# TUI plugin owns the title and emits the `OC | <cwd>[ : <branch>] | <session>`
+# pattern matching the NVIM/PS1 title scheme.
+export OPENCODE_DISABLE_TERMINAL_TITLE=1
+
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 
 if command -v nvim &> /dev/null; then

@@ -18,6 +18,11 @@ $env:MPLCONFIGDIR = "$env:XDG_CACHE_HOME\matplotlib"
 # skills into ~/.config/opencode/skills/ individually instead.
 $env:OPENCODE_DISABLE_EXTERNAL_SKILLS = 1
 
+# opencode: disable built-in terminal title writer; the terminal-title.tsx
+# TUI plugin owns the title and emits the `OC | <cwd>[ : <branch>] | <session>`
+# pattern matching the NVIM/PS1 title scheme.
+$env:OPENCODE_DISABLE_TERMINAL_TITLE = 1
+
 $env:VIRTUAL_ENV_DISABLE_PROMPT = 1
 
 if (Get-Command nvim -ErrorAction SilentlyContinue) {
