@@ -10,6 +10,9 @@
 // Discovery env vars (set by the OpenCode plugin):
 //   OPENCODE_SERVER_URL       required to dispatch the auditor
 //   OPENCODE_SESSION_ID       parent session for the auditor child-session
+//   OPENCODE_SESSION_AGENT    name of the agent owning the calling session
+//                             (used by the auditor to enforce tag policy,
+//                             e.g. [AUDIT] reserved for the executor agent)
 //   OPENCODE_CALL_ID          correlation ID for debug logging
 //   OPENCODE_PROJECT_DIR      project directory the session is bound to
 //   OPENCODE_SERVER_USERNAME  HTTP Basic auth user (pass-through)
@@ -70,12 +73,14 @@ function localPolicyCheck() {
     }
 }
 
-function buildPrompt(messageText, cwd, repo) {
+function buildPrompt(messageText, cwd, repo, sessionAgent) {
+    const agentLine = sessionAgent ? `dispatching-agent: ${sessionAgent}` : `dispatching-agent: <unknown>`;
     return `You are auditing a proposed commit message captured by the \`commit-msg\` git hook.
 Apply your agent definition (\`commit-auditor.md\`): mandatory pre-verdict checklist, convention-discovery routing, verdict format (APPROVE / REWRITE / REJECT), and self-check gates.
 
 cwd: ${cwd}
 repo: ${repo}
+${agentLine}
 
 Proposed commit message:
 
@@ -85,6 +90,21 @@ ${messageText}
 `;
 }
 
+function stripWrappingFence(text) {
+    if (typeof text !== "string") return text;
+    const lines = text.split(/\r?\n/);
+    while (lines.length > 0 && lines[0].trim() === "") lines.shift();
+    while (lines.length > 0 && lines[lines.length - 1].trim() === "") lines.pop();
+    if (lines.length < 2) return text;
+    const fence = /^\s*`{3,}[a-zA-Z0-9_-]*\s*$/;
+    if (fence.test(lines[0]) && fence.test(lines[lines.length - 1])) {
+        const inner = lines.slice(1, -1);
+        if (inner.length > 0 && /^REWRITE\s*$/i.test(inner[0])) inner.shift();
+        return inner.join("\n");
+    }
+    return text;
+}
+
 function parseVerdict(raw) {
     const rejectMatch = raw.match(/(?:^|\n)REJECT\b\s*\r?\n---\r?\n([\s\S]*?)\s*$/i);
     if (rejectMatch) {
@@ -92,7 +112,8 @@ function parseVerdict(raw) {
     }
     const rewriteMatch = raw.match(/(?:^|\n)REWRITE\b\s*\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*?)\s*$/i);
     if (rewriteMatch) {
-        return { kind: "REWRITE", message: rewriteMatch[1].trim(), rationale: rewriteMatch[2].trim() };
+        const message = stripWrappingFence(rewriteMatch[1].trim());
+        return { kind: "REWRITE", message: message.trim(), rationale: rewriteMatch[2].trim() };
     }
     if (/(?:^|\n)APPROVE\s*$/im.test(raw)) {
         return { kind: "APPROVE" };
@@ -195,7 +216,7 @@ async function main() {
 
     const promptBody = {
         agent: AUDITOR_AGENT,
-        parts: [{ type: "text", text: buildPrompt(messageText, process.cwd(), repoToplevel) }],
+        parts: [{ type: "text", text: buildPrompt(messageText, process.cwd(), repoToplevel, process.env.OPENCODE_SESSION_AGENT) }],
     };
 
     let promptRes;

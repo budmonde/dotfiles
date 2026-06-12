@@ -137,6 +137,29 @@ A message that is vague (`added stuff`, `updates`, `fixes`, `wip`), inaccurate (
 
 If you find yourself reaching for a vague verb, you have not read the diff carefully enough — re-read it.
 
+### 6. Enforce tag-reservation policy
+
+Some tags are reserved for specific dispatching agents.
+The `commit-msg` hook surfaces the calling session's agent identity in the prompt header as `dispatching-agent: <name>` (or `dispatching-agent: <unknown>` when the env var is absent — typically a non-OpenCode commit such as a manual CLI invocation).
+
+Reserved tags:
+
+- **`[AUDIT]`** — reserved for the `wiki-auditor/executor` agent.
+  This is the only legitimate producer of `[AUDIT]`-tagged commits.
+  Other agents (including the primary, other subagents, and `<unknown>` callers) must use the substrate tag matching the diff (`[ARCH]`, `[WORKFLOW]`, `[META]`, etc.) per the standard tag-selection rule.
+
+When a non-reserved-holder proposes a reserved tag:
+
+- If the diff is otherwise valid and a non-reserved tag would correctly classify it, emit `REWRITE` swapping the reserved tag for the appropriate substrate tag.
+  Name the policy in the rationale: "`[AUDIT]` is reserved for `wiki-auditor/executor`; this commit's substrate is X."
+- If the diff is invalid for other reasons, the standard verdict rules apply (the tag-policy violation is one of multiple findings).
+
+When the reserved-holder agent dispatches the commit:
+
+- The reserved tag is the *expected* tag for that agent.
+  Apply the rest of the convention as normal (subject must be substantive, body required if foundational docs are touched, etc.).
+- Do not strip the reserved tag for a substrate tag; that is exactly the case the reservation exists to allow.
+
 ## Verdict format
 
 Return exactly one of three verdicts, with no preamble or trailing text.
@@ -187,6 +210,12 @@ Requirements for the corrected message:
   Do not wrap the message in single or double quotes.
   Do not escape characters for any shell.
   The hook writes the bytes between `REWRITE\n` and `\n---\n` directly into `COMMIT_EDITMSG`.
+- **No code-fence wrapping.**
+  Do not wrap your corrected message in triple-backtick fences (```` ``` ````) or any other fence delimiter.
+  The corrected message is plain text, not a code block.
+  A fence makes the first line of the actual commit message be the fence delimiter (```` ``` ````), which destroys the subject line and the entire commit shape.
+  The hook writes everything between `REWRITE\n` and `\n---\n` verbatim, so a fence in your output becomes a fence in the commit.
+  If the corrected message itself contains code or example commands that need fencing, those internal fences are fine; only the *outermost wrapping* must be absent.
 - **ASCII only.**
   Every byte of the corrected message must be in the printable ASCII range (`0x20`-`0x7E`) plus `\n` and `\t`.
   Do not emit em-dashes (`---` is the ASCII substitute), en-dashes (`-`), ellipses (`...`), smart quotes (`'` and `"`), arrows (`->`, `<-`, `=>`), bullets (`*`), accented letters (`cafe`, not `café`), emoji, CJK, or any other non-ASCII character.
@@ -250,6 +279,9 @@ Before sending your verdict, verify:
   If no body, the rewrite is incomplete.
 - If `REWRITE`: is my output the literal message text (no shell quoting, no `-m` wrapping, no `git commit` invocation)?
   If anything other than literal message text, the hook will write a malformed message to `COMMIT_EDITMSG`.
+- If `REWRITE`: is my output wrapped in a triple-backtick fence (```` ``` ````) or any other fence delimiter?
+  If yes, remove the wrapping fence before emitting.
+  The corrected message is plain text written verbatim into `COMMIT_EDITMSG`; a wrapping fence makes the fence delimiter become the commit subject and corrupts the entire commit shape.
 - If `REWRITE`: is every character in my output printable ASCII?
   Scan for em-dashes, en-dashes, ellipses, smart quotes, arrows, bullets, accented letters, emoji, or CJK.
   If any are present, replace them with their ASCII equivalents before emitting.
