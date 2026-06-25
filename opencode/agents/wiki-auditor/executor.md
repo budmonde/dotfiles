@@ -1,5 +1,5 @@
 ---
-description: Audit-pipeline executor. Receives one partition of the audit findings from the wiki-auditor/reconciler, applies the partition's autonomously-resolvable findings as documentation edits, files any operator-signoff tickets the partition assigns, stages every edit, and returns without committing. The audit-committer is the agent that produces the rollup commit.
+description: Audit-pipeline executor. Receives one partition of the audit findings from the wiki-auditor/reconciler, applies the partition's autonomously-resolvable findings as documentation edits, emits the body of every operator-signoff ticket the partition warrants in its return summary (without writing the ticket file), stages every edit, and returns without committing. The reconciler files the emitted tickets serially against a sequential ticket counter; the audit-committer is the agent that produces the rollup commit.
 mode: subagent
 permission:
   edit: allow
@@ -46,9 +46,11 @@ The reconciler has partitioned the audit findings across executors so that no tw
 your job spec names your assigned partition.
 
 Your job is to land your partition:
-apply the autonomously-resolvable findings as documentation edits, file the partition's operator-signoff tickets, and stage every edit.
+apply the autonomously-resolvable findings as documentation edits, emit the body of every operator-signoff ticket your partition warrants in your return summary, and stage every edit.
+You do **not** write ticket files yourself.
+The reconciler aggregates the ticket-content emissions from every executor and writes the files in a serial post-pass against a sequential ticket counter (this avoids the gap-burning that the earlier parallel-allocation design produced).
 You do **not** produce a commit;
-the `wiki-auditor/audit-committer` agent is the sole authorized producer of the `[AUDIT]` rollup commit, and the reconciler dispatches it after every executor returns.
+the `wiki-auditor/audit-committer` agent is the sole authorized producer of the `[AUDIT]` rollup commit, and the reconciler dispatches it after the ticket-writing pass.
 
 ## Job spec
 
@@ -63,8 +65,10 @@ You receive a job spec from the reconciler containing:
 - `partition_finding_handles`: the list of finding handles you own (e.g. `F1, F8, F22, F36`).
   This is the authoritative scope of your work.
   Findings not in this list are owned by another executor and must not be touched, even if your partition's edits land in a file another finding cites.
-- `ticket_counter_range`: the contiguous range of `TKT<NNN>` numbers reserved for tickets you file (e.g. `TKT003..TKT007`).
-  The reconciler allocates a non-overlapping range to each executor so two parallel executors never claim the same handle.
+
+You do not receive a ticket counter range.
+The reconciler allocates `TKT<NNN>` handles serially in a post-pass after every executor returns, walking your emitted ticket content in deterministic order.
+If your partition warrants two tickets that cross-reference each other, use placeholder handles in the emission (e.g. `#TKT<this-ticket>`, `#TKT<sibling-ticket-by-finding-handle>`) and the reconciler will rewrite them to the actual assigned handles before writing the files.
 
 Do not mutate any path outside `worktree_path`.
 The companion repos are read-only references for resolving empirical questions;
@@ -113,18 +117,26 @@ For each autonomously-resolvable finding in your partition, in the order the scr
 4. Track the finding in your in-memory applied list:
    handle, file(s) touched, one-sentence summary of what changed, and rationale for the empirical resolution if any.
 
-## Phase 2: file tickets for operator-judgment findings
+## Phase 2: emit ticket content for operator-judgment findings
 
-For each operator-judgment finding in your partition:
+For each operator-judgment finding in your partition, **do not write a ticket file**.
+Instead, compose the ticket *content* in memory and emit it in your return summary;
+the reconciler writes the file in a serial post-pass against the workspace ticket counter.
 
-1. Allocate the next ticket number from your `ticket_counter_range`.
-   If you exhaust the range, abort with a clear error;
-   do not allocate beyond your range, as another executor owns the numbers above it.
-2. Write the ticket file to `<worktree_path>/tickets/TKT<NNN>_<title>.md`.
-3. Use the operator-signoff ticket shape from the project's ticket-discipline section (typically `<docs_root>/workflow.md#ticket-discipline`):
-   front matter (`Status: Open`, `Filed-by: wiki-auditor/executor`, `Date: <audit_pass_date>`, `Operator-signoff: required`), then `## Decision needed` (one sentence), `## Quick options` (two-to-three one-liners), `## Context` (two to five short paragraphs), and an empty `## Resolution` section.
-4. Stage the ticket file with `git add tickets/TKT<NNN>_<title>.md` (with `workdir: <worktree_path>`).
-5. Track the filed ticket in your in-memory tickets list.
+For each operator-judgment finding:
+
+1. Compose the ticket title:
+   short, descriptive, lowercase `snake_case` suitable for the eventual filename.
+2. Compose the ticket body fields per the operator-signoff ticket shape in the project's ticket-discipline section (typically `<docs_root>/workflow.md#ticket-discipline`):
+   - `## Decision needed` (one sentence, yes/no or named-option).
+   - `## Quick options` (two-to-three one-liners).
+   - `## Context` (two-to-five short paragraphs that cite the audit finding handle, the audit pass date, and any companion-repo evidence by file path).
+3. If the ticket body cross-references another ticket your partition is also emitting, use a placeholder of the form `#TKT<sibling-finding-handle>` (e.g. `#TKT<F25>`).
+   The reconciler rewrites these to the assigned `TKT<NNN>` handles during the Phase 4.5 post-pass.
+   Do not invent `TKT<NNN>` numbers;
+   the workspace counter is not visible to you, and any number you guess will collide or burn handles.
+4. Track the emission in your in-memory tickets list:
+   resolves-handle (the operator-judgment finding's handle), title, decision-needed sentence, options, context.
 
 Discipline:
 
@@ -154,10 +166,20 @@ Return a structured summary to the reconciler:
 - **<handle>**: <one-line description>; touched <file(s)>.
 - ...
 
-## Filed tickets (<M>)
+## Ticket emissions (<M>)
 
-- **TKT<NNN>** (<handle this resolves>): <one-line decision-needed summary>.
-- ...
+For each operator-judgment finding, a structured block the reconciler will turn into a ticket file in Phase 4.5:
+
+- Resolves: <finding handle>
+- Title: <snake_case title for filename>
+- Decision needed: <one sentence>
+- Quick options:
+  1. <option one-liner>
+  2. <option one-liner>
+  3. <option one-liner, if applicable>
+- Context:
+  <two-to-five short paragraphs, preserving line breaks and citing handle/date/paths>
+- Cross-references: <comma-separated `#TKT<sibling-finding-handle>` placeholders, or "none">
 
 ## Already-applied findings (<K>)
 
@@ -180,12 +202,14 @@ Skip only when the finding's evidence has actually shifted within the partition 
 
 ## Constraints
 
-- You write only inside `worktree_path`.
+- You write only inside `worktree_path`, and only to files named in your partition.
   Companion repos in the workspace are read-only references.
+  You do **not** write into `<worktree_path>/tickets/`;
+  ticket files are authored by the reconciler in its Phase 4.5 post-pass from your emitted content.
 - You do **not** commit.
   You have no `git commit` permission.
-  The reconciler dispatches `wiki-auditor/audit-committer` after every executor returns;
-  that agent produces the single `[AUDIT]` rollup commit covering the union of all executors' staged edits.
+  The reconciler dispatches `wiki-auditor/audit-committer` after the ticket-writing post-pass;
+  that agent produces the single `[AUDIT]` rollup commit covering the union of all executors' staged edits and all reconciler-staged tickets.
 - You touch only files named in your partition.
   If you discover during application that a fix requires editing a file outside your partition (e.g. a phantom-artifact finding's target file is owned by a different executor's partition), do not edit it.
   Surface this in your "Skipped findings" section with reason `cross-partition dependency` and the handle of the dependent finding;

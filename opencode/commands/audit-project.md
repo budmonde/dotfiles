@@ -207,9 +207,9 @@ Otherwise leave them in place
   The orchestrator and its worker fleet have no `write` or `edit` permissions
   (enforced in their agent frontmatter).
 - The reconciliation phase (steps 5-6) is the reconciler's responsibility.
-  The reconciler writes only inside the docs worktree's `.audit-scratch/` directory;
-  the executors it dispatches write the actual edits inside the docs worktree;
-  the audit-committer it dispatches produces exactly one `[AUDIT]` rollup commit;
+  The reconciler writes inside the docs worktree's `.audit-scratch/` directory (findings-scratch and commit-message files) and inside the docs worktree's `tickets/` directory (operator-signoff tickets it files in a serial post-pass against a sequential ticket counter);
+  the executors it dispatches write the foundational-doc and design-doc edits inside the docs worktree but do not write ticket files (they emit ticket content to the reconciler instead);
+  the audit-committer it dispatches produces exactly one `[AUDIT]` rollup commit covering the union of executor-staged edits and reconciler-staged tickets;
   none of them push, merge, or modify branches.
   See the `wiki-auditor/reconciler`, `wiki-auditor/executor`, and `wiki-auditor/audit-committer` agent definitions for the full reconciliation-phase discipline.
 - The `[AUDIT]` commit tag is reserved for the `wiki-auditor/audit-committer` agent.
