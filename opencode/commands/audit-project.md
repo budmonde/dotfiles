@@ -1,11 +1,11 @@
 ---
-description: Run a workspace-scoped audit (intra-wiki health, cross-doc self-consistency, code-vs-wiki alignment, audit-pipeline meta-state) via the wiki-auditor agent fleet, then auto-chain into the executor to apply findings.
+description: Run a workspace-scoped audit (intra-wiki health, cross-doc self-consistency, code-vs-wiki alignment, audit-pipeline meta-state) via the wiki-auditor agent fleet, then auto-chain into the reconciler to apply findings.
 ---
 
 Dispatcher for the wiki-audit workflow.
 This command runs the full audit-reconciliation loop end to end:
 the audit phase produces a structured findings report,
-the executor phase applies autonomously-resolvable findings as a single `[AUDIT]` rollup commit and files operator-signoff tickets for findings that need operator judgment,
+the reconciliation phase partitions the findings across parallel executors and lands them as a single `[AUDIT]` rollup commit,
 and the operator-signoff phase (out of scope of this command) closes the loop.
 
 The dispatcher is intentionally thin.
@@ -13,7 +13,7 @@ It does workspace detection,
 worktree setup,
 orchestrator dispatch,
 report surfacing,
-executor dispatch,
+reconciler dispatch,
 final summary,
 and cleanup.
 All audit and reconciliation logic lives in the `wiki-auditor/*` agent fleet.
@@ -140,45 +140,53 @@ The expected report structure:
 - **Tool-denial soft-fail log**
   (worker-reported tool denials and the fallback methods used).
 
-### 5. Dispatch the executor against the report
+### 5. Dispatch the reconciler against the report
 
-Use the `task` tool with `subagent_type: "wiki-auditor/executor"` and a prompt containing the executor job spec.
+Use the `task` tool with `subagent_type: "wiki-auditor/reconciler"` and a prompt containing the reconciler job spec.
 
-The executor job spec contains:
+The reconciler is the agent that drives the reconciliation phase end to end.
+It partitions the findings by target substrate, fans out one `wiki-auditor/executor` per partition (in parallel), composes the rollup commit message from their returned summaries, then dispatches `wiki-auditor/audit-committer` to produce the single `[AUDIT]` commit.
+The dispatcher does not see these substeps directly;
+it sees only the reconciler's final structured summary.
+
+The reconciler job spec contains:
 
 - `worktree_path`:
-  the docs worktree path created in step 2
-  (the executor writes only inside this path).
+  the docs worktree path created in step 2.
 - `companion_repo_paths`:
   the same companion repo paths surfaced to the orchestrator
-  (read-only references for empirical questions).
+  (read-only references that executors may need for empirical questions).
 - `audit_pass_date`:
-  the calendar date of this audit pass (used in the rollup commit subject and in any tickets the executor files).
-- `findings`:
-  the orchestrator's findings list, transcribed from step 4's report.
-  Each entry carries the finding handle, description, substrate(s), proposed action (or alternatives), and any open sub-questions.
+  the calendar date of this audit pass (used in the rollup commit subject, scratch document name, and ticket `Date:` fields).
+- `findings_report`:
+  the orchestrator's structured report, transcribed verbatim from step 4.
 - `ticket_counter_start`:
   the next available `TKT<NNN>` number in the workspace's ticket counter.
   Determine this by `ls <docs_root>/tickets/ <docs_root>/archive/ | grep -oE 'TKT[0-9]+'` (or platform equivalent), parsing the highest existing handle and adding 1.
 
-The executor returns a structured summary naming the rollup commit hash, the applied-finding handles, the filed-ticket handles, and any skipped findings with reasons.
+The reconciler returns a structured summary naming the rollup commit hash, the partition layout, the applied-finding handles per partition, the filed-ticket handles, any already-applied findings, any cross-partition deferrals, and the `commit-auditor` verdict on the rollup commit (APPROVE / REWRITTEN / REJECTED).
 
-### 6. Surface the executor result
+### 6. Surface the reconciler result
 
-Render the executor's summary to the operator immediately after the audit report.
+Render the reconciler's summary to the operator immediately after the audit report.
 Do not paraphrase;
-the executor's output is the operator-visible artifact for the reconciliation phase.
+the reconciler's output is the operator-visible artifact for the reconciliation phase.
 
-If the executor reports filed tickets,
+If the reconciler reports the audit verdict as `REWRITTEN`, surface that prominently.
+A rewrite means the `commit-auditor` swapped the `[AUDIT]` tag for a substrate tag,
+which indicates either a regression in the tag-reservation infrastructure or a legitimate scope violation in the staged set.
+The operator must investigate before the next audit pass.
+
+If the reconciler reports filed tickets,
 the audit-reconciliation loop is not yet closed.
 The operator must triage each ticket per the project's ticket-discipline section (typically `<docs_root>/workflow.md#ticket-discipline`)
 (operator fills in `## Resolution`, then a follow-up agent applies and archives).
 Surface this expectation explicitly:
 
-> "The executor filed `<M>` operator-signoff tickets that need your review before the audit loop closes.
+> "The reconciliation phase filed `<M>` operator-signoff tickets that need your review before the audit loop closes.
 > See `<docs_root>/tickets/TKT<NNN>_*.md` for each."
 
-If the executor reports no filed tickets,
+If the reconciler reports no filed tickets,
 the audit-reconciliation loop is closed by the rollup commit alone.
 
 ### 7. Offer worktree cleanup
@@ -198,17 +206,20 @@ Otherwise leave them in place
 - The audit phase (steps 1-4) is read-only by output.
   The orchestrator and its worker fleet have no `write` or `edit` permissions
   (enforced in their agent frontmatter).
-- The reconciliation phase (steps 5-6) is the executor's responsibility.
-  The executor writes only inside the docs worktree and produces exactly one `[AUDIT]` rollup commit;
-  it does not push, merge, or modify branches.
-  See the `wiki-auditor/executor` agent definition for the executor's discipline.
-- The `[AUDIT]` commit tag is reserved for the `wiki-auditor/executor` agent.
+- The reconciliation phase (steps 5-6) is the reconciler's responsibility.
+  The reconciler writes only inside the docs worktree's `.audit-scratch/` directory;
+  the executors it dispatches write the actual edits inside the docs worktree;
+  the audit-committer it dispatches produces exactly one `[AUDIT]` rollup commit;
+  none of them push, merge, or modify branches.
+  See the `wiki-auditor/reconciler`, `wiki-auditor/executor`, and `wiki-auditor/audit-committer` agent definitions for the full reconciliation-phase discipline.
+- The `[AUDIT]` commit tag is reserved for the `wiki-auditor/audit-committer` agent.
   The `commit-auditor` enforces this reservation by reading `OPENCODE_SESSION_AGENT` from the calling session;
-  any other dispatching agent that proposes `[AUDIT]` is rewritten to a substrate tag.
+  any other dispatching agent (including the reconciler and the executors that prepared the staged set) that proposes `[AUDIT]` is rewritten to a substrate tag.
+  The reservation lives on the audit-committer rather than on the agent that performed the edits because the audit-committer's session is deliberately short (one tool call) and therefore not vulnerable to the compaction race that overwrites `OPENCODE_SESSION_AGENT` mid-session.
   Workers in the audit phase that need an audit-window scope look up the most recent `[AUDIT]` commit locally
   (`git log --grep='^\[AUDIT\]' -1` with `workdir: <docs_root>`);
   the dispatcher does not thread a high-water mark through the job spec.
-- Operator-signoff tickets filed by the executor close the audit loop only after the operator records a resolution.
+- Operator-signoff tickets filed during reconciliation close the audit loop only after the operator records a resolution.
   This dispatcher is *not* responsible for waiting on or applying ticket resolutions;
   that is a separate operator-driven follow-up phase.
 - If the workspace cannot be detected,

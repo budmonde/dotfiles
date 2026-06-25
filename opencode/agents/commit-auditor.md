@@ -144,14 +144,15 @@ The `commit-msg` hook surfaces the calling session's agent identity in the promp
 
 Reserved tags:
 
-- **`[AUDIT]`** — reserved for the `wiki-auditor/executor` agent.
+- **`[AUDIT]`** — reserved for the `wiki-auditor/audit-committer` agent.
   This is the only legitimate producer of `[AUDIT]`-tagged commits.
-  Other agents (including the primary, other subagents, and `<unknown>` callers) must use the substrate tag matching the diff (`[ARCH]`, `[WORKFLOW]`, `[META]`, etc.) per the standard tag-selection rule.
+  The reservation lives on `wiki-auditor/audit-committer` rather than on the executor that performed the edits because that agent's session is deliberately short (one tool call) and therefore not vulnerable to the compaction race that overwrites `OPENCODE_SESSION_AGENT` mid-session.
+  Other agents (including the primary, other subagents, the `wiki-auditor/executor` and `wiki-auditor/reconciler` agents that produced the edits but do not commit them, and `<unknown>` callers) must use the substrate tag matching the diff (`[ARCH]`, `[WORKFLOW]`, `[META]`, etc.) per the standard tag-selection rule.
 
 When a non-reserved-holder proposes a reserved tag:
 
 - If the diff is otherwise valid and a non-reserved tag would correctly classify it, emit `REWRITE` swapping the reserved tag for the appropriate substrate tag.
-  Name the policy in the rationale: "`[AUDIT]` is reserved for `wiki-auditor/executor`; this commit's substrate is X."
+  Name the policy in the rationale: "`[AUDIT]` is reserved for `wiki-auditor/audit-committer`; this commit's substrate is X."
 - If the diff is invalid for other reasons, the standard verdict rules apply (the tag-policy violation is one of multiple findings).
 
 When the reserved-holder agent dispatches the commit:
