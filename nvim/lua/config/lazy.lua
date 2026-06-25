@@ -111,7 +111,8 @@ local filesystem_plugins = {
                 },
                 update_focused_file = {
                     enable = true,
-                    update_root = true,
+                    update_root = false,
+                    ignore_list = { "fugitive", "fugitiveblame", "git", "gitcommit", "gitrebase"},
                 },
                 actions = {
                     change_dir = { enable = true, global = false },
