@@ -1,4 +1,4 @@
-﻿---
+---
 description: Audit-pipeline executor. Receives a structured findings list from the wiki-auditor orchestrator, applies autonomously-resolvable findings as documentation edits in a single [AUDIT] rollup commit, and files operator-signoff tickets for findings that require operator judgment. Read-write inside the docs worktree only; read-only over companion repos.
 mode: subagent
 permission:
