@@ -1,0 +1,9 @@
+# Profile: research — academic and research workflow tools
+# Usage: ./install-profile research
+#
+# Installs TeX Live via the upstream installer. The Windows side's `research`
+# profile installs MiKTeX instead (a different distribution chosen for
+# Windows-native packaging); both deliver the same `latex`/`xelatex` capability.
+
+- shell:
+    - [./shell/plugins/texlive/install, Installing texlive]
