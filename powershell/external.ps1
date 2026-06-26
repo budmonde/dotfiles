@@ -5,13 +5,22 @@ $env:XDG_STATE_HOME = "$HOME\.local\state"
 $env:XDG_CACHE_HOME = "$HOME\.cache"
 
 # Tool-specific overrides (for tools that don't check XDG)
+$env:INPUTRC = "$env:XDG_CONFIG_HOME\readline\inputrc"
+$env:CLAUDE_CONFIG_DIR = "$env:XDG_CONFIG_HOME\claude"
 $env:PYTHONSTARTUP = "$env:XDG_CONFIG_HOME\python\pythonrc"
+$env:IPYTHONDIR = "$env:XDG_CONFIG_HOME\ipython"
+$env:JUPYTER_CONFIG_DIR = "$env:XDG_CONFIG_HOME\jupyter"
 $env:NPM_CONFIG_USERCONFIG = "$env:XDG_CONFIG_HOME\npm\npmrc"
 $env:GOPATH = "$env:XDG_DATA_HOME\go"
 $env:GOMODCACHE = "$env:XDG_CACHE_HOME\go\mod"
+$env:KERAS_HOME = "$env:XDG_DATA_HOME\keras"
 $env:DOCKER_CONFIG = "$env:XDG_CONFIG_HOME\docker"
 $env:BUN_INSTALL_CACHE_DIR = "$env:XDG_CACHE_HOME\bun"
+$env:CUPY_CACHE_DIR = "$env:XDG_CACHE_HOME\cupy"
 $env:MPLCONFIGDIR = "$env:XDG_CACHE_HOME\matplotlib"
+$env:LESSHISTFILE = "$env:XDG_STATE_HOME\less\history"
+$env:NODE_REPL_HISTORY = "$env:XDG_STATE_HOME\node\history"
+$env:PYTHONHISTFILE = "$env:XDG_STATE_HOME\python\history"
 
 # opencode: skip ~/.claude/skills and ~/.agents/skills discovery (IT-pushed
 # skills like managing-omnistation and nvinfo-cli land there). Pull desired

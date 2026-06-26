@@ -40,6 +40,41 @@ function Get-VenvPrompt {
     return "$($Color.Yellow)[venv:$($Color.Orange)$name$($Color.Yellow)]$($Color.Reset) "
 }
 
+# Variable-display tracker: yellow if exposed to child processes via $env:,
+# red if only in the PowerShell session scope.
+$script:_pr_var_list = @()
+
+function vshow {
+    foreach ($v in $args) {
+        if ($v -match '^[A-Z_]+$' -and ($script:_pr_var_list -notcontains $v)) {
+            $script:_pr_var_list += $v
+        }
+    }
+}
+
+function vhide {
+    foreach ($v in $args) {
+        $script:_pr_var_list = @($script:_pr_var_list | Where-Object { $_ -ne $v })
+    }
+}
+
+function Get-VarHeader {
+    if (-not $script:_pr_var_list -or $script:_pr_var_list.Count -eq 0) { return '' }
+    $lines = foreach ($v in $script:_pr_var_list) {
+        $envVal = [Environment]::GetEnvironmentVariable($v, 'Process')
+        if ($null -ne $envVal) {
+            "$($Color.Yellow)$v=$envVal$($Color.Reset)"
+        } else {
+            $sv = Get-Variable -Name $v -ErrorAction SilentlyContinue
+            if ($null -ne $sv) {
+                "$($Color.Red)$v=$($sv.Value)$($Color.Reset)"
+            }
+        }
+    }
+    if (-not $lines) { return '' }
+    return ($lines -join "`n") + "`n"
+}
+
 function prompt {
     $lastOk = $?
     $realLASTEXITCODE = $global:LASTEXITCODE
@@ -52,6 +87,7 @@ function prompt {
     $branch = Get-GitBranch
     $gitBranch = if ($branch) { " $($Color.Cyan)git:$($Color.Reset)($($Color.Red)$branch$($Color.Reset))" } else { '' }
     $venv = Get-VenvPrompt
+    $varHeader = Get-VarHeader
 
     $arrow = "$($Color.Bold)>$($Color.Reset)"
 
@@ -65,6 +101,7 @@ function prompt {
     $titleBranch = if ($branch) { " : $branch" } else { '' }
     $Host.UI.Write("$ESC]2;PS1 | $dirName$titleBranch$([char]7)")
     "`n" +
+    "$varHeader" +
     "$statusChar " +
     "$($Color.Teal)$user$($Color.Reset) " +
     "$($Color.Gray)at$($Color.Reset) " +
