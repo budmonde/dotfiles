@@ -286,13 +286,15 @@ local syntax_plugins = {
     ---------------------------------------------------------------------------
     {
         "williamboman/mason.nvim",
+        cmd = { "Mason", "MasonInstall", "MasonUninstall", "MasonUninstallAll", "MasonLog", "MasonUpdate" },
         config = function()
             require("mason").setup()
         end,
     },
     {
         "williamboman/mason-lspconfig.nvim",
-        dependencies = { "williamboman/mason.nvim", "neovim/nvim-lspconfig" },
+        cmd = { "LspInstall", "LspUninstall" },
+        dependencies = { "williamboman/mason.nvim" },
         config = function()
             require("mason-lspconfig").setup({
                 ensure_installed = { "pyright", "lua_ls" },
@@ -305,7 +307,8 @@ local syntax_plugins = {
     ---------------------------------------------------------------------------
     {
         "neovim/nvim-lspconfig",
-        dependencies = { "williamboman/mason-lspconfig.nvim" },
+        event = { "BufReadPre", "BufNewFile" },
+        dependencies = { "hrsh7th/cmp-nvim-lsp" },
         config = function()
             local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
@@ -339,6 +342,7 @@ local syntax_plugins = {
     ---------------------------------------------------------------------------
     {
         "hrsh7th/nvim-cmp",
+        event = { "InsertEnter", "CmdlineEnter" },
         dependencies = {
             "hrsh7th/cmp-nvim-lsp",
             "hrsh7th/cmp-buffer",
@@ -397,6 +401,7 @@ local syntax_plugins = {
     ---------------------------------------------------------------------------
     {
         "MeanderingProgrammer/render-markdown.nvim",
+        ft = { "markdown" },
         dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
         ---@module 'render-markdown'
         ---@type render.md.UserConfig
@@ -480,6 +485,34 @@ local keybinding_plugins = {
                     end
                 end,
                 nested = true,
+            })
+
+            -- Workaround: persistence.nvim restores buffers via `:source <session-file>`,
+            -- but the active restored buffer ends up with filetype unset (likely a race
+            -- with session-restore window setup). That breaks every filetype-triggered
+            -- system: Lazy.nvim `ft` lazy-load triggers, treesitter highlighter autocmds,
+            -- render-markdown attach, LSP attachment, etc. We re-fire filetype detection
+            -- on every loaded named buffer with an empty filetype after the session
+            -- finishes loading. The `vim.schedule` defer is required: running synchronously
+            -- on PersistenceLoadPost has no effect because session-restore window setup is
+            -- still in flight at that point.
+            vim.api.nvim_create_autocmd("User", {
+                pattern = "PersistenceLoadPost",
+                group = vim.api.nvim_create_augroup("persistence_filetype_refire", { clear = true }),
+                callback = function()
+                    vim.schedule(function()
+                        for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+                            if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "" then
+                                local name = vim.api.nvim_buf_get_name(buf)
+                                if name ~= "" then
+                                    vim.api.nvim_buf_call(buf, function()
+                                        vim.cmd("filetype detect")
+                                    end)
+                                end
+                            end
+                        end
+                    end)
+                end,
             })
 
             -- Manual keymaps
