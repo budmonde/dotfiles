@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+# Install optional application profiles via dotbot.
+# Usage: ./install-profile <profile> [profile...]
+#
+# Profiles are discovered dynamically from profiles/unix/*.conf.yaml.
+#
+# Examples:
+#   ./install-profile agentic
+#   ./install-profile agentic research
+
+set -e
+
+# Fail fast on Git Bash / MSYS / Cygwin - use install-profile.ps1 instead
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+        echo "Error: This installer is not supported on Git Bash/MSYS/Cygwin."
+        echo "Please use PowerShell and run: .\\install-profile.ps1"
+        exit 1
+        ;;
+esac
+
+DOTBOT_DIR="dotbot"
+DOTBOT_BIN="bin/dotbot"
+BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROFILES_DIR="${BASEDIR}/profiles/unix"
+
+list_profiles() {
+    if [ -d "${PROFILES_DIR}" ]; then
+        find "${PROFILES_DIR}" -maxdepth 1 -name '*.conf.yaml' -type f -printf '%f\n' 2>/dev/null \
+            | sed 's/\.conf\.yaml$//' \
+            | sort
+    fi
+}
+
+VALID_PROFILES="$(list_profiles)"
+
+if [ "$#" -eq 0 ]; then
+    echo "Available profiles:"
+    if [ -z "${VALID_PROFILES}" ]; then
+        echo "  (none — add profiles/unix/<name>.conf.yaml)"
+    else
+        echo "${VALID_PROFILES}" | sed 's/^/  /'
+    fi
+    echo
+    echo "Usage: ./install-profile <profile> [profile...]"
+    exit 0
+fi
+
+CONFIGS=()
+for profile in "$@"; do
+    conf="profiles/unix/${profile}.conf.yaml"
+    if [ ! -f "${BASEDIR}/${conf}" ]; then
+        echo "Error: Unknown profile: ${profile}" >&2
+        if [ -n "${VALID_PROFILES}" ]; then
+            valid_csv="$(echo "${VALID_PROFILES}" | paste -sd, -)"
+            echo "Valid profiles: ${valid_csv}" >&2
+        else
+            echo "No profiles available under profiles/unix/." >&2
+        fi
+        exit 1
+    fi
+    CONFIGS+=("${conf}")
+done
+
+cd "${BASEDIR}"
+git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
+git submodule update --init --recursive "${DOTBOT_DIR}"
+
+DOTBOT_ARGS=()
+for c in "${CONFIGS[@]}"; do
+    DOTBOT_ARGS+=(-c "${c}")
+done
+
+"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" "${DOTBOT_ARGS[@]}"
