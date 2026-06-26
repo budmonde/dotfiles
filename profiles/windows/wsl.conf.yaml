@@ -1,5 +1,5 @@
 # Profile: wsl — install WSL
-# Usage: .\install-extras.ps1 wsl
+# Usage: .\install-profile.ps1 wsl
 # Note: WSL install requires admin privileges and may trigger a reboot.
 
 - shell:

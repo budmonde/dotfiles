@@ -1,5 +1,5 @@
 # Profile: gamedev — game development tools
-# Usage: .\install-extras.ps1 gamedev
+# Usage: .\install-profile.ps1 gamedev
 
 - shell:
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Unity.UnityHub

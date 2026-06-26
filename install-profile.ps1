@@ -1,10 +1,11 @@
 # Install optional application profiles via dotbot.
-# Usage: .\install-extras.ps1 <profile> [profile...]
-# Profiles: agentic, collab, creative, dev, gamedev, gaming, iqa, research, wsl
+# Usage: .\install-profile.ps1 <profile> [profile...]
+#
+# Profiles are discovered dynamically from profiles\windows\*.conf.yaml.
 #
 # Examples:
-#   .\install-extras.ps1 collab
-#   .\install-extras.ps1 collab gaming
+#   .\install-profile.ps1 collab
+#   .\install-profile.ps1 collab gaming
 
 $ErrorActionPreference = "Stop"
 
@@ -12,12 +13,15 @@ $DOTBOT_DIR = "dotbot"
 $DOTBOT_BIN = "bin/dotbot"
 $BASEDIR = $PSScriptRoot
 
-$ValidProfiles = @("agentic", "collab", "creative", "dev", "gamedev", "gaming", "iqa", "research", "wsl")
+$ProfilesDir = Join-Path $BASEDIR "profiles\windows"
+$ValidProfiles = @(Get-ChildItem -LiteralPath $ProfilesDir -Filter "*.conf.yaml" -File |
+    ForEach-Object { $_.BaseName -replace '\.conf$', '' } |
+    Sort-Object)
 
 if ($Args.Count -eq 0) {
     Write-Host "Available profiles:"
     foreach ($p in $ValidProfiles) { Write-Host "  $p" }
-    Write-Host "`nUsage: .\install-extras.ps1 <profile> [profile...]"
+    Write-Host "`nUsage: .\install-profile.ps1 <profile> [profile...]"
     exit 0
 }
 
@@ -26,7 +30,7 @@ foreach ($profile in $Args) {
     if ($profile -notin $ValidProfiles) {
         Write-Error "Unknown profile: $profile. Valid profiles: $($ValidProfiles -join ', ')"
     }
-    $conf = "windows\extras\$profile.conf.yaml"
+    $conf = "profiles\windows\$profile.conf.yaml"
     if (!(Test-Path (Join-Path $BASEDIR $conf))) {
         Write-Error "Config not found: $conf"
     }

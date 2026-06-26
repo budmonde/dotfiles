@@ -1,5 +1,5 @@
 # Profile: dev — development build tools
-# Usage: .\install-extras.ps1 dev
+# Usage: .\install-profile.ps1 dev
 
 - shell:
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Microsoft.VisualStudio.2022.Community

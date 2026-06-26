@@ -1,5 +1,5 @@
 # Profile: iqa — image quality assessment tools
-# Usage: .\install-extras.ps1 iqa
+# Usage: .\install-profile.ps1 iqa
 
 - shell:
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId VideoLAN.VLC

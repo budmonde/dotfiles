@@ -1,5 +1,5 @@
 # Profile: agentic — agentic-coding CLI tooling
-# Usage: .\install-extras.ps1 agentic
+# Usage: .\install-profile.ps1 agentic
 #
 # Installs the upstream opencode CLI via npm. The local repo's `agentic`
 # profile installs the NVIDIA-internal fork instead; the two are mutually

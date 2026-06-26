@@ -1,5 +1,5 @@
 # Profile: collab — online collaboration tools
-# Usage: .\install-extras.ps1 collab
+# Usage: .\install-profile.ps1 collab
 
 - shell:
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Discord.Discord
