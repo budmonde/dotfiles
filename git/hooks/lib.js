@@ -7,6 +7,7 @@ const { execSync } = require("child_process");
 
 const dataHome = process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share");
 const DEBUG_LOG = path.join(dataHome, "opencode", "git-hook-debug.log");
+const COMMIT_AUDITOR_LOG = path.join(dataHome, "opencode", "commit-auditor.jsonl");
 
 const ASCII_REPLACEMENTS = new Map([
     ["\u2014", "---"],
@@ -87,6 +88,24 @@ function makeDebug(hookTag) {
     };
 }
 
+// Append one JSONL record per commit-auditor invocation to
+// $XDG_DATA_HOME/opencode/commit-auditor.jsonl (default
+// ~/.local/share/opencode/commit-auditor.jsonl).
+//
+// Telemetry surface for the commit-msg hook: captures every audit outcome
+// (APPROVE / REWRITE / REJECT / UNKNOWN) so the auditor's editing behavior
+// is reconstructable without scraping per-session OpenCode logs.
+//
+// `record` is a plain object; a `timestamp` field is injected if absent.
+// Write failures are swallowed: telemetry must never block a commit.
+function appendAuditLog(record) {
+    try {
+        const entry = { timestamp: new Date().toISOString(), ...record };
+        fs.mkdirSync(path.dirname(COMMIT_AUDITOR_LOG), { recursive: true });
+        fs.appendFileSync(COMMIT_AUDITOR_LOG, JSON.stringify(entry) + "\n");
+    } catch {}
+}
+
 function gitOutput(args, opts = {}) {
     try {
         return execSync(`git ${args}`, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], ...opts }).trim();
@@ -120,4 +139,4 @@ async function httpJson(method, urlStr, body) {
     return { status: res.status, ok: res.ok, text, data };
 }
 
-module.exports = { makeDebug, gitOutput, withTimeout, httpJson, sanitizeToAscii };
+module.exports = { makeDebug, appendAuditLog, gitOutput, withTimeout, httpJson, sanitizeToAscii };

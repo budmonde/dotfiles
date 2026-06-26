@@ -85,9 +85,18 @@ The hook prompt does not tell you which; infer from the message text and from `g
 
 - **Normal commit**: the change is the staged index.
   Run `git diff --cached` (or `git -C <repo> diff --cached`) and read the full output.
-- **Amend**: the effective change is HEAD's diff plus any staged additions.
-  Run `git show --stat HEAD`, `git log -1 --format=%B HEAD`, and `git diff --cached`.
-  Treat the union as the change set for this commit.
+- **Amend**: the effective change is HEAD's prior diff *plus* any newly staged additions, taken as one unified change set.
+  The amend will rewrite HEAD, so the commit message you are auditing must describe the *entire* resulting commit, not just the delta being added on top.
+  Run, in order:
+  1. `git log -1 --format=%B HEAD` to see the message the amend is replacing.
+  2. `git diff --cached HEAD~1` to see the **full effective diff** the amended commit will carry (HEAD's parent against the current index).
+     This is the single most important command for an amend audit; `git diff --cached` alone shows only the newly staged delta and will cause you to under-audit the message.
+     If `HEAD~1` does not exist (amending the root commit), fall back to `git diff --cached $(git hash-object -t tree --stdin </dev/null)` or, if that is unavailable, `git show HEAD` plus `git diff --cached`.
+  3. `git show --stat HEAD` only as a quick orientation aid; the authoritative diff is step 2.
+
+  Audit the proposed message against the **full effective diff from step 2**, not against the staged delta alone.
+  If the new message describes only the newly staged hunks and silently drops content that the prior HEAD commit message covered but the full diff still reflects, that is a `REWRITE`: name the dropped content in the rationale and produce a message that covers the full effective change set.
+  The old commit message body is not automatically preserved by `--amend`; the proposed new message is the only message the amended commit will carry.
 
 If you cannot tell whether this is an amend from the available signals, treat it as a normal commit (the common case) and rely on `git diff --cached`.
 
@@ -99,7 +108,7 @@ Apply the empty-change rules:
   This is a scope or hygiene boundary that no message rewrite can fix.
 
 You must know which files changed, the nature of each change, and which subsystems are touched.
-Do not skim large diffs, but also do not explore beyond `git show` / `git diff --cached`.
+Do not skim large diffs, but also do not explore beyond the diff commands listed above (`git show`, `git diff --cached`, and for amends `git diff --cached HEAD~1`).
 
 ### 3. Locate the convention source
 
@@ -121,14 +130,39 @@ Extract from whichever source you find:
 
 ### 4. Cross-reference diff against convention
 
-For each file in the diff:
+Tag selection is **intent-first**, not file-distribution-first.
+A file-path check alone could be done by a script; your job is to read the diff and reason about *why* the change was made.
 
-- Determine the most-specific applicable tag from the taxonomy.
-- If the file is a foundational document under the convention, determine what provenance citations are required (driving handle, informing research, the "why" statement).
-- If multiple subsystems are touched, apply the convention's splitting rule or dominant-tag rule explicitly.
+Before considering any tag, write (in your own reasoning, not in the output) a one-sentence statement of the commit's single dominant intent — what behavior, capability, or document state the diff brings about, taken as a whole.
+The diff almost always has one dominant intent even when it touches many files: a feature spread across config, code, and docs is still that feature; a refactor that updates call sites in many subsystems is still that refactor; a documentation pass that touches many files is still that documentation pass.
 
-You must be able to name the specific files that justify your chosen tag.
-"I'll use `[META]` as a fallback" without naming the files is a failed audit.
+Choose the tag that matches that intent, using the most-specific applicable tag from the taxonomy.
+Files in the diff that exist only to support the dominant intent (call-site updates, an updated import, a regenerated lockfile, a touched test, a wiki note recording the change) do not pull the tag toward themselves; they are evidence *of* the dominant intent, not competing intents.
+
+For each file in the diff, identify which role it plays for the dominant intent:
+
+- It *is* the intent (the file the commit exists to change).
+- It *supports* the intent (incidental edit required to keep the change coherent).
+- It *records* the intent (a wiki/foundational-doc update describing the change).
+
+If you find yourself unable to write a single dominant-intent sentence without conjunctions like "and also", "plus", or "as well as" joining genuinely unrelated changes, only then is the diff cross-cutting in the sense the convention's fallback tag is meant to capture.
+Otherwise the diff has a dominant intent and the tag must match it.
+
+A cross-cutting fallback tag (e.g. `[META]`) is permitted **only** when both of the following are true:
+
+- The one-sentence intent statement is genuinely impossible to write without joining unrelated changes.
+- No splitting rule in the convention applies (i.e. the convention does not require the commit to be broken into separate commits per subsystem).
+
+When you do use a cross-cutting fallback tag, the rationale must:
+
+- State explicitly why a single dominant intent could not be written.
+- Name the unrelated change clusters by file group.
+- Confirm the convention's splitting rule does not require splitting the commit.
+
+"Touches multiple subsystems" is not by itself sufficient.
+"Touches multiple subsystems with no shared intent" is.
+
+For foundational documents in the diff, also determine what provenance citations are required (driving handle, informing research, the "why" statement) per the convention.
 
 ### 5. Verify message content against diff
 
@@ -202,8 +236,8 @@ Requirements for the corrected message:
   The convention requires a body for any commit that touches a foundational document or that otherwise needs provenance.
   A subject-only message is insufficient for any commit the convention says needs a body.
 - **Name a specific tag with evidence.**
-  The tag must match a specific file or set of files in the staged diff.
-  Do not emit placeholder tags like `[META]` unless the diff is genuinely cross-cutting per the convention's rule, and even then the rationale must name the files that make it cross-cutting.
+  The tag must match the commit's dominant intent (per checklist step 4), and you must be able to point to the file(s) in the diff that *are* that intent (not merely *touched by* it).
+  Do not emit cross-cutting fallback tags like `[META]` unless step 4's two-part test passes (no writeable single-intent sentence *and* no applicable splitting rule), and the rationale records both findings.
 - **Write a real subject.**
   The subject must describe what the diff actually does, with enough specificity that a reader of `git log --oneline` understands the change without opening the diff.
 - **Use real newlines** between subject, blank line, and body — not literal `\n` characters.
@@ -271,6 +305,10 @@ Before sending your verdict, verify:
   If no, the verdict is invalid — run it now.
 - Did I read the convention document in this turn?
   If no, the verdict is invalid — read it now.
+- If this is an `--amend`: did I run `git diff --cached HEAD~1` (or the documented root-commit fallback) and audit the message against the full effective diff, not against the staged delta alone?
+  If no, the verdict is invalid — the amend audit is not done.
+- If `REWRITE` or `APPROVE`: can I state the commit's dominant intent in one sentence without joining unrelated changes with "and also" / "plus" / "as well as"?
+  If no, re-read the diff; either there is a dominant intent I missed, or the cross-cutting fallback applies and both parts of step 4's two-part test must be recorded in the rationale.
 - If `REWRITE`: can I name the specific files in the diff that justify my tag choice?
   If no, re-read the diff.
 - If `REWRITE`: does my subject describe what the diff actually does, or am I hedging with a vague verb?

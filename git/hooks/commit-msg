@@ -24,12 +24,17 @@
 //
 // When OPENCODE_SERVER_URL is set but the server is unreachable, the hook
 // fails open: print a warning that the commit was not audited, exit 0.
+//
+// Telemetry: every verdict (APPROVE / REWRITE / REJECT / UNKNOWN) is appended
+// as one JSONL record to $XDG_DATA_HOME/opencode/commit-auditor.jsonl
+// (default ~/.local/share/opencode/commit-auditor.jsonl). Always on; log-
+// write failures are swallowed so telemetry never blocks a commit.
 
 "use strict";
 
 const fs = require("fs");
 const path = require("path");
-const { makeDebug, gitOutput, httpJson, withTimeout, sanitizeToAscii } = require(path.join(__dirname, "lib"));
+const { makeDebug, gitOutput, httpJson, withTimeout, sanitizeToAscii, appendAuditLog } = require(path.join(__dirname, "lib"));
 
 const HOOK_TAG = "[commit-msg]";
 const AUDITOR_AGENT = process.env.OPENCODE_AUDITOR_AGENT || "commit-auditor";
@@ -254,8 +259,18 @@ async function main() {
 
     const verdict = parseVerdict(verdictText);
 
+    const auditBase = {
+        repo: repoToplevel,
+        cwd: process.cwd(),
+        auditor_session_id: auditorSessionId,
+        parent_session_id: process.env.OPENCODE_SESSION_ID || null,
+        dispatching_agent: process.env.OPENCODE_SESSION_AGENT || null,
+        original_message: messageText,
+    };
+
     if (verdict.kind === "APPROVE") {
         const subject = stripComments(fs.readFileSync(MSG_FILE, "utf8")).split(/\r?\n/)[0] || "";
+        appendAuditLog({ ...auditBase, verdict: "APPROVE" });
         process.stdout.write(`${HOOK_TAG} APPROVE: ${subject}\n`);
         process.stdout.write(`${HOOK_TAG} auditor session: ${auditorSessionId}\n`);
         debug(`APPROVE`);
@@ -264,6 +279,7 @@ async function main() {
 
     if (verdict.kind === "REWRITE") {
         if (!verdict.message) {
+            appendAuditLog({ ...auditBase, verdict: "REWRITE_EMPTY", rationale: verdict.rationale || null });
             process.stderr.write(`${HOOK_TAG} WARNING: REWRITE verdict had empty message; commit NOT audited.\n`);
             process.stderr.write(`${HOOK_TAG} auditor session: ${auditorSessionId}\n`);
             process.exit(0);
@@ -276,6 +292,12 @@ async function main() {
         const finalMessage = rewriteSanitized.text;
         fs.writeFileSync(MSG_FILE, finalMessage.endsWith("\n") ? finalMessage : finalMessage + "\n");
         const newSubject = stripComments(finalMessage).split(/\r?\n/)[0] || "";
+        appendAuditLog({
+            ...auditBase,
+            verdict: "REWRITE",
+            rewritten_message: finalMessage,
+            rationale: verdict.rationale,
+        });
         process.stdout.write(`${HOOK_TAG} REWRITE\n`);
         process.stdout.write(`${HOOK_TAG}   original: ${originalSubject}\n`);
         process.stdout.write(`${HOOK_TAG}   rewritten: ${newSubject}\n`);
@@ -289,6 +311,7 @@ async function main() {
     }
 
     if (verdict.kind === "REJECT") {
+        appendAuditLog({ ...auditBase, verdict: "REJECT", rationale: verdict.rationale });
         process.stderr.write(`${HOOK_TAG} REJECT\n`);
         process.stderr.write(`${HOOK_TAG} rationale:\n`);
         for (const line of verdict.rationale.split(/\r?\n/)) {
@@ -300,6 +323,11 @@ async function main() {
         process.exit(1);
     }
 
+    appendAuditLog({
+        ...auditBase,
+        verdict: "UNKNOWN",
+        raw_verdict_text: verdictText.slice(0, 4000),
+    });
     process.stderr.write(`${HOOK_TAG} WARNING: auditor verdict unparseable; commit NOT audited.\n`);
     process.stderr.write(`${HOOK_TAG} auditor session: ${auditorSessionId}\n`);
     debug(`unparseable verdict: ${verdictText.slice(0, 500)}`);
