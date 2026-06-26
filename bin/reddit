@@ -1,71 +1,136 @@
-#!/bin/sh
+#!/usr/bin/env python3
 # ========================================================
-# Reddit Posts Fetcher
+# reddit - Fetch and list posts from a subreddit
+#
+# A minimal, dependency-free CLI for fetching public reddit
+# JSON listings. Prints a column-aligned table of upvotes,
+# approximate downvotes, short URL, and title.
 #
 # Usage:
-#   ./reddit.sh [-n NUM] [-s SORT] [-t RANGE] <subreddit>
+#   reddit [-n NUM] [-s SORT] [-t RANGE] <subreddit>
 #
 # Options:
-#   -n NUM     Number of posts to fetch (default: 10)
-#   -s SORT    Sorting: hot | new | top   (default: hot)
-#   -t RANGE   Time range for "top": hour | day | week | month | year | all
-#              (default: week, ignored unless -s top)
+#   -n, --limit NUM    Number of posts to fetch (default: 10).
+#   -s, --sort SORT    Sorting: hot | new | top (default: hot).
+#   -t, --time RANGE   Time range for "top": hour | day | week |
+#                      month | year | all (default: week; ignored
+#                      unless --sort top).
+#   -h, --help         Show this help.
 #
 # Examples:
-#   ./reddit.sh programming
-#   ./reddit.sh -n 25 -s new funny
-#   ./reddit.sh -n 15 -s top -t month science
+#   reddit programming
+#   reddit -n 25 -s new funny
+#   reddit -n 15 -s top -t month science
 #
-# Requires: curl, jq, column
+# Exit codes:
+#   0  success
+#   1  usage / argument error
+#   2  network error
+#   3  HTTP error (non-2xx response)
+#   4  malformed response (JSON parse failure or missing data)
 # ========================================================
 
-# Default values
-limit=10
-sort="hot"
-time="week"
+from __future__ import annotations
 
-# Parse options
-while getopts "n:s:t:" opt; do
-  case $opt in
-    n) limit="$OPTARG" ;;
-    s) sort="$OPTARG" ;;
-    t) time="$OPTARG" ;;
-    *) echo "Usage: $0 [-n NUM] [-s SORT] [-t RANGE] <subreddit>" >&2; exit 1 ;;
-  esac
-done
-shift $((OPTIND - 1))
+import argparse
+import json
+import sys
+import urllib.error
+import urllib.request
 
-# Check if subreddit was given
-if [ -z "$1" ]; then
-  echo "Usage: $0 [-n NUM] [-s SORT] [-t RANGE] <subreddit>" >&2
-  exit 1
-fi
 
-subreddit="$1"
+USER_AGENT = "Mozilla/5.0"
+VALID_SORTS = ("hot", "new", "top")
+VALID_TIMES = ("hour", "day", "week", "month", "year", "all")
 
-# Build URL depending on sort
-case "$sort" in
-  hot|new)
-    url="https://www.reddit.com/r/$subreddit/$sort/.json?limit=$limit"
-    ;;
-  top)
-    url="https://www.reddit.com/r/$subreddit/top/.json?limit=$limit&t=$time"
-    ;;
-  *)
-    echo "Error: sort must be one of: hot | new | top" >&2
-    exit 1
-    ;;
-esac
 
-# Fetch and format results
-curl -s -A "Mozilla/5.0" "$url" \
-| jq -r '.data.children[].data
-    | [
-        .ups?,                                                # Upvotes
-        (.ups? * (1 - .upvote_ratio?) | round),               # Downvotes (approx)
-        ("https://redd.it/" + .id),                           # Short URL
-        (.title? // "" | split(",")[0])                       # Title (first part if comma present)
-      ]
-    | @csv' \
-| column -t -s,
+def die(code: int, msg: str) -> None:
+    print(f"reddit: {msg}", file=sys.stderr)
+    sys.exit(code)
 
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        prog="reddit",
+        description="Fetch posts from a subreddit via the public JSON API.",
+        add_help=True,
+    )
+    p.add_argument("subreddit", help="Subreddit name (without the r/ prefix).")
+    p.add_argument("-n", "--limit", type=int, default=10, help="Number of posts (default: 10).")
+    p.add_argument("-s", "--sort", choices=VALID_SORTS, default="hot", help="Sort mode (default: hot).")
+    p.add_argument("-t", "--time", choices=VALID_TIMES, default="week",
+                   help="Time range for --sort top (default: week).")
+    return p.parse_args()
+
+
+def build_url(subreddit: str, sort: str, limit: int, time_range: str) -> str:
+    base = f"https://www.reddit.com/r/{subreddit}/{sort}/.json?limit={limit}"
+    if sort == "top":
+        return f"{base}&t={time_range}"
+    return base
+
+
+def fetch_json(url: str) -> dict:
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read()
+    except urllib.error.HTTPError as e:
+        die(3, f"HTTP {e.code} from {url}: {e.reason}")
+    except urllib.error.URLError as e:
+        die(2, f"network error contacting {url}: {e.reason}")
+    except TimeoutError:
+        die(2, f"request to {url} timed out")
+
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as e:
+        die(4, f"response was not JSON: {e}")
+
+
+def extract_rows(payload: dict) -> list[tuple[str, str, str, str]]:
+    children = payload.get("data", {}).get("children")
+    if not isinstance(children, list):
+        die(4, f"response missing data.children: {payload!r}")
+
+    rows: list[tuple[str, str, str, str]] = []
+    for child in children:
+        data = child.get("data", {})
+        ups = data.get("ups", 0) or 0
+        ratio = data.get("upvote_ratio", 1.0) or 0.0
+        post_id = data.get("id", "")
+        title = (data.get("title") or "").split(",", 1)[0]
+
+        # Approximate downvotes: ups * (1 - upvote_ratio).
+        downs = round(ups * (1.0 - ratio))
+        short_url = f"https://redd.it/{post_id}" if post_id else ""
+
+        rows.append((str(ups), str(downs), short_url, title))
+
+    return rows
+
+
+def print_aligned(rows: list[tuple[str, str, str, str]]) -> None:
+    if not rows:
+        return
+    cols = list(zip(*rows))
+    widths = [max(len(cell) for cell in col) for col in cols]
+    for row in rows:
+        parts = [row[i].ljust(widths[i]) for i in range(len(row) - 1)]
+        parts.append(row[-1])
+        print("  ".join(parts))
+
+
+def main() -> None:
+    args = parse_args()
+    if args.limit < 1:
+        die(1, "--limit must be >= 1")
+
+    url = build_url(args.subreddit, args.sort, args.limit, args.time)
+    payload = fetch_json(url)
+    rows = extract_rows(payload)
+    print_aligned(rows)
+
+
+if __name__ == "__main__":
+    main()

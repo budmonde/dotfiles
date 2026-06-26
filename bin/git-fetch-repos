@@ -1,60 +1,125 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+# ========================================================
+# git-fetch-repos - Fetch and report state for one or more git repos
+#
+# For each path given, fetches from its remote and reports whether
+# the current branch is up-to-date, behind, ahead, or diverged
+# relative to its upstream tracking branch. Also flags local
+# working-tree changes.
+#
+# Usage:
+#   git-fetch-repos <path-to-git-repo> [more-repos...]
+#
+# Discoverable as a git subcommand when present on PATH:
+#   git fetch-repos <path-to-git-repo> [more-repos...]
+#
+# Exit codes:
+#   0  all repos processed (individual repos may still report problems)
+#   1  usage error
+# ========================================================
 
-# Color codes
-BLUE="\033[34m"
-GREEN="\033[32m"
-YELLOW="\033[33m"
-RED="\033[31m"
-RESET="\033[0m"
+from __future__ import annotations
 
-if [ "$#" -lt 1 ]; then
-    echo -e "${YELLOW}Usage: $0 <path-to-git-repo> [more-repos...]${RESET}"
-    exit 1
-fi
+import subprocess
+import sys
 
-for repo in "$@"; do
-    if ! git -C "$repo" rev-parse --git-dir >/dev/null 2>&1; then
-        echo -e "${YELLOW}Skipping '$repo': not a git repository.${RESET}"
-        continue
-    fi
 
-    echo -e "${BLUE}Checking repository: $repo${RESET}"
-    pushd "$repo" >/dev/null || continue
+BLUE = "\033[34m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+RED = "\033[31m"
+RESET = "\033[0m"
 
-    # Fetch latest changes from remote
-    git fetch --quiet
 
-    # Get current branch
-    current_branch=$(git symbolic-ref --short HEAD)
+def usage() -> None:
+    print(f"{YELLOW}Usage: git-fetch-repos <path-to-git-repo> [more-repos...]{RESET}",
+          file=sys.stderr)
 
-    # Get tracking branch
-    tracking_branch=$(git for-each-ref --format='%(upstream:short)' "refs/heads/$current_branch")
 
-    if [ -z "$tracking_branch" ]; then
-        echo -e "${YELLOW}  Branch '$current_branch' has no upstream tracking branch.${RESET}"
-        popd >/dev/null
-        continue
-    fi
+def git(repo: str, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", "-C", repo, *args],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    # Check ahead/behind counts relative to upstream
-    behind_count=$(git rev-list --count "$current_branch".."$tracking_branch")
-    ahead_count=$(git rev-list --count "$tracking_branch".."$current_branch")
 
-    if [ "$ahead_count" -gt 0 ] && [ "$behind_count" -gt 0 ]; then
-        echo -e "${RED}  Branch '$current_branch' has diverged from '$tracking_branch' (ahead $ahead_count, behind $behind_count).${RESET}"
-    elif [ "$behind_count" -gt 0 ]; then
-        echo -e "${YELLOW}  Branch '$current_branch' is behind '$tracking_branch' by $behind_count commits.${RESET}"
-    elif [ "$ahead_count" -gt 0 ]; then
-        echo -e "${YELLOW}  Branch '$current_branch' is ahead of '$tracking_branch' by $ahead_count commits.${RESET}"
-    else
-        echo -e "${GREEN}  Branch '$current_branch' is up to date with '$tracking_branch'.${RESET}"
-    fi
+def is_git_repo(repo: str) -> bool:
+    result = git(repo, "rev-parse", "--git-dir")
+    return result.returncode == 0
 
-    # Also indicate if there are local changes in the working tree (regardless of ahead/behind/diverged)
-    if [ -n "$(git status --porcelain)" ]; then
-        echo -e "${YELLOW}  Local changes present in the working tree.${RESET}"
-    fi
 
-    popd >/dev/null
-done
+def process_repo(repo: str) -> None:
+    if not is_git_repo(repo):
+        print(f"{YELLOW}Skipping '{repo}': not a git repository.{RESET}")
+        return
+
+    print(f"{BLUE}Checking repository: {repo}{RESET}")
+
+    fetch = git(repo, "fetch", "--quiet")
+    if fetch.returncode != 0:
+        msg = fetch.stderr.strip() or "git fetch failed"
+        print(f"{RED}  Fetch failed: {msg}{RESET}")
+        return
+
+    head = git(repo, "symbolic-ref", "--short", "HEAD")
+    if head.returncode != 0:
+        print(f"{YELLOW}  Detached HEAD; skipping ahead/behind comparison.{RESET}")
+        report_dirty(repo)
+        return
+    current_branch = head.stdout.strip()
+
+    upstream = git(repo, "for-each-ref", "--format=%(upstream:short)",
+                   f"refs/heads/{current_branch}")
+    tracking_branch = upstream.stdout.strip()
+
+    if not tracking_branch:
+        print(f"{YELLOW}  Branch '{current_branch}' has no upstream tracking branch.{RESET}")
+        report_dirty(repo)
+        return
+
+    behind = count_revs(repo, f"{current_branch}..{tracking_branch}")
+    ahead = count_revs(repo, f"{tracking_branch}..{current_branch}")
+
+    if ahead > 0 and behind > 0:
+        print(f"{RED}  Branch '{current_branch}' has diverged from "
+              f"'{tracking_branch}' (ahead {ahead}, behind {behind}).{RESET}")
+    elif behind > 0:
+        print(f"{YELLOW}  Branch '{current_branch}' is behind "
+              f"'{tracking_branch}' by {behind} commits.{RESET}")
+    elif ahead > 0:
+        print(f"{YELLOW}  Branch '{current_branch}' is ahead of "
+              f"'{tracking_branch}' by {ahead} commits.{RESET}")
+    else:
+        print(f"{GREEN}  Branch '{current_branch}' is up to date with "
+              f"'{tracking_branch}'.{RESET}")
+
+    report_dirty(repo)
+
+
+def count_revs(repo: str, range_spec: str) -> int:
+    result = git(repo, "rev-list", "--count", range_spec)
+    try:
+        return int(result.stdout.strip())
+    except ValueError:
+        return 0
+
+
+def report_dirty(repo: str) -> None:
+    status = git(repo, "status", "--porcelain")
+    if status.stdout.strip():
+        print(f"{YELLOW}  Local changes present in the working tree.{RESET}")
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        usage()
+        sys.exit(1)
+
+    for repo in sys.argv[1:]:
+        process_repo(repo)
+
+
+if __name__ == "__main__":
+    main()
