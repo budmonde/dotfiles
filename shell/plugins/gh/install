@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# GitHub CLI (gh) installation script
+# Installs gh via the official cli.github.com apt repository.
+#
+# Supported: Debian/Ubuntu (apt-based systems).
+# Unsupported targets exit 0 with a skip message; operators on non-apt
+# distros or macOS install gh out-of-band (brew, dnf, etc.).
+
+set -euo pipefail
+
+if ! command -v apt-get >/dev/null 2>&1; then
+    echo "Skipping gh install (apt-get not found; install gh via your platform's package manager)."
+    exit 0
+fi
+
+if command -v gh >/dev/null 2>&1; then
+    echo "gh already installed: $(gh --version | head -1)"
+    exit 0
+fi
+
+KEYRING="/etc/apt/keyrings/githubcli-archive-keyring.gpg"
+SOURCES_LIST="/etc/apt/sources.list.d/github-cli.list"
+
+if ! command -v wget >/dev/null 2>&1; then
+    sudo apt-get update
+    sudo apt-get install -y wget
+fi
+
+echo "Adding cli.github.com apt repository..."
+sudo mkdir -p -m 755 /etc/apt/keyrings
+out="$(mktemp)"
+wget -nv -O "$out" https://cli.github.com/packages/githubcli-archive-keyring.gpg
+sudo install -m 644 "$out" "$KEYRING"
+rm -f "$out"
+
+sudo mkdir -p -m 755 /etc/apt/sources.list.d
+echo "deb [arch=$(dpkg --print-architecture) signed-by=${KEYRING}] https://cli.github.com/packages stable main" \
+    | sudo tee "$SOURCES_LIST" >/dev/null
+
+echo "Installing gh..."
+sudo apt-get update
+sudo apt-get install -y gh
+
+echo "gh installed: $(gh --version | head -1)"

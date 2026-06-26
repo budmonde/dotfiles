@@ -58,6 +58,8 @@
       description: Installing GitHub CLI
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC
       description: Installing ripgrep
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Rclone.Rclone
+      description: Installing rclone
 
     # Node.js / npm (scripts refresh PATH and activate fnm)
     - command: powershell -NoProfile -File powershell\plugins\node\install.ps1

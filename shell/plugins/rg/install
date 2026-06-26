@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# ripgrep (rg) installation script
+# Installs ripgrep via apt-get on Debian/Ubuntu.
+#
+# Supported: Debian stable, Ubuntu 18.10 (Cosmic) or newer.
+# Unsupported targets exit 0 with a skip message; operators on non-apt
+# distros or macOS install ripgrep out-of-band (brew, dnf, cargo, etc.).
+#
+# Note: the apt-packaged version may lag upstream. For the latest, fetch
+# the .deb directly from https://github.com/BurntSushi/ripgrep/releases.
+
+set -euo pipefail
+
+if ! command -v apt-get >/dev/null 2>&1; then
+    echo "Skipping ripgrep install (apt-get not found; install ripgrep via your platform's package manager)."
+    exit 0
+fi
+
+if command -v rg >/dev/null 2>&1; then
+    echo "ripgrep already installed: $(rg --version | head -1)"
+    exit 0
+fi
+
+echo "Installing ripgrep..."
+sudo apt-get update
+sudo apt-get install -y ripgrep
+
+echo "ripgrep installed: $(rg --version | head -1)"

@@ -33,6 +33,9 @@
     - ['eval "$(${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm env --shell bash)" && cd git/hooks && npm install --silent --no-audit --no-fund', Installing git hook dependencies]
     - [./shell/plugins/nvim/install, Installing neovim]
     - ['curl -LsSf https://astral.sh/uv/install.sh | UV_NO_MODIFY_PATH=1 sh', Installing uv]
+    - [./shell/plugins/gh/install, Installing GitHub CLI]
+    - [./shell/plugins/rg/install, Installing ripgrep]
+    - [./shell/plugins/rclone/install, Installing rclone]
     - [./shell/plugins/push-notify/install, Installing push-notify]
 
 # Symlinks for binaries installed above

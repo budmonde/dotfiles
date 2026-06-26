@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# rclone installation script
+# Downloads the official rclone binary into ~/.local/bin (userspace, no sudo).
+#
+# Supported: Linux (amd64, arm64, armv7), macOS (amd64, arm64).
+# Unsupported targets exit 0 with a skip message.
+#
+# rclone is a single static Go binary, so a portable userspace install is
+# sufficient for copy/sync/lsd/etc. The `rclone mount` subcommand additionally
+# requires FUSE (Linux) or WinFsp (Windows) and is not addressed here.
+
+set -euo pipefail
+
+BIN_DIR="$HOME/.local/bin"
+BIN="$BIN_DIR/rclone"
+
+if command -v rclone >/dev/null 2>&1; then
+    echo "rclone already installed: $(rclone version | head -1)"
+    exit 0
+fi
+
+os=$(uname -s | tr '[:upper:]' '[:lower:]')
+case "$os" in
+    linux)  ;;
+    darwin) os=osx ;;
+    *)
+        echo "Skipping rclone install (unsupported OS: $os)."
+        exit 0
+        ;;
+esac
+
+arch=$(uname -m)
+case "$arch" in
+    x86_64)         arch=amd64 ;;
+    aarch64|arm64)  arch=arm64 ;;
+    armv7l)         arch=arm-v7 ;;
+    *)
+        echo "Skipping rclone install (unsupported arch: $arch)."
+        exit 0
+        ;;
+esac
+
+url="https://downloads.rclone.org/rclone-current-${os}-${arch}.zip"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+echo "Downloading rclone (${os}-${arch})..."
+curl -fsSL "$url" -o "$tmp/rclone.zip"
+
+echo "Extracting..."
+unzip -q "$tmp/rclone.zip" -d "$tmp"
+
+mkdir -p "$BIN_DIR"
+mv "$tmp"/rclone-*/rclone "$BIN"
+chmod +x "$BIN"
+
+echo "rclone installed: $($BIN version | head -1)"
