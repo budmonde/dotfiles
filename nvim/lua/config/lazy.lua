@@ -46,6 +46,30 @@ local appearance_plugins = {
         dependencies = { "nvim-tree/nvim-web-devicons" },
         config = function()
             local use_nerd_fonts = vim.g.use_nerd_fonts ~= 0  -- default true
+
+            -- Fugitive extension that adds the repo name left of the branch.
+            -- fugitive bufnames look like fugitive:///<repo>/.git// (with a
+            -- leading slash before the drive letter on Windows).
+            local fugitive_extension = {
+                sections = {
+                    lualine_a = {
+                        function()
+                            local dir = vim.api.nvim_buf_get_name(0)
+                                :gsub("^fugitive://", "")
+                                :gsub("//.*$", "")
+                                :gsub("/%.git/?$", "")
+                                :gsub("^/(%a:)", "%1")
+                            return vim.fn.fnamemodify(dir, ":t")
+                        end,
+                        function()
+                            return " " .. vim.fn.FugitiveHead()
+                        end,
+                    },
+                    lualine_z = { "location" },
+                },
+                filetypes = { "fugitive" },
+            }
+
             require("lualine").setup({
                 options = {
                     theme = "gruvbox-material",
@@ -53,7 +77,7 @@ local appearance_plugins = {
                     section_separators = use_nerd_fonts and { left = '', right = '' } or { left = '', right = '' },
                     component_separators = use_nerd_fonts and { left = '', right = '' } or { left = '|', right = '|' },
                 },
-                extensions = { "nvim-tree", "fugitive" },
+                extensions = { "nvim-tree", fugitive_extension },
             })
         end,
     },
