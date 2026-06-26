@@ -34,11 +34,7 @@
     - [./shell/plugins/nvim/install, Installing neovim]
     - ['curl -LsSf https://astral.sh/uv/install.sh | UV_NO_MODIFY_PATH=1 sh', Installing uv]
     - [./shell/plugins/texlive/install, Installing texlive]
-    - ['curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path', Installing opencode]
     - [./shell/plugins/push-notify/install, Installing push-notify]
-
-    # WSL-specific
-    - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL]
 
 # Symlinks for binaries installed above
 - link:

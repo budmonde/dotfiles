@@ -1,0 +1,12 @@
+# Profile: agentic — agentic-coding CLI tooling
+# Usage: ./install-profile agentic
+#
+# Installs the upstream opencode CLI via the official installer. The local
+# repo's `agentic` profile installs the NVIDIA-internal fork instead; the
+# two are mutually exclusive — pick whichever is appropriate for the machine.
+#
+# On WSL, also masks systemd-timesyncd as an opencode-specific workaround.
+
+- shell:
+    - ['curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path', Installing opencode]
+    - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL (opencode workaround)]
