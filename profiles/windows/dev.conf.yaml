@@ -8,5 +8,7 @@
       description: Installing CMake
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId GnuWin32.Make
       description: Installing GnuWin32 Make
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId GoLang.Go
+      description: Installing Go toolchain
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Nvidia.Nsight.Compute
       description: Installing NVIDIA Nsight Compute

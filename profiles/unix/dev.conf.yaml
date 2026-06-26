@@ -1,0 +1,17 @@
+# Profile: dev — development build tools
+# Usage: ./install-profile dev
+#
+# Installs the build toolchain (Go, CMake, build-essential which provides
+# make/gcc/g++) and NVIDIA Nsight Compute on Debian/Ubuntu via apt-get.
+# Operators on non-apt distros or macOS install these out-of-band (brew,
+# dnf, the upstream Go tarball, etc.).
+#
+# Note: Nsight Compute on Ubuntu requires NVIDIA's CUDA apt repository.
+# Soft-skip on absence so the profile remains usable on hosts without
+# the CUDA repo configured.
+
+- shell:
+    - ['command -v apt-get >/dev/null 2>&1 || { echo "Skipping dev profile (apt-get not found)."; exit 0; }; sudo apt-get update && sudo apt-get install -y golang-go', Installing Go toolchain]
+    - ['command -v apt-get >/dev/null 2>&1 || exit 0; sudo apt-get install -y cmake', Installing CMake]
+    - ['command -v apt-get >/dev/null 2>&1 || exit 0; sudo apt-get install -y build-essential', Installing build-essential]
+    - ['command -v apt-get >/dev/null 2>&1 || exit 0; if apt-cache show nsight-compute >/dev/null 2>&1; then sudo apt-get install -y nsight-compute; else echo "Skipping nsight-compute (not in apt cache; configure NVIDIA CUDA repo to enable)."; fi', Installing NVIDIA Nsight Compute]

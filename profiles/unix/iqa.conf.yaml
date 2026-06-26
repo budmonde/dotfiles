@@ -1,0 +1,9 @@
+# Profile: iqa — image quality assessment tools
+# Usage: ./install-profile iqa
+#
+# Installs VLC and FFmpeg via apt-get on Debian/Ubuntu. Operators on
+# non-apt distros or macOS install these out-of-band (brew, dnf, etc.).
+
+- shell:
+    - ['command -v apt-get >/dev/null 2>&1 || { echo "Skipping iqa profile (apt-get not found)."; exit 0; }; sudo apt-get update && sudo apt-get install -y vlc', Installing VLC]
+    - ['command -v apt-get >/dev/null 2>&1 || exit 0; sudo apt-get install -y ffmpeg', Installing FFmpeg]
