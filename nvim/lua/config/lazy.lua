@@ -463,29 +463,10 @@ local keybinding_plugins = {
             return vim.g.enable_session == true or vim.g.enable_session == 1
         end,
         config = function()
-            -- Store global CWD before any :tcd is set
-            vim.g.global_cwd = vim.fn.getcwd()
-
             local persistence = require("persistence")
             persistence.setup({
                 dir = vim.fn.stdpath("state") .. "/sessions/",
             })
-
-            -- Override the current() function to use global CWD
-            local config = require("persistence.config")
-            local original_current = persistence.current
-            persistence.current = function(opts)
-                opts = opts or {}
-                local cwd = vim.g.global_cwd or vim.fn.getcwd()
-                local name = cwd:gsub("[\\/:]+", "%%")
-                if config.options.branch and opts.branch ~= false then
-                    local branch = persistence.branch()
-                    if branch and branch ~= "main" and branch ~= "master" then
-                        name = name .. "%%" .. branch:gsub("[\\/:]+", "%%")
-                    end
-                end
-                return config.options.dir .. name .. ".vim"
-            end
 
             -- Auto-load session if nvim started without arguments
             vim.api.nvim_create_autocmd("VimEnter", {
