@@ -75,8 +75,12 @@
       description: Installing fonts
 
     # PowerShell modules (bootstraps PackageManagement if needed)
+    - command: powershell -NoProfile -File powershell\plugins\psreadline\install.ps1
+      description: Upgrading PSReadLine
     - command: powershell -NoProfile -File powershell\plugins\psfzf\install.ps1
       description: Installing PSFzf
+    - command: powershell -NoProfile -File powershell\plugins\completion-predictor\install.ps1
+      description: Installing CompletionPredictor
 
     # Post-link actions
     - command: >-
@@ -101,4 +105,6 @@
 - link:
     ~/.local/bin/fzf.exe: shell/plugins/fzf/bin/fzf.exe
     ~/.local/bin/imgen.cmd: windows/bin/imgen.cmd
+    ~/.local/bin/reddit.cmd: windows/bin/reddit.cmd
+    ~/.local/bin/git-fetch-repos.cmd: windows/bin/git-fetch-repos.cmd
     ~/.local/bin/winget-install.ps1: windows/bin/winget-install.ps1
