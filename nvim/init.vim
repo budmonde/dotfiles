@@ -42,6 +42,11 @@ augroup AutoReload
     autocmd FocusGained,BufEnter * checktime
 augroup END
 
+" Telemetry: capture nvim messages (notifications, errors, warnings) to a
+" durable log. Loaded before lazy.nvim so plugin-load-time messages are also
+" captured.
+lua require('config.telemetry')
+
 " Load Lua configuration (includes colorscheme via lazy.nvim)
 " lazy.nvim preserves ~/.vim in rtp via performance.rtp.paths
 lua require('config.lazy')
