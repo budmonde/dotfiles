@@ -125,7 +125,7 @@ local filesystem_plugins = {
         "nvim-tree/nvim-tree.lua",
         dependencies = { "nvim-tree/nvim-web-devicons" },
         config = function()
-            local use_nerd_fonts = vim.g.use_nerd_fonts ~= 0  -- default true
+            local use_nerd_fonts = vim.g.use_nerd_fonts ~= 0
             require("nvim-tree").setup({
                 view = { width = 60 },
                 sync_root_with_cwd = true,
@@ -135,6 +135,20 @@ local filesystem_plugins = {
                     show_on_dirs = true,
                     show_on_open_dirs = false,
                     timeout = vim.fn.has("win32") == 1 and 2000 or 400,
+                },
+                -- Suppress libuv-watcher exhaustion on noisy trees.
+                filesystem_watchers = {
+                    enable = true,
+                    debounce_delay = 50,
+                    ignore_dirs = {
+                        "/.git$",
+                        "/node_modules$",
+                        "/.opencode$",
+                        "/p4$",
+                        "/rclone$",
+                        "/.local/share/nvim%-data$",
+                        "/.local/state/nvim%-data$",
+                    },
                 },
                 update_focused_file = {
                     enable = true,
