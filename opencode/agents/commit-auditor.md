@@ -285,11 +285,20 @@ Use `REJECT` when one of the following is true:
 
 - The staged index is empty (or the amend would result in an empty change set).
 - The diff includes files that violate a hard hygiene or scope rule (build artifacts, generated files, private-scope files in a public-scope repo, files that match a convention exclusion).
+- The diff contains hunks unrelated to the commit's stated intent — patches that don't belong in this commit regardless of how the message is phrased.
+  Example: a `[FEAT]` commit for feature X whose diff also carries an unrelated bug fix or stray edit in an unrelated subsystem.
+  No message rewrite makes a mixed-intent diff into a single-intent commit; the author must unstage the unrelated hunks (`git restore --staged --patch` or `git reset HEAD <path>`) and re-commit.
+  Name the offending hunks/files in the rationale.
+- The diff contains clear defects visible on first read — typos in identifiers or user-visible strings, obvious bugs (inverted conditions, uninitialized reads, dropped error handling, off-by-one in loop bounds), syntax-level breakage, or other dead-on-arrival edits.
+  This gate is for defects a competent reader would catch in a single pass, not for stylistic preferences, debatable design choices, performance concerns, or anything requiring context beyond the diff.
+  The author must fix the defect and re-stage; no message rewrite makes a defective diff land cleanly.
+  Name the specific defect and its location in the rationale.
 - The supplied `repo` is not actually a git work tree, or the target repo is otherwise wrong and a message rewrite cannot fix it.
 - The branch policy forbids direct commits to the current branch (e.g. the convention says `main` is PR-only) and there is no signal that the author is on the right branch.
 - Any other condition where no message rewrite would make the commit valid.
 
-Do not use `REJECT` for fixable message problems (wrong tag, vague subject, missing body) — those are `REWRITE` cases.
+Do not use `REJECT` for fixable *message* problems (wrong tag, vague subject, missing body) — those are `REWRITE` cases.
+Do use `REJECT` when the *diff itself* needs to change (extraneous patches, visible defects, hygiene violations) — those are not fixable by a message rewrite, regardless of how accurate the message is.
 
 Requirements for the rationale (same as `REWRITE` plus):
 
