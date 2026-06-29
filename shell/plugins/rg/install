@@ -1,28 +1,90 @@
 #!/usr/bin/env bash
 # ripgrep (rg) installation script
-# Installs ripgrep via apt-get on Debian/Ubuntu.
+# Downloads the official ripgrep binary into ~/.local/bin (userspace, no sudo).
 #
-# Supported: Debian stable, Ubuntu 18.10 (Cosmic) or newer.
-# Unsupported targets exit 0 with a skip message; operators on non-apt
-# distros or macOS install ripgrep out-of-band (brew, dnf, cargo, etc.).
+# Supported: Linux (amd64 musl, arm64 gnu), macOS (amd64, arm64).
+# Unsupported targets exit 0 with a skip message.
 #
-# Note: the apt-packaged version may lag upstream. For the latest, fetch
-# the .deb directly from https://github.com/BurntSushi/ripgrep/releases.
+# The Linux amd64 build is the upstream musl static binary, which avoids
+# glibc-version issues on older cluster login nodes. The Linux arm64 build
+# uses the gnu variant because upstream does not publish an arm64 musl build.
 
 set -euo pipefail
 
-if ! command -v apt-get >/dev/null 2>&1; then
-    echo "Skipping ripgrep install (apt-get not found; install ripgrep via your platform's package manager)."
-    exit 0
-fi
+BIN_DIR="$HOME/.local/bin"
+BIN="$BIN_DIR/rg"
 
 if command -v rg >/dev/null 2>&1; then
     echo "ripgrep already installed: $(rg --version | head -1)"
     exit 0
 fi
 
-echo "Installing ripgrep..."
-sudo apt-get update
-sudo apt-get install -y ripgrep
+if [ -x "$BIN" ]; then
+    echo "ripgrep already installed at $BIN"
+    "$BIN" --version | head -1
+    exit 0
+fi
 
-echo "ripgrep installed: $(rg --version | head -1)"
+os=$(uname -s)
+arch=$(uname -m)
+
+case "$os" in
+    Linux)
+        case "$arch" in
+            x86_64)
+                target="x86_64-unknown-linux-musl"
+                ;;
+            aarch64|arm64)
+                target="aarch64-unknown-linux-gnu"
+                ;;
+            *)
+                echo "Skipping ripgrep install (unsupported Linux arch: $arch)."
+                exit 0
+                ;;
+        esac
+        ;;
+    Darwin)
+        case "$arch" in
+            x86_64)         target="x86_64-apple-darwin" ;;
+            aarch64|arm64)  target="aarch64-apple-darwin" ;;
+            *)
+                echo "Skipping ripgrep install (unsupported Darwin arch: $arch)."
+                exit 0
+                ;;
+        esac
+        ;;
+    *)
+        echo "Skipping ripgrep install (unsupported OS: $os)."
+        exit 0
+        ;;
+esac
+
+# Resolve the latest release tag from the GitHub API; fall back to a pinned
+# version if the API is unreachable (cluster login nodes occasionally have
+# restricted egress).
+PINNED_VERSION="15.1.0"
+if version=$(curl -fsSL "https://api.github.com/repos/BurntSushi/ripgrep/releases/latest" 2>/dev/null \
+    | grep -m1 '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/'); then
+    : "${version:=$PINNED_VERSION}"
+else
+    version="$PINNED_VERSION"
+fi
+
+filename="ripgrep-${version}-${target}.tar.gz"
+url="https://github.com/BurntSushi/ripgrep/releases/download/${version}/${filename}"
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+echo "Downloading ripgrep ${version} (${target})..."
+curl -fsSL "$url" -o "$tmp/$filename"
+
+echo "Extracting..."
+tar -xzf "$tmp/$filename" -C "$tmp"
+
+mkdir -p "$BIN_DIR"
+# Tarball extracts to ripgrep-<version>-<target>/; rg binary lives at top level.
+mv "$tmp"/ripgrep-*/rg "$BIN"
+chmod +x "$BIN"
+
+echo "ripgrep installed: $("$BIN" --version | head -1)"

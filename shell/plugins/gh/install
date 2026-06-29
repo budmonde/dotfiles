@@ -1,44 +1,72 @@
 #!/usr/bin/env bash
 # GitHub CLI (gh) installation script
-# Installs gh via the official cli.github.com apt repository.
+# Downloads the official gh release tarball into ~/.local/share/gh-install
+# and symlinks the binary into ~/.local/bin (userspace, no sudo).
 #
-# Supported: Debian/Ubuntu (apt-based systems).
-# Unsupported targets exit 0 with a skip message; operators on non-apt
-# distros or macOS install gh out-of-band (brew, dnf, etc.).
+# Supported: Linux (amd64, arm64).
+# Unsupported targets exit 0 with a skip message; operators on macOS install
+# gh via Homebrew, and Windows is handled out-of-band.
 
 set -euo pipefail
 
-if ! command -v apt-get >/dev/null 2>&1; then
-    echo "Skipping gh install (apt-get not found; install gh via your platform's package manager)."
-    exit 0
-fi
+INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/gh-install"
+BIN_DIR="$HOME/.local/bin"
 
 if command -v gh >/dev/null 2>&1; then
     echo "gh already installed: $(gh --version | head -1)"
     exit 0
 fi
 
-KEYRING="/etc/apt/keyrings/githubcli-archive-keyring.gpg"
-SOURCES_LIST="/etc/apt/sources.list.d/github-cli.list"
-
-if ! command -v wget >/dev/null 2>&1; then
-    sudo apt-get update
-    sudo apt-get install -y wget
+if [ -x "$INSTALL_DIR/bin/gh" ]; then
+    echo "gh already installed at $INSTALL_DIR"
+    "$INSTALL_DIR/bin/gh" --version | head -1
+    exit 0
 fi
 
-echo "Adding cli.github.com apt repository..."
-sudo mkdir -p -m 755 /etc/apt/keyrings
-out="$(mktemp)"
-wget -nv -O "$out" https://cli.github.com/packages/githubcli-archive-keyring.gpg
-sudo install -m 644 "$out" "$KEYRING"
-rm -f "$out"
+os=$(uname -s)
+if [ "$os" != "Linux" ]; then
+    echo "Skipping gh install (this installer only supports Linux; on macOS install via Homebrew)."
+    exit 0
+fi
 
-sudo mkdir -p -m 755 /etc/apt/sources.list.d
-echo "deb [arch=$(dpkg --print-architecture) signed-by=${KEYRING}] https://cli.github.com/packages stable main" \
-    | sudo tee "$SOURCES_LIST" >/dev/null
+arch=$(uname -m)
+case "$arch" in
+    x86_64)         arch=amd64 ;;
+    aarch64|arm64)  arch=arm64 ;;
+    *)
+        echo "Skipping gh install (unsupported arch: $arch)."
+        exit 0
+        ;;
+esac
 
-echo "Installing gh..."
-sudo apt-get update
-sudo apt-get install -y gh
+# Resolve the latest release tag from the GitHub API; fall back to a pinned
+# version if the API is unreachable (cluster login nodes occasionally have
+# restricted egress).
+PINNED_VERSION="2.95.0"
+if version=$(curl -fsSL "https://api.github.com/repos/cli/cli/releases/latest" 2>/dev/null \
+    | grep -m1 '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/'); then
+    : "${version:=$PINNED_VERSION}"
+else
+    version="$PINNED_VERSION"
+fi
 
-echo "gh installed: $(gh --version | head -1)"
+filename="gh_${version}_linux_${arch}.tar.gz"
+url="https://github.com/cli/cli/releases/download/v${version}/${filename}"
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+echo "Downloading gh ${version} (linux_${arch})..."
+curl -fsSL "$url" -o "$tmp/$filename"
+
+echo "Extracting to $INSTALL_DIR..."
+mkdir -p "$INSTALL_DIR"
+tar -xzf "$tmp/$filename" -C "$tmp"
+# Tarball extracts to gh_<version>_linux_<arch>/; flatten its contents into INSTALL_DIR.
+mv "$tmp"/gh_*/* "$INSTALL_DIR/"
+
+mkdir -p "$BIN_DIR"
+ln -sf "$INSTALL_DIR/bin/gh" "$BIN_DIR/gh"
+
+echo "gh installed: $("$INSTALL_DIR/bin/gh" --version | head -1)"
+echo "Symlinked to $BIN_DIR/gh"
