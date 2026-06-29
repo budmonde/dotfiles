@@ -7,6 +7,7 @@
   ],
   "keybinds": {
     "session_interrupt": "ctrl+c,escape",
+    "session_fork": "<leader>f",
     "input_clear": "ctrl+u",
     "app_exit": "ctrl+d,<leader>q",
     "messages_line_up": "ctrl+alt+y,ctrl+k",
