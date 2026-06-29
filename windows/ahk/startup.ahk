@@ -1,27 +1,21 @@
 #SingleInstance Force
 
 ; Re-program CapsLock key behavior
-
 CapsLock:: {
     Send("{Escape}")
 }
-
 +CapsLock:: {
     SetCapsLockState(GetKeyState("CapsLock", "T") ? "Off" : "On")
 }
 
-; Ctrl+Alt+Pause — Sleep
-^!Pause:: {
-    DllCall("powrprof\SetSuspendState", "Int", 0, "Int", 1, "Int", 0)
+; Ctrl+Alt+Pause — Hibernate.
+^!CtrlBreak:: {
+    DllCall("powrprof\SetSuspendState", "Int", 1, "Int", 1, "Int", 0)
 }
 
-; Ctrl+Alt+T — WSL terminal (bring to front if running, else launch)
+; Ctrl+Alt+T — Open a new Windows Terminal window with the Ubuntu profile.
 ^!t:: {
-    if WinExist("Ubuntu ahk_exe WindowsTerminal.exe") {
-        WinActivate()
-    } else {
-        Run("wt.exe -p Ubuntu")
-    }
+    Run('wt.exe -w new -p Ubuntu')
 }
 
 ; Win+/ — Hotkey cheat sheet overlay
@@ -58,8 +52,8 @@ ShowCheatSheet() {
     SYSTEM
       CapsLock           Escape
       Shift+CapsLock     Toggle CapsLock
-      Ctrl+Alt+Pause     Sleep
-      Ctrl+Alt+T         WSL terminal
+      Ctrl+Alt+Pause     Hibernate
+      Ctrl+Alt+T         New WSL terminal window
 
     WINDOWS
       Win+V              Clipboard history
