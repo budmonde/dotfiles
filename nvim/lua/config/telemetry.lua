@@ -1,3 +1,5 @@
+-- Last realignment: 2026-06-29
+
 -- Avoids vim.ui_attach(ext_messages=true): that externalizes the cmdline UI
 -- and would require re-implementing it (cf. noice.nvim).
 
