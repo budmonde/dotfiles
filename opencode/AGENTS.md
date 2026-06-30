@@ -4,9 +4,18 @@
 
 ### Comments
 
-Only include comments when they provide necessary context or explanation that isn't already obvious from the code itself.
-If the code is human-readable and self-explanatory, omit the comment.
-Prefer clear, descriptive names over comments that restate what the code does.
+Do not add comments unless they explain non-obvious behavior, intent, or constraints that cannot be expressed through naming or structure.
+In particular, do not:
+
+- Narrate or restate what the code does (`// increment counter`, `# loop over users`).
+- Add section-divider banners or decorative comments.
+- Annotate edits with change-log prose (`// added retry`, `// fixed bug`, `// updated logic`).
+  That belongs in the commit message.
+- Add comments addressed to the user rather than future readers of the code.
+- Add docstrings or header comments to trivial functions whose signature is self-explanatory.
+
+Prefer clear, descriptive names over comments that restate the code.
+When in doubt, omit the comment.
 
 ### Markdown Authoring
 
