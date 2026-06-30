@@ -1,4 +1,3 @@
-# Windows-specific configuration (PowerShell)
 # Run via: .\install.ps1 (which loads this after install.conf.yaml)
 # Requires: admin shell (for symlinks), winget, python
 #
