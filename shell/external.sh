@@ -25,6 +25,7 @@ export LESSHISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/less/history"
 export NODE_REPL_HISTORY="${XDG_STATE_HOME:-$HOME/.local/state}/node/history"
 export PYTHONHISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/python/history"
 export DOCKER_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/docker"
+export UV_TOOL_BIN_DIR="$HOME/.local/bin"
 
 # opencode: skip ~/.claude/skills and ~/.agents/skills discovery (IT-pushed
 # skills like managing-omnistation and nvinfo-cli land there). Pull desired
