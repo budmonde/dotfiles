@@ -15,6 +15,10 @@ endif
 
 source ~/.vim/vimrc.before
 
+" Reset to nvim default; the shared vim baseline of 10ms is too tight for
+" bracketed-paste envelopes over SSH+tmux.
+set ttimeoutlen=50
+
 " Auto-set tab-local CWD to file's directory on new tabs
 augroup TabLocalCwd
     autocmd!
