@@ -11,6 +11,7 @@
 
 - link:
     "%DOCUMENTS%\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1": profile.ps1
+    "%DOCUMENTS%\\PowerShell\\Microsoft.PowerShell_profile.ps1": profile.ps1
     "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json": windows/terminal/settings.json
     "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\startup.ahk": windows/ahk/startup.ahk
     ~/.config/powertoys/settings: windows/powertoys/settings
@@ -47,6 +48,12 @@
     # CLI tools
     - command: powershell -NoProfile -File shell\plugins\fzf\install.ps1
       description: Installing fzf
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Microsoft.PowerShell
+      description: Installing PowerShell 7
+    - command: >-
+        powershell -NoProfile -Command
+        "& pwsh -NoProfile -Command \"if ((Get-ExecutionPolicy -Scope CurrentUser) -eq 'Restricted') { Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }\""
+      description: Setting PowerShell 7 execution policy
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Schniz.fnm
       description: Installing fnm
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Neovim.Neovim
@@ -73,12 +80,14 @@
     - command: powershell -NoProfile -File powershell\plugins\fonts\install.ps1
       description: Installing fonts
 
-    # PowerShell modules (bootstraps PackageManagement if needed)
-    - command: powershell -NoProfile -File powershell\plugins\psreadline\install.ps1
+    # PowerShell modules (bootstraps PackageManagement if needed).
+    # Invoked via pwsh so modules land under Documents\PowerShell\Modules
+    # rather than Documents\WindowsPowerShell\Modules.
+    - command: pwsh -NoProfile -File powershell\plugins\psreadline\install.ps1
       description: Upgrading PSReadLine
-    - command: powershell -NoProfile -File powershell\plugins\psfzf\install.ps1
+    - command: pwsh -NoProfile -File powershell\plugins\psfzf\install.ps1
       description: Installing PSFzf
-    - command: powershell -NoProfile -File powershell\plugins\completion-predictor\install.ps1
+    - command: pwsh -NoProfile -File powershell\plugins\completion-predictor\install.ps1
       description: Installing CompletionPredictor
 
     # Post-link actions
