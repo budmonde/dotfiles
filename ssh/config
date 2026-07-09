@@ -7,3 +7,12 @@ Host github.com
     User git
     IdentityFile ~/.ssh/git/github_ed25519
     IdentitiesOnly yes
+
+# Set the WT tab title to "SSH | <alias>" on connect. %n is the hostname as
+# typed on the command line (the Host alias), so no argv parsing is needed.
+# The title reverts to "PS1 | <dir>" automatically on the next prompt render
+# after ssh returns. set-title resolves to bin/set-title (bash) on Unix and
+# bin/set-title.cmd on Windows via ~/.local/bin symlinks.
+Host *
+    PermitLocalCommand yes
+    LocalCommand set-title "SSH | %n"

@@ -115,4 +115,5 @@
     ~/.local/bin/imgen.cmd: windows/bin/imgen.cmd
     ~/.local/bin/reddit.cmd: windows/bin/reddit.cmd
     ~/.local/bin/git-fetch-repos.cmd: windows/bin/git-fetch-repos.cmd
+    ~/.local/bin/set-title.cmd: bin/set-title.cmd
     ~/.local/bin/winget-install.ps1: windows/bin/winget-install.ps1
