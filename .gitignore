@@ -1,6 +1,6 @@
 *~
 tags
-opencode.json
+opencode.jsonc
 opencode/agents/nv_*.md
 __pycache__/
 .githooks/commit-msg
