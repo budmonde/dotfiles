@@ -13,6 +13,11 @@ Host github.com
 # The title reverts to "PS1 | <dir>" automatically on the next prompt render
 # after ssh returns. set-title resolves to bin/set-title (bash) on Unix and
 # bin/set-title.cmd on Windows via ~/.local/bin symlinks.
+#
+# Output is redirected to stderr because LocalCommand's stdout is ssh's
+# stdout, which for non-interactive invocations (git-over-ssh, rsync, scp)
+# is the transport channel; a stray OSC title escape there corrupts the
+# git wire protocol with `bad line length character` errors.
 Host *
     PermitLocalCommand yes
-    LocalCommand set-title "SSH | %n"
+    LocalCommand set-title "SSH | %n" 1>&2
