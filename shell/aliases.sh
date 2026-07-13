@@ -45,6 +45,24 @@ opencode() {
     command opencode --hostname 127.0.0.1 "$@"
 }
 
+codex() {
+    local arg
+    for arg in "$@"; do
+        case "$arg" in
+            --profile|--profile=*)
+                command codex "$@"
+                return
+                ;;
+        esac
+    done
+
+    if [ -n "${CODEX_PROFILE:-}" ] && [ "$CODEX_PROFILE" != "default" ]; then
+        command codex --profile "$CODEX_PROFILE" "$@"
+    else
+        command codex "$@"
+    fi
+}
+
 if [ -n "$IS_WSL" ]; then
     alias pdf-viewer-pipe="xargs $PDF_VIEWER"
 fi

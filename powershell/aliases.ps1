@@ -51,3 +51,15 @@ function venv {
 }
 
 function opencode { & opencode.exe --hostname 127.0.0.1 @args }
+
+function codex {
+    $hasExplicitProfile = $args | Where-Object {
+        $_ -eq '--profile' -or $_ -like '--profile=*'
+    }
+
+    if ($hasExplicitProfile -or -not $env:CODEX_PROFILE -or $env:CODEX_PROFILE -eq 'default') {
+        & codex.cmd @args
+    } else {
+        & codex.cmd --profile $env:CODEX_PROFILE @args
+    }
+}

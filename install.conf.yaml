@@ -6,7 +6,7 @@
         create: true
         relink: true
 
-- clean: ['~', '~/.config']
+- clean: ['~', '~/.config', '~/.codex']
 
 - link:
     # Git / SSH
@@ -21,6 +21,11 @@
     ~/.config/claude/settings.json: claude/settings.json
     ~/.config/claude/keybindings.json: claude/keybindings.json
     ~/.config/opencode: opencode
+    ~/.agents: agents
+    ~/.codex/AGENTS.md: agents/AGENTS.md
+    ~/.codex/config.toml:
+        path: codex/config.toml
+        backup: true
 
     # Languages
     ~/.config/python: python

@@ -27,10 +27,9 @@ export PYTHONHISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/python/history"
 export DOCKER_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/docker"
 export UV_TOOL_BIN_DIR="$HOME/.local/bin"
 
-# opencode: skip ~/.claude/skills and ~/.agents/skills discovery (IT-pushed
-# skills like managing-omnistation and nvinfo-cli land there). Pull desired
-# skills into ~/.config/opencode/skills/ individually instead.
-export OPENCODE_DISABLE_EXTERNAL_SKILLS=1
+# opencode: use the shared ~/.agents/skills root but skip Claude-compatible
+# skill discovery.
+export OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1
 
 # opencode: disable built-in terminal title writer; the terminal-title.tsx
 # TUI plugin owns the title and emits the `OC | <cwd>[ : <branch>] | <session>`

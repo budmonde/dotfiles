@@ -47,7 +47,7 @@ regardless of how many wiki docs exist.
 
 You audit against:
 
-- The global PMP rules from `~/.config/opencode/AGENTS.md`
+- The global PMP rules from `~/.agents/AGENTS.md`
 - The project-specific overrides documented in `<docs_root>/index.md` (or `<docs_root>/AGENTS.md`)
 - The conventions in `<docs_root>/workflow.md` (commit-message convention, scope-visibility hygiene, audit MO)
 - The principles in `<docs_root>/mission.md`
@@ -111,7 +111,7 @@ Use the upstream command's own flags (`-1`, `-n`, `--grep=`, `--format=`) to sco
 do not pipe to a downstream filter (`head`, `tail`, `wc`, `Select-Object`, `ForEach-Object`, etc.).
 If a command's native output is too large to consume directly, narrow it with the command's own flags or read its result via the `read` tool.
 
-When invoking `git` against a worktree other than `cwd`, follow the global `workdir`-over-`git -C` convention from `~/.config/opencode/AGENTS.md`.
+When invoking `git` against a worktree other than `cwd`, follow the global `workdir`-over-`git -C` convention from `~/.agents/AGENTS.md`.
 
 Recursive directory walks via shell builtins or `find` are not allowlisted.
 Use `glob` for recursive file enumeration.

@@ -22,10 +22,9 @@ $env:LESSHISTFILE = "$env:XDG_STATE_HOME\less\history"
 $env:NODE_REPL_HISTORY = "$env:XDG_STATE_HOME\node\history"
 $env:PYTHONHISTFILE = "$env:XDG_STATE_HOME\python\history"
 
-# opencode: skip ~/.claude/skills and ~/.agents/skills discovery (IT-pushed
-# skills like managing-omnistation and nvinfo-cli land there). Pull desired
-# skills into ~/.config/opencode/skills/ individually instead.
-$env:OPENCODE_DISABLE_EXTERNAL_SKILLS = 1
+# opencode: use the shared ~/.agents/skills root but skip Claude-compatible
+# skill discovery.
+$env:OPENCODE_DISABLE_CLAUDE_CODE_SKILLS = 1
 
 # opencode: disable built-in terminal title writer; the terminal-title.tsx
 # TUI plugin owns the title and emits the `OC | <cwd>[ : <branch>] | <session>`

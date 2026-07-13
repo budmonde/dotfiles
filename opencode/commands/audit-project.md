@@ -20,7 +20,7 @@ All audit and reconciliation logic lives in the `wiki-auditor/*` agent fleet.
 
 Where the steps below show `git <verb> ...` prose,
 issue it with the `bash` tool's `workdir` parameter set to the appropriate substrate
-(per the global `workdir`-over-`git -C` convention in `~/.config/opencode/AGENTS.md`).
+(per the global `workdir`-over-`git -C` convention in `~/.agents/AGENTS.md`).
 
 ## Process
 

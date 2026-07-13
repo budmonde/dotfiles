@@ -1,0 +1,10 @@
+/*
+!/.gitignore
+!/AGENTS.md
+!/skills/
+/skills/*
+!/skills/feature-dev/
+!/skills/imgen/
+!/skills/markdown/
+!/skills/papergrep/
+!/skills/skill-dev/
