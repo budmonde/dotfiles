@@ -46,17 +46,33 @@ opencode() {
 }
 
 codex() {
-    local arg
+    local arg profile="default" has_explicit_profile=0 expect_profile_value=0
     for arg in "$@"; do
+        if [ "$expect_profile_value" -eq 1 ]; then
+            profile="$arg"
+            expect_profile_value=0
+            continue
+        fi
+
         case "$arg" in
-            --profile|--profile=*)
-                command codex "$@"
-                return
+            --profile)
+                has_explicit_profile=1
+                expect_profile_value=1
+                ;;
+            --profile=*)
+                has_explicit_profile=1
+                profile="${arg#--profile=}"
                 ;;
         esac
     done
 
-    if [ -n "${CODEX_PROFILE:-}" ] && [ "$CODEX_PROFILE" != "default" ]; then
+    if [ "$has_explicit_profile" -eq 0 ] && [ -n "${CODEX_PROFILE:-}" ] && [ "$CODEX_PROFILE" != "default" ]; then
+        profile="$CODEX_PROFILE"
+    fi
+
+    printf 'Codex profile: %s\n' "$profile"
+
+    if [ "$has_explicit_profile" -eq 0 ] && [ "$profile" != "default" ]; then
         command codex --profile "$CODEX_PROFILE" "$@"
     else
         command codex "$@"
