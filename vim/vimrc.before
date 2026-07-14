@@ -156,7 +156,7 @@ map <M-n> :NERDTreeToggle<CR>
 " Find current file in NERDTree
 map <M-N> :NERDTreeFind<CR>
 " NERDTree Window width
-let g:NERDTreeWinSize=60
+let g:NERDTreeWinSize=40
 " NERDTree File num lines
 let g:NERDTreeFileLines = 1
 let g:NERDTreeShowBookmarks=1

@@ -127,7 +127,7 @@ local filesystem_plugins = {
         config = function()
             local use_nerd_fonts = vim.g.use_nerd_fonts ~= 0
             require("nvim-tree").setup({
-                view = { width = 60 },
+                view = { width = 40 },
                 sync_root_with_cwd = true,
                 respect_buf_cwd = true,
                 git = {
