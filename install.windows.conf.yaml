@@ -117,3 +117,6 @@
     ~/.local/bin/git-fetch-repos.cmd: windows/bin/git-fetch-repos.cmd
     ~/.local/bin/set-title.cmd: bin/set-title.cmd
     ~/.local/bin/winget-install.ps1: windows/bin/winget-install.ps1
+
+    ~/.codex/hooks/codex-notify.cmd: codex/hooks/codex-notify.cmd
+    ~/.codex/hooks/notify-on-event.ps1: codex/hooks/notify-on-event.ps1
