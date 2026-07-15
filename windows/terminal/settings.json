@@ -7,7 +7,7 @@
             "command": 
             {
                 "action": "sendInput",
-                "input": "\u001b[13;2u"
+                "input": "\u000a"
             },
             "id": "User.sendInput.ShiftEnterCustom"
         },
