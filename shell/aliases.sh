@@ -45,8 +45,36 @@ opencode() {
     command opencode --hostname 127.0.0.1 "$@"
 }
 
+codex_subcommand() {
+    local arg expect_value=0
+    for arg in "$@"; do
+        if [ "$expect_value" -eq 1 ]; then
+            expect_value=0
+            continue
+        fi
+
+        case "$arg" in
+            --)
+                return 0
+                ;;
+            -c|--config|--enable|--disable|--remote|--remote-auth-token-env|-i|--image|-m|--model|--local-provider|-p|--profile|-s|--sandbox|-C|--cd|--add-dir|-a|--ask-for-approval)
+                expect_value=1
+                ;;
+            -*)
+                ;;
+            exec|e|review|login|logout|mcp|plugin|mcp-server|app-server|remote-control|app|completion|update|doctor|sandbox|debug|apply|a|resume|archive|delete|unarchive|fork|cloud|exec-server|features|help)
+                printf '%s\n' "$arg"
+                return 0
+                ;;
+            *)
+                return 0
+                ;;
+        esac
+    done
+}
+
 codex() {
-    local arg profile="default" has_explicit_profile=0 expect_profile_value=0
+    local arg subcommand profile="default" has_explicit_profile=0 expect_profile_value=0 profile_eligible=0 informational=0
     for arg in "$@"; do
         if [ "$expect_profile_value" -eq 1 ]; then
             profile="$arg"
@@ -55,7 +83,10 @@ codex() {
         fi
 
         case "$arg" in
-            --profile)
+            -h|--help|-V|--version)
+                informational=1
+                ;;
+            --profile|-p)
                 has_explicit_profile=1
                 expect_profile_value=1
                 ;;
@@ -70,9 +101,18 @@ codex() {
         profile="$CODEX_PROFILE"
     fi
 
+    subcommand="$(codex_subcommand "$@")"
+    if [ "$informational" -eq 0 ]; then
+        case "$subcommand" in
+            ""|exec|e|review|resume|fork)
+                profile_eligible=1
+                ;;
+        esac
+    fi
+
     printf 'Codex profile: %s\n' "$profile"
 
-    if [ "$has_explicit_profile" -eq 0 ] && [ "$profile" != "default" ]; then
+    if [ "$profile_eligible" -eq 1 ] && [ "$has_explicit_profile" -eq 0 ] && [ "$profile" != "default" ]; then
         command codex --profile "$CODEX_PROFILE" "$@"
     else
         command codex "$@"

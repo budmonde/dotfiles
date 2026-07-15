@@ -1,5 +1,5 @@
-# push-notify — Windows notification script
-# Usage: push-notify [OPTIONS] <title> <message>
+# push-notify - Windows notification script
+# Usage: push-notify [OPTIONS] <title> <message-line> [message-line ...]
 #
 # Options:
 #   --sound <name>    Play specific sound (from C:\Windows\Media\)
@@ -25,8 +25,16 @@ while ($i -lt $Arguments.Count) {
     $i++
 }
 
-$title   = if ($positional.Count -ge 1) { $positional[0] } else { 'Notification' }
-$message = if ($positional.Count -ge 2) { $positional[1] } else { 'Task finished' }
+$title = if ($positional.Count -ge 1) {
+    $positional[0]
+} else {
+    'Notification'
+}
+$message = if ($positional.Count -ge 2) {
+    $positional[1..($positional.Count - 1)] -join "`n"
+} else {
+    'Task finished'
+}
 
 $escapedTitle = [System.Security.SecurityElement]::Escape($title)
 $escapedMessage = [System.Security.SecurityElement]::Escape($message)

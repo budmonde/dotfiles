@@ -113,10 +113,14 @@
 - link:
     ~/.local/bin/fzf.exe: shell/plugins/fzf/bin/fzf.exe
     ~/.local/bin/imgen.cmd: windows/bin/imgen.cmd
+    ~/.local/bin/codex-host.cmd: windows/bin/codex-host.cmd
     ~/.local/bin/reddit.cmd: windows/bin/reddit.cmd
     ~/.local/bin/git-fetch-repos.cmd: windows/bin/git-fetch-repos.cmd
     ~/.local/bin/set-title.cmd: bin/set-title.cmd
     ~/.local/bin/winget-install.ps1: windows/bin/winget-install.ps1
 
-    ~/.codex/hooks/codex-notify.cmd: codex/hooks/codex-notify.cmd
-    ~/.codex/hooks/notify-on-event.ps1: codex/hooks/notify-on-event.ps1
+    ~/.codex/app-server/codex-host.ps1: codex/app-server/codex-host.ps1
+    ~/.codex/app-server/notification-monitor.mjs: codex/app-server/notification-monitor.mjs
+
+- clean:
+    - ~/.codex/hooks
