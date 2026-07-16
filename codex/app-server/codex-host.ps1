@@ -1,12 +1,18 @@
 param(
     [Parameter(Position = 0)]
     [ValidateSet('start', 'status', 'stop')]
-    [string]$Command = 'status'
+    [string]$Command = 'status',
+    [switch]$LibraryMode
 )
 
 $Endpoint = 'ws://127.0.0.1:4500'
 $Port = 4500
-$StateRoot = if ($env:XDG_STATE_HOME) { $env:XDG_STATE_HOME } else { Join-Path $HOME '.local\state' }
+$UserHome = [Environment]::GetFolderPath('UserProfile')
+$StateRoot = if ($env:XDG_STATE_HOME) {
+    $env:XDG_STATE_HOME
+} else {
+    Join-Path $UserHome '.local\state'
+}
 $StateDirectory = Join-Path $StateRoot 'codex-app-server'
 $HostPidPath = Join-Path $StateDirectory 'host.pid'
 $MonitorPidPath = Join-Path $StateDirectory 'monitor.pid'
@@ -15,6 +21,18 @@ $HostErrorLog = Join-Path $StateDirectory 'host-error.log'
 $MonitorOutputLog = Join-Path $StateDirectory 'monitor.log'
 $MonitorErrorLog = Join-Path $StateDirectory 'monitor-error.log'
 $MonitorPath = Join-Path $PSScriptRoot 'notification-monitor.mjs'
+$BaseConfigPath = Join-Path $UserHome '.codex\config.toml'
+$ProfileConfigPath = Join-Path $UserHome '.codex\windows.config.toml'
+
+function Get-AppServerArguments {
+    return @(
+        'app-server', '--listen', $Endpoint
+    )
+}
+
+function Get-MonitorArguments {
+    return @($MonitorPath, '--endpoint', $Endpoint)
+}
 
 function Initialize-StateDirectory {
     if (-not (Test-Path -LiteralPath $StateDirectory)) {
@@ -67,18 +85,23 @@ function Get-ProcessCommandLine {
     }
 }
 
-function Test-HostProcess {
+function Test-AppServerCommandLine {
+    param([string]$CommandLine)
+
+    return [bool](
+        $CommandLine -and
+        $CommandLine -match '(?i)(^|\s)app-server(\s|$)' -and
+        $CommandLine -match [regex]::Escape($Endpoint)
+    )
+}
+
+function Test-AppServerProcess {
     param([int]$ProcessId)
 
     if (-not (Test-ProcessExists -ProcessId $ProcessId)) {
         return $false
     }
-    $commandLine = Get-ProcessCommandLine -ProcessId $ProcessId
-    return [bool](
-        $commandLine -and
-        $commandLine -match '(?i)(^|\s)app-server(\s|$)' -and
-        $commandLine -match [regex]::Escape($Endpoint)
-    )
+    return Test-AppServerCommandLine -CommandLine (Get-ProcessCommandLine -ProcessId $ProcessId)
 }
 
 function Test-MonitorProcess {
@@ -97,7 +120,11 @@ function Test-MonitorProcess {
 
 function Get-ListeningProcessId {
     try {
-        $listener = Get-NetTCPConnection -LocalAddress '127.0.0.1' -LocalPort $Port -State Listen -ErrorAction Stop |
+        $listener = Get-NetTCPConnection `
+            -LocalAddress '127.0.0.1' `
+            -LocalPort $Port `
+            -State Listen `
+            -ErrorAction Stop |
             Select-Object -First 1
         if ($listener) {
             return [int]$listener.OwningProcess
@@ -108,36 +135,47 @@ function Get-ListeningProcessId {
     return $null
 }
 
+function Get-NodeCommand {
+    return Get-Command node.exe -ErrorAction SilentlyContinue
+}
+
+function Test-WindowsConfigReady {
+    if (
+        -not (Test-Path -LiteralPath $BaseConfigPath -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $ProfileConfigPath -PathType Leaf)
+    ) {
+        return $false
+    }
+    return (Get-Content -Raw -LiteralPath $BaseConfigPath) -ceq
+        (Get-Content -Raw -LiteralPath $ProfileConfigPath)
+}
+
 function Test-ReadyEndpoint {
     try {
-        $response = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$Port/readyz" -TimeoutSec 1 -ErrorAction Stop
+        $response = Invoke-WebRequest `
+            -UseBasicParsing `
+            -Uri "http://127.0.0.1:$Port/readyz" `
+            -TimeoutSec 1 `
+            -ErrorAction Stop
         return $response.StatusCode -eq 200
     } catch {
         return $false
     }
 }
 
-function Get-NodeCommand {
-    return Get-Command node.exe -ErrorAction SilentlyContinue
-}
-
-function Test-CodexEndpoint {
-    $node = Get-NodeCommand
-    if (-not $node -or -not (Test-Path -LiteralPath $MonitorPath)) {
-        return $false
-    }
-
-    & $node.Source $MonitorPath --probe --endpoint $Endpoint 1>$null 2>$null
-    return $LASTEXITCODE -eq 0
-}
-
-function Wait-CodexEndpoint {
-    param([int]$TimeoutSeconds = 15)
+function Wait-ReadyEndpoint {
+    param(
+        [Diagnostics.Process]$Launcher,
+        [int]$TimeoutSeconds = 20
+    )
 
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
     while ([DateTime]::UtcNow -lt $deadline) {
         if (Test-ReadyEndpoint) {
             return $true
+        }
+        if ($Launcher -and $Launcher.HasExited) {
+            return $false
         }
         Start-Sleep -Milliseconds 200
     }
@@ -154,56 +192,61 @@ function Start-NotificationMonitor {
 
     $node = Get-NodeCommand
     if (-not $node) {
-        Write-Warning 'Node.js is unavailable; Codex notification monitoring was not started.'
+        Write-Error 'Node.js is unavailable; notification monitoring cannot start.'
         return $false
     }
-    if (-not (Test-Path -LiteralPath $MonitorPath)) {
-        Write-Warning "Notification monitor is missing at $MonitorPath."
+    if (-not (Test-Path -LiteralPath $MonitorPath -PathType Leaf)) {
+        Write-Error "Notification monitor is missing at $MonitorPath."
         return $false
     }
 
     & $node.Source $MonitorPath --check 1>$null 2>$null
     if ($LASTEXITCODE -ne 0) {
-        Write-Warning 'The installed Node.js runtime does not provide the required WebSocket API.'
+        Write-Error 'The installed Node.js runtime does not provide the required WebSocket API.'
         return $false
     }
 
     try {
-        $monitorProcess = Start-Process -FilePath $node.Source `
-            -ArgumentList @("`"$MonitorPath`"", '--endpoint', $Endpoint) `
+        $monitorProcess = Start-Process `
+            -FilePath $node.Source `
+            -ArgumentList (Get-MonitorArguments) `
+            -WorkingDirectory $UserHome `
             -RedirectStandardOutput $MonitorOutputLog `
             -RedirectStandardError $MonitorErrorLog `
             -WindowStyle Hidden `
             -PassThru
-        Start-Sleep -Milliseconds 500
+        Start-Sleep -Milliseconds 300
         if ($monitorProcess.HasExited) {
-            Write-Warning "Codex notification monitor exited during startup. See $MonitorErrorLog."
+            Write-Error "Notification monitor exited during startup. See $MonitorErrorLog."
             return $false
         }
         Set-RecordedProcessId -Path $MonitorPidPath -ProcessId $monitorProcess.Id
         Write-Host "Started Codex notification monitor (PID $($monitorProcess.Id))."
         return $true
     } catch {
-        Write-Warning "Could not start Codex notification monitor: $($_.Exception.Message)"
+        Write-Error "Could not start Codex notification monitor: $($_.Exception.Message)"
         return $false
     }
 }
 
 function Start-ManagedHost {
     Initialize-StateDirectory
+    if (-not (Test-WindowsConfigReady)) {
+        Write-Error 'Codex App Server requires config.toml and windows.config.toml to match. Run the Windows local Dotbot install, then retry.'
+        return $false
+    }
     $listenerId = Get-ListeningProcessId
 
     if ($listenerId) {
-        if ((Test-ReadyEndpoint) -and (Test-CodexEndpoint)) {
+        if (
+            (Test-AppServerProcess -ProcessId $listenerId) -and
+            (Test-ReadyEndpoint)
+        ) {
             Set-RecordedProcessId -Path $HostPidPath -ProcessId $listenerId
             Write-Host "Codex App Server is already running (PID $listenerId)."
-            if (-not (Start-NotificationMonitor)) {
-                Write-Warning 'Codex App Server is available, but its notification and policy monitor is unavailable.'
-                return $false
-            }
-            return $true
+            return Start-NotificationMonitor
         }
-        Write-Error "Port $Port is occupied by a process that is not a compatible Codex App Server."
+        Write-Error "Port $Port is occupied by another process."
         return $false
     }
 
@@ -215,9 +258,10 @@ function Start-ManagedHost {
     }
 
     try {
-        $launcher = Start-Process -FilePath $codex.Source `
-            -ArgumentList @('-c', 'sandbox_mode=workspace-write', '-c', 'approval_policy=on-request', '-c', 'approvals_reviewer=auto_review', 'app-server', '--listen', $Endpoint) `
-            -WorkingDirectory $HOME `
+        $launcher = Start-Process `
+            -FilePath $codex.Source `
+            -ArgumentList (Get-AppServerArguments) `
+            -WorkingDirectory $UserHome `
             -RedirectStandardOutput $HostOutputLog `
             -RedirectStandardError $HostErrorLog `
             -WindowStyle Hidden `
@@ -227,59 +271,52 @@ function Start-ManagedHost {
         return $false
     }
 
-    if (-not (Wait-CodexEndpoint)) {
-        if (-not $launcher.HasExited) {
+    if (-not (Wait-ReadyEndpoint -Launcher $launcher)) {
+        $failedListenerId = Get-ListeningProcessId
+        if ($failedListenerId -and (Test-AppServerProcess -ProcessId $failedListenerId)) {
+            Stop-Process -Id $failedListenerId -Force -ErrorAction SilentlyContinue
+        } elseif (-not $launcher.HasExited) {
             Stop-Process -Id $launcher.Id -Force -ErrorAction SilentlyContinue
         }
         Write-Error "Codex App Server did not become ready. See $HostErrorLog."
         return $false
     }
-    if (-not (Test-CodexEndpoint)) {
-        $unexpectedListenerId = Get-ListeningProcessId
-        if ($unexpectedListenerId) {
-            Stop-Process -Id $unexpectedListenerId -Force -ErrorAction SilentlyContinue
-        }
-        Write-Error "The listener on port $Port did not complete a Codex initialization handshake."
-        return $false
-    }
 
     $hostProcessId = Get-ListeningProcessId
     if (-not $hostProcessId) {
-        Write-Error 'Codex App Server became ready but its listener process could not be identified.'
+        Write-Error 'Codex App Server became ready but its listener could not be identified.'
         return $false
     }
     Set-RecordedProcessId -Path $HostPidPath -ProcessId $hostProcessId
     Write-Host "Started Codex App Server (PID $hostProcessId) at $Endpoint."
-
-    if (-not (Start-NotificationMonitor)) {
-        Write-Warning 'Codex App Server is available, but its notification and policy monitor is unavailable.'
-        return $false
-    }
-    return $true
+    return Start-NotificationMonitor
 }
 
 function Show-ManagedStatus {
     Initialize-StateDirectory
-    $hostProcessId = Get-RecordedProcessId -Path $HostPidPath
-    $monitorProcessId = Get-RecordedProcessId -Path $MonitorPidPath
+    $listenerId = Get-ListeningProcessId
     $hostRunning = [bool](
-        $hostProcessId -and
-        (Test-HostProcess -ProcessId $hostProcessId) -and
-        (Test-ReadyEndpoint) -and
-        (Test-CodexEndpoint)
+        $listenerId -and
+        (Test-AppServerProcess -ProcessId $listenerId) -and
+        (Test-ReadyEndpoint)
     )
+    if ($hostRunning) {
+        Set-RecordedProcessId -Path $HostPidPath -ProcessId $listenerId
+    }
+
+    $monitorId = Get-RecordedProcessId -Path $MonitorPidPath
     $monitorRunning = [bool](
-        $monitorProcessId -and
-        (Test-MonitorProcess -ProcessId $monitorProcessId)
+        $monitorId -and
+        (Test-MonitorProcess -ProcessId $monitorId)
     )
 
     if ($hostRunning) {
-        Write-Host "Host: running (PID $hostProcessId) at $Endpoint"
+        Write-Host "Host: running (PID $listenerId) at $Endpoint"
     } else {
         Write-Host 'Host: stopped or unhealthy'
     }
     if ($monitorRunning) {
-        Write-Host "Monitor: running (PID $monitorProcessId)"
+        Write-Host "Monitor: running (PID $monitorId)"
     } else {
         Write-Host 'Monitor: stopped'
     }
@@ -290,49 +327,64 @@ function Show-ManagedStatus {
     return $hostRunning -and $monitorRunning
 }
 
-function Stop-RecordedProcess {
-    param(
-        [string]$Name,
-        [string]$PidPath,
-        [scriptblock]$Validator
-    )
-
-    $recordedId = Get-RecordedProcessId -Path $PidPath
-    if (-not $recordedId) {
-        Write-Host "$Name is not recorded as running."
+function Stop-RecordedMonitor {
+    $processId = Get-RecordedProcessId -Path $MonitorPidPath
+    if (-not $processId) {
+        Write-Host 'Codex notification monitor is not recorded as running.'
         return $true
     }
-    if (-not (Test-ProcessExists -ProcessId $recordedId)) {
-        Remove-RecordedProcessId -Path $PidPath
-        Write-Host "$Name was already stopped."
+    if (-not (Test-ProcessExists -ProcessId $processId)) {
+        Remove-RecordedProcessId -Path $MonitorPidPath
+        Write-Host 'Codex notification monitor was already stopped.'
         return $true
     }
-
-    if (-not (& $Validator $recordedId)) {
-        Write-Error "Refusing to stop PID $recordedId because it no longer matches $Name."
+    if (-not (Test-MonitorProcess -ProcessId $processId)) {
+        Write-Error "Refusing to stop PID $processId because it is not the notification monitor."
         return $false
     }
 
-    Stop-Process -Id $recordedId -Force -ErrorAction Stop
-    Remove-RecordedProcessId -Path $PidPath
-    Write-Host "Stopped $Name (PID $recordedId)."
+    Stop-Process -Id $processId -Force -ErrorAction Stop
+    Remove-RecordedProcessId -Path $MonitorPidPath
+    Write-Host "Stopped Codex notification monitor (PID $processId)."
+    return $true
+}
+
+function Stop-ManagedAppServer {
+    $processId = Get-ListeningProcessId
+    if (-not $processId) {
+        $recordedId = Get-RecordedProcessId -Path $HostPidPath
+        if ($recordedId -and (Test-ProcessExists -ProcessId $recordedId)) {
+            $processId = $recordedId
+        }
+    }
+    if (-not $processId) {
+        Remove-RecordedProcessId -Path $HostPidPath
+        Write-Host 'Codex App Server was already stopped.'
+        return $true
+    }
+    if (-not (Test-AppServerProcess -ProcessId $processId)) {
+        Write-Error "Refusing to stop PID $processId because it is not the managed loopback App Server."
+        return $false
+    }
+
+    Stop-Process -Id $processId -Force -ErrorAction Stop
+    Remove-RecordedProcessId -Path $HostPidPath
+    Write-Host "Stopped Codex App Server (PID $processId)."
     return $true
 }
 
 function Stop-ManagedHost {
     Initialize-StateDirectory
-    $monitorStopped = Stop-RecordedProcess `
-        -Name 'Codex notification monitor' `
-        -PidPath $MonitorPidPath `
-        -Validator { param($id) Test-MonitorProcess -ProcessId $id }
-    $hostStopped = Stop-RecordedProcess `
-        -Name 'Codex App Server' `
-        -PidPath $HostPidPath `
-        -Validator { param($id) Test-HostProcess -ProcessId $id }
+    $monitorStopped = Stop-RecordedMonitor
+    $hostStopped = Stop-ManagedAppServer
     return $monitorStopped -and $hostStopped
 }
 
-$requiresLock = $Command -eq 'start' -or $Command -eq 'stop'
+if ($LibraryMode) {
+    return
+}
+
+$requiresLock = $Command -in @('start', 'stop')
 $mutex = $null
 $lockAcquired = $false
 $success = $false

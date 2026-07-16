@@ -6,395 +6,285 @@ import { pathToFileURL } from "node:url";
 import gitHookHelpers from "../../git/hooks/lib.js";
 
 const { sanitizeToAscii } = gitHookHelpers;
-
-const APPROVAL_METHODS = new Set([
-    "item/commandExecution/requestApproval",
-    "item/fileChange/requestApproval",
-    "item/permissions/requestApproval",
-]);
-const INPUT_METHODS = new Set([
-    "item/tool/requestUserInput",
-    "mcpServer/elicitation/request",
-]);
-const AUTO_REVIEW_METHODS = new Set([
-    "item/autoApprovalReview/started",
-    "item/autoApprovalReview/completed",
-]);
-const ALLOWED_REQUEST_METHODS = new Set([
-    "initialize",
-    "thread/loaded/list",
-    "thread/resume",
-    "thread/settings/update",
-]);
-const MANAGED_SANDBOX_POLICY = {
-    type: "workspaceWrite",
-    writableRoots: [],
-    networkAccess: false,
-    excludeTmpdirEnvVar: false,
-    excludeSlashTmp: false,
-};
-const DEFAULT_ENDPOINT = "ws://127.0.0.1:4500";
 const CLIENT_INFO = {
     name: "dotfiles_notification_monitor",
     title: "Dotfiles Notification Monitor",
     version: "1.0.0",
 };
 
-function compactText(value) {
-    return String(value ?? "").replace(/\s+/g, " ").trim();
-}
+export const DEFAULT_ENDPOINT = "ws://127.0.0.1:4500";
 
-function truncate(value, limit) {
-    const text = compactText(value);
+function clean(value, limit = Infinity) {
+    const text = String(value ?? "").replace(/\s+/g, " ").trim();
     return text.length <= limit ? text : `${text.slice(0, limit - 3)}...`;
 }
 
-function truncateLines(value, limit) {
-    const text = String(value ?? "")
-        .replace(/\r\n?/g, "\n")
-        .split("\n")
-        .map((line) => compactText(line))
-        .filter(Boolean)
-        .join("\n");
-    return text.length <= limit ? text : `${text.slice(0, limit - 3)}...`;
+function errorText(error) {
+    return typeof error === "string"
+        ? error
+        : error?.message || error?.additionalDetails || "Unknown error";
 }
 
-function threadLabel(metadata) {
-    return truncate(metadata?.name || metadata?.preview || "unknown", 100);
-}
-
-function errorMessage(error) {
-    if (typeof error === "string") {
-        return error;
-    }
-    return error?.message || error?.additionalDetails || "Unknown failure";
-}
-
-function errorSummary(error) {
-    const message = compactText(errorMessage(error));
-    const bounded = message.length > 80 ? `${message.slice(0, 80)}...` : message;
-    return `Event: Error - ${bounded}`;
-}
-
-export function buildNotification({ metadata = {}, summary, sound, includeSession = true }) {
-    const cwd = metadata.cwd || "";
-    const directory = path.basename(cwd) || "Codex";
-    const branch = metadata.gitInfo?.branch;
-    const title = truncate(branch ? `${directory} : ${branch}` : directory, 100);
-    const message = truncateLines(
-        includeSession ? `Session: ${threadLabel(metadata)}\n${summary}` : summary,
-        240,
+function isEligibleThread(thread) {
+    return Boolean(
+        thread?.id &&
+            thread.parentThreadId == null &&
+            thread.threadSource === "user",
     );
-    return { title, message, ...(sound ? { sound } : {}) };
+}
+
+function waitingFlags(status) {
+    return status?.type === "active" && Array.isArray(status.activeFlags)
+        ? new Set(status.activeFlags)
+        : new Set();
+}
+
+export function buildNotification({ event, metadata = {}, detail = "" }) {
+    const directory = path.basename(metadata.cwd || "") || "Codex";
+    const branch = metadata.gitInfo?.branch;
+    const session = clean(metadata.name || metadata.preview || "Codex", 100);
+    const title = clean(branch ? `${directory} : ${branch}` : directory, 100);
+    let summary;
+    let sound;
+
+    if (event === "interaction") {
+        summary = `Interaction required${detail ? `: ${detail}` : ""}`;
+        sound = "Windows Exclamation";
+    } else if (event === "idle") {
+        summary = "Codex is idle";
+        sound = "Windows Notify";
+    } else {
+        throw new Error(`Unsupported notification event: ${event}`);
+    }
+
+    return {
+        event,
+        title,
+        message: clean(`Session: ${session}\n${summary}`, 240),
+        sound,
+    };
 }
 
 export class NotificationState {
     constructor() {
-        this.terminalTurns = new Set();
-        this.threadMetadata = new Map();
+        this.metadata = new Map();
+        this.statuses = new Map();
+        this.waiting = new Map();
+        this.idleTimers = new Map();
     }
 }
 
 export class MonitorSession {
-    constructor({ send, notify, log, state, requestTimeoutMs = 10000 }) {
+    constructor({
+        send,
+        notify,
+        log,
+        state,
+        idleDelayMs = 500,
+        requestTimeoutMs = 10000,
+    }) {
         this.send = send;
         this.notify = notify;
         this.log = log;
         this.state = state;
-        this.nextRequestId = 1;
-        this.pendingClientRequests = new Map();
-        this.pendingServerRequests = new Map();
-        this.seenServerRequests = new Set();
-        this.subscribedThreads = new Set();
-        this.discoveryPromise = null;
-        this.closed = false;
+        this.idleDelayMs = idleDelayMs;
         this.requestTimeoutMs = requestTimeoutMs;
-    }
-
-    get pendingRequestCount() {
-        return this.pendingServerRequests.size;
+        this.nextId = 1;
+        this.requests = new Map();
+        this.pendingStatuses = new Map();
+        this.inspections = new Map();
+        this.closed = false;
     }
 
     async start({ discover = true } = {}) {
         await this.request("initialize", {
             clientInfo: CLIENT_INFO,
-            capabilities: {
-                experimentalApi: true,
-                requestAttestation: false,
-            },
+            capabilities: { experimentalApi: true, requestAttestation: false },
         });
-        this.sendInitialized();
+        this.send({ method: "initialized", params: {} });
         if (discover) {
-            await this.discoverLoadedThreads();
+            await this.discover();
         }
     }
 
     request(method, params) {
-        if (!ALLOWED_REQUEST_METHODS.has(method)) {
-            throw new Error(`Passive monitor cannot send request method ${method}`);
-        }
         if (this.closed) {
             return Promise.reject(new Error("Connection is closed"));
         }
-
-        const id = this.nextRequestId++;
+        const id = this.nextId++;
         const response = new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
-                this.pendingClientRequests.delete(String(id));
-                reject(new Error(`${method}: timed out waiting for App Server response`));
+                this.requests.delete(String(id));
+                reject(new Error(`${method}: timed out waiting for App Server`));
             }, this.requestTimeoutMs);
-            this.pendingClientRequests.set(String(id), { resolve, reject, method, timeout });
+            this.requests.set(String(id), { method, resolve, reject, timeout });
         });
         this.send({ method, id, params });
         return response;
     }
 
-    sendInitialized() {
-        if (this.closed) {
-            throw new Error("Connection is closed");
-        }
-        this.send({ method: "initialized", params: {} });
-    }
-
-    async discoverLoadedThreads() {
-        if (this.discoveryPromise) {
-            return this.discoveryPromise;
-        }
-
-        this.discoveryPromise = this.discoverLoadedThreadsInternal().finally(() => {
-            this.discoveryPromise = null;
-        });
-        return this.discoveryPromise;
-    }
-
-    async discoverLoadedThreadsInternal() {
+    async discover() {
         let cursor = null;
         do {
-            const params = cursor ? { cursor } : {};
-            const result = await this.request("thread/loaded/list", params);
+            const result = await this.request(
+                "thread/loaded/list",
+                cursor ? { cursor } : {},
+            );
             if (!Array.isArray(result?.data)) {
                 throw new Error("thread/loaded/list returned malformed data");
             }
-            await Promise.all(result.data.map((threadId) => this.subscribe(threadId)));
+            await Promise.all(result.data.map((threadId) => this.inspect(threadId)));
             cursor = result.nextCursor || null;
         } while (cursor);
     }
 
-    async subscribe(threadId) {
-        if (typeof threadId !== "string" || this.subscribedThreads.has(threadId)) {
-            return;
+    inspect(threadId) {
+        if (typeof threadId !== "string") {
+            return Promise.resolve();
         }
-
-        this.subscribedThreads.add(threadId);
-        try {
-            const result = await this.request("thread/resume", {
-                threadId,
-                excludeTurns: true,
-            });
-            if (result?.thread?.id) {
-                if (result.sandbox?.type !== "workspaceWrite") {
-                    await this.request("thread/settings/update", {
-                        threadId,
-                        sandboxPolicy: MANAGED_SANDBOX_POLICY,
-                    });
-                    this.log("info", `Applied managed sandbox policy to thread ${threadId}`);
+        if (this.inspections.has(threadId)) {
+            return this.inspections.get(threadId);
+        }
+        const inspection = this.request("thread/read", {
+            threadId,
+            includeTurns: false,
+        })
+            .then((result) => {
+                const thread = result?.thread;
+                if (!thread?.id) {
+                    throw new Error(`thread/read returned no metadata for ${threadId}`);
                 }
-                this.state.threadMetadata.set(result.thread.id, result.thread);
-                this.log("info", `Subscribed to thread ${result.thread.id}`);
-            } else {
-                this.log("warn", `thread/resume returned no metadata for ${threadId}`);
-            }
-        } catch (error) {
-            this.subscribedThreads.delete(threadId);
-            throw error;
-        }
+                this.state.metadata.set(thread.id, thread);
+                const queued = this.pendingStatuses.get(thread.id) || [];
+                this.pendingStatuses.delete(thread.id);
+                if (isEligibleThread(thread)) {
+                    for (const status of queued.length ? queued : [thread.status]) {
+                        this.applyStatus(thread.id, status);
+                    }
+                }
+            })
+            .finally(() => this.inspections.delete(threadId));
+        this.inspections.set(threadId, inspection);
+        return inspection;
     }
 
     handleRawMessage(rawMessage) {
         try {
             this.handleMessage(JSON.parse(rawMessage));
         } catch (error) {
-            this.log("warn", `Skipped malformed App Server message: ${error.message}`);
+            this.log("warn", `Skipped App Server message: ${errorText(error)}`);
         }
     }
 
     handleMessage(message) {
         if (!message || typeof message !== "object") {
-            this.log("warn", "Skipped non-object App Server message");
             return;
         }
-
         if (message.method && Object.hasOwn(message, "id")) {
-            this.handleServerRequest(message);
             return;
         }
         if (Object.hasOwn(message, "id")) {
-            this.handleClientResponse(message);
+            const pending = this.requests.get(String(message.id));
+            if (!pending) {
+                return;
+            }
+            this.requests.delete(String(message.id));
+            clearTimeout(pending.timeout);
+            if (message.error) {
+                pending.reject(new Error(`${pending.method}: ${errorText(message.error)}`));
+            } else {
+                pending.resolve(message.result);
+            }
             return;
         }
-        if (typeof message.method === "string") {
-            this.handleNotification(message);
-            return;
-        }
-        this.log("warn", "Skipped unrecognized App Server message shape");
+        this.handleNotification(message.method, message.params);
     }
 
-    handleClientResponse(message) {
-        const pending = this.pendingClientRequests.get(String(message.id));
-        if (!pending) {
-            this.log("debug", `Ignored response for unknown request ${message.id}`);
-            return;
-        }
-
-        this.pendingClientRequests.delete(String(message.id));
-        clearTimeout(pending.timeout);
-        if (message.error) {
-            pending.reject(new Error(`${pending.method}: ${errorMessage(message.error)}`));
-        } else {
-            pending.resolve(message.result);
-        }
-    }
-
-    handleServerRequest(message) {
-        const requestKey = String(message.id);
-        if (this.seenServerRequests.has(requestKey)) {
-            return;
-        }
-        this.seenServerRequests.add(requestKey);
-
-        const params = message.params;
-        if (!params || typeof params.threadId !== "string") {
-            this.log("warn", `Skipped malformed server request ${message.method}`);
-            return;
-        }
-
-        let summary;
-        let includeSession = true;
-        if (APPROVAL_METHODS.has(message.method)) {
-            summary = "Event: Permission required";
-        } else if (INPUT_METHODS.has(message.method)) {
-            summary = "Event: Input required";
-            includeSession = false;
-        } else {
-            this.log("debug", `Observed unsupported server request ${message.method}`);
-            return;
-        }
-
-        this.pendingServerRequests.set(requestKey, {
-            threadId: params.threadId,
-            turnId: params.turnId || null,
-            itemId: params.itemId || null,
-        });
-        this.dispatch(params.threadId, summary, "Windows Exclamation", includeSession);
-    }
-
-    handleNotification(message) {
-        if (AUTO_REVIEW_METHODS.has(message.method)) {
-            return;
-        }
-
-        switch (message.method) {
-            case "serverRequest/resolved":
-                this.handleResolvedRequest(message.params);
-                break;
-            case "turn/completed":
-                this.handleTurnCompleted(message.params);
-                break;
-            case "error":
-                this.handleError(message.params);
-                break;
-            case "thread/name/updated":
-                this.handleThreadNameUpdated(message.params);
-                break;
-            default:
-                break;
-        }
-    }
-
-    handleResolvedRequest(params) {
-        if (!params || !Object.hasOwn(params, "requestId")) {
-            this.log("warn", "Skipped malformed serverRequest/resolved notification");
-            return;
-        }
-        this.pendingServerRequests.delete(String(params.requestId));
-    }
-
-    handleTurnCompleted(params) {
-        const threadId = params?.threadId;
-        const turn = params?.turn;
-        if (typeof threadId !== "string" || typeof turn?.id !== "string" || !turn.status) {
-            this.log("warn", "Skipped malformed turn/completed notification");
-            return;
-        }
-
-        const turnKey = `${threadId}:${turn.id}`;
-        if (this.state.terminalTurns.has(turnKey)) {
-            return;
-        }
-        this.state.terminalTurns.add(turnKey);
-
-        if (turn.status === "completed") {
-            this.dispatch(threadId, "Event: Task completed");
-        } else if (turn.status === "failed") {
-            this.dispatch(
-                threadId,
-                errorSummary(turn.error),
-                "Windows Critical Stop",
-            );
-        } else if (turn.status !== "interrupted") {
-            this.log("warn", `Unknown terminal turn status ${turn.status}`);
-        }
-    }
-
-    handleError(params) {
-        if (
-            typeof params?.threadId !== "string" ||
-            typeof params?.turnId !== "string" ||
-            !params.error
+    handleNotification(method, params) {
+        if (method === "thread/started" && params?.thread?.id) {
+            const thread = params.thread;
+            this.state.metadata.set(thread.id, thread);
+            if (isEligibleThread(thread)) {
+                this.applyStatus(thread.id, thread.status);
+            }
+        } else if (method === "thread/status/changed" && params?.status?.type) {
+            const metadata = this.state.metadata.get(params.threadId);
+            if (metadata && isEligibleThread(metadata)) {
+                this.applyStatus(params.threadId, params.status);
+            } else if (!metadata && typeof params.threadId === "string") {
+                const queued = this.pendingStatuses.get(params.threadId) || [];
+                queued.push(params.status);
+                this.pendingStatuses.set(params.threadId, queued.slice(-8));
+                void this.inspect(params.threadId).catch((error) =>
+                    this.log("warn", `Thread inspection failed: ${errorText(error)}`),
+                );
+            }
+        } else if (
+            ["thread/closed", "thread/archived", "thread/deleted"].includes(method)
         ) {
-            this.log("warn", "Skipped malformed error notification");
-            return;
+            this.prune(params?.threadId);
         }
-        if (params.willRetry) {
-            this.log("info", `Turn ${params.turnId} reported a retryable error`);
-            return;
-        }
-
-        const turnKey = `${params.threadId}:${params.turnId}`;
-        if (this.state.terminalTurns.has(turnKey)) {
-            return;
-        }
-        this.state.terminalTurns.add(turnKey);
-        this.dispatch(
-            params.threadId,
-            errorSummary(params.error),
-            "Windows Critical Stop",
-        );
     }
 
-    handleThreadNameUpdated(params) {
-        if (typeof params?.threadId !== "string") {
+    applyStatus(threadId, status) {
+        if (!status?.type) {
             return;
         }
-        const current = this.state.threadMetadata.get(params.threadId) || {
-            id: params.threadId,
-        };
-        this.state.threadMetadata.set(params.threadId, {
-            ...current,
-            name: params.threadName || null,
+        const previous = this.state.statuses.get(threadId);
+        const flags = waitingFlags(status);
+        const isWaiting = flags.size > 0;
+        const wasWaiting = this.state.waiting.get(threadId) || false;
+        this.state.statuses.set(threadId, status);
+        this.state.waiting.set(threadId, isWaiting);
+
+        if (status.type !== "idle") {
+            this.cancelIdle(threadId);
+        }
+        if (isWaiting && !wasWaiting) {
+            const detail = flags.has("waitingOnUserInput")
+                ? "Input required"
+                : "Permission required";
+            this.emit(threadId, "interaction", detail);
+        }
+        if (status.type === "idle" && previous?.type === "active") {
+            this.cancelIdle(threadId);
+            const timer = setTimeout(() => {
+                this.state.idleTimers.delete(threadId);
+                if (this.state.statuses.get(threadId)?.type === "idle") {
+                    this.emit(threadId, "idle");
+                }
+            }, this.idleDelayMs);
+            this.state.idleTimers.set(threadId, timer);
+        }
+    }
+
+    emit(threadId, event, detail = "") {
+        const notification = buildNotification({
+            event,
+            detail,
+            metadata: this.state.metadata.get(threadId),
         });
+        Promise.resolve()
+            .then(() => this.notify(notification))
+            .catch((error) =>
+                this.log("error", `push-notify failed: ${errorText(error)}`),
+            );
     }
 
-    dispatch(threadId, summary, sound, includeSession = true) {
-        const metadata = this.state.threadMetadata.get(threadId) || {};
-        const notification = buildNotification({ metadata, summary, sound, includeSession });
-        Promise.resolve(this.notify(notification))
-            .then(() => {
-                this.log("info", `Notification delivered for thread ${threadId}: ${summary}`);
-            })
-            .catch((error) => {
-                this.log("error", `push-notify failed: ${error.message}`);
-            });
+    cancelIdle(threadId) {
+        const timer = this.state.idleTimers.get(threadId);
+        if (timer) {
+            clearTimeout(timer);
+            this.state.idleTimers.delete(threadId);
+        }
+    }
+
+    prune(threadId) {
+        this.cancelIdle(threadId);
+        this.state.metadata.delete(threadId);
+        this.state.statuses.delete(threadId);
+        this.state.waiting.delete(threadId);
+        this.pendingStatuses.delete(threadId);
     }
 
     close(error = new Error("Connection closed")) {
@@ -402,61 +292,58 @@ export class MonitorSession {
             return;
         }
         this.closed = true;
-        for (const pending of this.pendingClientRequests.values()) {
+        for (const pending of this.requests.values()) {
             clearTimeout(pending.timeout);
             pending.reject(error);
         }
-        this.pendingClientRequests.clear();
-        this.pendingServerRequests.clear();
-        this.seenServerRequests.clear();
-        this.subscribedThreads.clear();
+        this.requests.clear();
+        for (const threadId of this.state.idleTimers.keys()) {
+            this.cancelIdle(threadId);
+        }
     }
 }
 
-function createLogger() {
-    return (level, message) => {
-        process.stdout.write(`${new Date().toISOString()} ${level.toUpperCase()} ${message}\n`);
-    };
-}
-
-function shellSafeText(value) {
-    return compactText(value)
-        .replace(/[^\x20-\x7E]|[%!"^&|<>()]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+function shellSafe(value) {
+    return clean(value).replace(/[^\x20-\x7E]|[%!"^&|<>()]/g, " ");
 }
 
 export async function buildPushNotifierInvocation(
     { title, message, sound },
     comSpec = process.env.ComSpec || "cmd.exe",
 ) {
-    const argumentsList = ["/d", "/s", "/c", "push-notify.cmd"];
-    if (sound) {
-        const normalizedSound = await sanitizeToAscii(String(sound));
-        argumentsList.push("--sound", shellSafeText(normalizedSound.text));
-    }
-    const [normalizedTitle, normalizedMessage] = await Promise.all([
+    const [safeTitle, safeMessage] = await Promise.all([
         sanitizeToAscii(String(title ?? "")),
         sanitizeToAscii(String(message ?? "")),
     ]);
-    const messageLines = normalizedMessage.text
-        .split(/\r?\n/)
-        .map((line) => shellSafeText(line))
-        .filter(Boolean);
-    argumentsList.push(shellSafeText(normalizedTitle.text), ...messageLines);
+    const argumentsList = ["/d", "/s", "/c", "push-notify.cmd"];
+    if (sound) {
+        argumentsList.push("--sound", shellSafe(sound));
+    }
+    argumentsList.push(
+        shellSafe(safeTitle.text),
+        ...safeMessage.text.split(/\r?\n/).map(shellSafe).filter(Boolean),
+    );
     return { filePath: comSpec, argumentsList };
 }
 
 function createPushNotifier(log) {
     return async (notification) => {
-        const invocation = await buildPushNotifierInvocation(notification);
+        const command = await buildPushNotifierInvocation(notification);
         return new Promise((resolve, reject) => {
-            const child = spawn(invocation.filePath, invocation.argumentsList, {
+            const child = spawn(command.filePath, command.argumentsList, {
                 windowsHide: true,
                 stdio: "ignore",
             });
-            child.once("error", reject);
+            const timeout = setTimeout(() => {
+                child.kill();
+                reject(new Error("push-notify process timed out"));
+            }, 10000);
+            child.once("error", (error) => {
+                clearTimeout(timeout);
+                reject(error);
+            });
             child.once("exit", (code) => {
+                clearTimeout(timeout);
                 if (code === 0) {
                     resolve();
                 } else {
@@ -469,148 +356,112 @@ function createPushNotifier(log) {
     };
 }
 
-function connectWebSocket(endpoint, timeoutMs = 5000) {
+function connect(endpoint, timeoutMs = 5000) {
     return new Promise((resolve, reject) => {
         const socket = new WebSocket(endpoint);
         const timeout = setTimeout(() => {
             socket.close();
             reject(new Error(`Timed out connecting to ${endpoint}`));
         }, timeoutMs);
-        socket.addEventListener(
-            "open",
-            () => {
-                clearTimeout(timeout);
-                resolve(socket);
-            },
-            { once: true },
-        );
-        socket.addEventListener(
-            "error",
-            () => {
-                clearTimeout(timeout);
-                reject(new Error(`WebSocket connection failed for ${endpoint}`));
-            },
-            { once: true },
-        );
+        socket.addEventListener("open", () => {
+            clearTimeout(timeout);
+            resolve(socket);
+        }, { once: true });
+        socket.addEventListener("error", () => {
+            clearTimeout(timeout);
+            reject(new Error(`WebSocket connection failed for ${endpoint}`));
+        }, { once: true });
     });
 }
 
-function rawMessageText(data) {
+async function messageText(data) {
     if (typeof data === "string") {
-        return Promise.resolve(data);
+        return data;
     }
     if (data instanceof Blob) {
         return data.text();
     }
-    if (data instanceof ArrayBuffer) {
-        return Promise.resolve(Buffer.from(data).toString("utf8"));
-    }
-    return Promise.resolve(String(data));
+    return Buffer.from(data).toString("utf8");
 }
 
-async function createLiveSession(
-    endpoint,
-    state,
-    notify,
-    log,
-    discover,
-    requestTimeoutMs = 10000,
-) {
-    const socket = await connectWebSocket(endpoint);
+async function openSession(endpoint, state, notify, log, discover) {
+    const socket = await connect(endpoint);
     const session = new MonitorSession({
         send: (message) => socket.send(JSON.stringify(message)),
         notify,
         log,
         state,
-        requestTimeoutMs,
     });
-    const closed = new Promise((resolve) => {
-        socket.addEventListener(
-            "close",
-            () => {
-                session.close();
-                resolve();
-            },
-            { once: true },
-        );
-    });
+    const closed = new Promise((resolve) => socket.addEventListener("close", () => {
+        session.close();
+        resolve();
+    }, { once: true }));
     socket.addEventListener("message", (event) => {
-        rawMessageText(event.data)
+        void messageText(event.data)
             .then((text) => session.handleRawMessage(text))
-            .catch((error) => log("warn", `Could not read App Server message: ${error.message}`));
+            .catch((error) => log("warn", `Could not read message: ${errorText(error)}`));
     });
-    await session.start({ discover });
-    return { socket, session, closed };
+    try {
+        await session.start({ discover });
+        return { socket, closed };
+    } catch (error) {
+        session.close(error);
+        socket.close();
+        await closed;
+        throw error;
+    }
 }
 
 export async function runProbe(endpoint = DEFAULT_ENDPOINT) {
-    if (typeof WebSocket !== "function") {
-        throw new Error("The installed Node runtime does not provide WebSocket");
-    }
-    const log = () => {};
-    const live = await createLiveSession(
+    const live = await openSession(
         endpoint,
         new NotificationState(),
         () => {},
-        log,
+        () => {},
         false,
-        3000,
     );
     live.socket.close(1000, "probe complete");
     await live.closed;
 }
 
-function delay(milliseconds) {
-    return new Promise((resolve) => setTimeout(resolve, milliseconds));
+function delay(milliseconds, signal) {
+    return new Promise((resolve) => {
+        if (signal?.aborted) {
+            resolve();
+            return;
+        }
+        const timer = setTimeout(resolve, milliseconds);
+        signal?.addEventListener("abort", () => {
+            clearTimeout(timer);
+            resolve();
+        }, { once: true });
+    });
 }
 
-export async function runMonitor({
-    endpoint = DEFAULT_ENDPOINT,
-    discoveryIntervalMs = 500,
-    signal = null,
-} = {}) {
-    if (typeof WebSocket !== "function") {
-        throw new Error("The installed Node runtime does not provide WebSocket");
-    }
-
-    const log = createLogger();
-    const notify = createPushNotifier(log);
+export async function runMonitor({ endpoint = DEFAULT_ENDPOINT, signal = null } = {}) {
+    const log = (level, message) =>
+        process.stdout.write(`${new Date().toISOString()} ${level.toUpperCase()} ${message}\n`);
     const state = new NotificationState();
+    const notify = createPushNotifier(log);
     let reconnectAttempt = 0;
 
     while (!signal?.aborted) {
-        let pollTimer;
         try {
-            const live = await createLiveSession(endpoint, state, notify, log, true);
+            const live = await openSession(endpoint, state, notify, log, true);
             reconnectAttempt = 0;
             log("info", `Connected to Codex App Server at ${endpoint}`);
-            const abortHandler = () => live.socket.close(1000, "monitor stopping");
-            signal?.addEventListener("abort", abortHandler, { once: true });
-            pollTimer = setInterval(() => {
-                live.session.discoverLoadedThreads().catch((error) => {
-                    log("warn", `Thread discovery failed: ${error.message}`);
-                });
-            }, discoveryIntervalMs);
+            const stop = () => live.socket.close(1000, "monitor stopping");
+            signal?.addEventListener("abort", stop, { once: true });
             await live.closed;
-            signal?.removeEventListener("abort", abortHandler);
-            clearInterval(pollTimer);
-            if (signal?.aborted) {
-                break;
-            }
-            log("warn", "Codex App Server connection closed");
+            signal?.removeEventListener("abort", stop);
         } catch (error) {
-            if (pollTimer) {
-                clearInterval(pollTimer);
+            if (!signal?.aborted) {
+                log("warn", errorText(error));
             }
-            if (signal?.aborted) {
-                break;
-            }
-            log("warn", error.message);
         }
-
-        const baseDelay = Math.min(30000, 1000 * 2 ** reconnectAttempt++);
-        const jitter = Math.floor(Math.random() * Math.min(1000, baseDelay / 4));
-        await delay(baseDelay + jitter);
+        if (!signal?.aborted) {
+            await delay(Math.min(30000, 1000 * 2 ** reconnectAttempt++), signal);
+        }
     }
 }
 
@@ -635,17 +486,16 @@ function parseArguments(argumentsList) {
 
 async function main() {
     const options = parseArguments(process.argv.slice(2));
+    if (typeof WebSocket !== "function") {
+        throw new Error("The installed Node runtime does not provide WebSocket");
+    }
     if (options.check) {
-        if (typeof WebSocket !== "function") {
-            throw new Error("The installed Node runtime does not provide WebSocket");
-        }
         return;
     }
     if (options.probe) {
         await runProbe(options.endpoint);
         return;
     }
-
     const controller = new AbortController();
     process.once("SIGINT", () => controller.abort());
     process.once("SIGTERM", () => controller.abort());
@@ -663,10 +513,9 @@ export function isMainModule(entryPath, moduleUrl, resolvePath = realpathSync) {
     }
 }
 
-const isMain = isMainModule(process.argv[1], import.meta.url);
-if (isMain) {
+if (isMainModule(process.argv[1], import.meta.url)) {
     main().catch((error) => {
-        process.stderr.write(`${error.message}\n`);
+        process.stderr.write(`${errorText(error)}\n`);
         process.exitCode = 1;
     });
 }

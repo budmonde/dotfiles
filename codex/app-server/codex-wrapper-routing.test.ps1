@@ -4,11 +4,7 @@ $aliasesPath = Join-Path $PSScriptRoot '..\..\powershell\aliases.ps1'
 $failures = 0
 
 function Assert-Equal {
-    param(
-        [string]$Name,
-        $Actual,
-        $Expected
-    )
+    param($Name, $Actual, $Expected)
 
     if ($Actual -ne $Expected) {
         Write-Error "$Name`: expected '$Expected', got '$Actual'"
@@ -20,36 +16,61 @@ function Test-Route {
     param(
         [string]$Name,
         [string[]]$Arguments,
-        [string]$ExpectedSubcommand,
         [bool]$ExpectedProfile,
         [bool]$ExpectedRemote,
-        [string]$ExpectedManagedSandbox = '',
-        [bool]$ExpectedExplicitProfile = $false,
-        [bool]$ExpectedExplicitRemote = $false,
-        [bool]$ExpectedExplicitSandbox = $false
+        [string]$ExpectedWorkingDirectory = '',
+        [string]$EnvironmentProfile = 'windows'
     )
 
-    $plan = Get-CodexInvocationPlan -Arguments $Arguments -EnvironmentProfile 'windows'
-    Assert-Equal "$Name subcommand" $plan.Subcommand $ExpectedSubcommand
+    $plan = Get-CodexInvocationPlan `
+        -Arguments $Arguments `
+        -EnvironmentProfile $EnvironmentProfile `
+        -CallerWorkingDirectory 'C:\caller\worktree'
     Assert-Equal "$Name profile" $plan.InjectProfile $ExpectedProfile
     Assert-Equal "$Name remote" $plan.UseManagedRemote $ExpectedRemote
-    Assert-Equal "$Name managed sandbox" ([string]$plan.ManagedSandbox) $ExpectedManagedSandbox
-    Assert-Equal "$Name explicit profile" $plan.HasExplicitProfile $ExpectedExplicitProfile
-    Assert-Equal "$Name explicit remote" $plan.HasExplicitRemote $ExpectedExplicitRemote
-    Assert-Equal "$Name explicit sandbox" $plan.HasExplicitSandbox $ExpectedExplicitSandbox
+    Assert-Equal "$Name working directory" ([string]$plan.ManagedWorkingDirectory) $ExpectedWorkingDirectory
 }
 
-Test-Route -Name 'root' -Arguments @('--cd', 'C:\src') -ExpectedSubcommand '' -ExpectedProfile $true -ExpectedRemote $true -ExpectedManagedSandbox 'workspace-write'
-Test-Route -Name 'resume' -Arguments @('resume', '--last') -ExpectedSubcommand 'resume' -ExpectedProfile $true -ExpectedRemote $true -ExpectedManagedSandbox 'workspace-write'
-Test-Route -Name 'exec' -Arguments @('exec', 'summarize') -ExpectedSubcommand 'exec' -ExpectedProfile $true -ExpectedRemote $false
-Test-Route -Name 'review' -Arguments @('review', '--base', 'main') -ExpectedSubcommand 'review' -ExpectedProfile $true -ExpectedRemote $false
-Test-Route -Name 'app-server' -Arguments @('app-server', '--help') -ExpectedSubcommand 'app-server' -ExpectedProfile $false -ExpectedRemote $false
-Test-Route -Name 'doctor' -Arguments @('doctor') -ExpectedSubcommand 'doctor' -ExpectedProfile $false -ExpectedRemote $false
-Test-Route -Name 'version' -Arguments @('--version') -ExpectedSubcommand '' -ExpectedProfile $false -ExpectedRemote $false
-Test-Route -Name 'explicit profile' -Arguments @('-p', 'other', 'resume') -ExpectedSubcommand 'resume' -ExpectedProfile $false -ExpectedRemote $true -ExpectedExplicitProfile $true
-Test-Route -Name 'explicit Windows profile' -Arguments @('-p', 'windows', 'resume') -ExpectedSubcommand 'resume' -ExpectedProfile $false -ExpectedRemote $true -ExpectedManagedSandbox 'workspace-write' -ExpectedExplicitProfile $true
-Test-Route -Name 'explicit remote' -Arguments @('--remote=ws://127.0.0.1:4600', 'resume') -ExpectedSubcommand 'resume' -ExpectedProfile $true -ExpectedRemote $false -ExpectedExplicitRemote $true
-Test-Route -Name 'explicit sandbox' -Arguments @('--sandbox', 'read-only', 'resume') -ExpectedSubcommand 'resume' -ExpectedProfile $true -ExpectedRemote $false -ExpectedExplicitSandbox $true
+Test-Route -Name 'root' -Arguments @() -ExpectedProfile $true -ExpectedRemote $true -ExpectedWorkingDirectory 'C:\caller\worktree'
+Test-Route -Name 'root explicit cwd' -Arguments @('--cd', 'C:\src') -ExpectedProfile $true -ExpectedRemote $true
+Test-Route -Name 'resume' -Arguments @('resume', '--last') -ExpectedProfile $true -ExpectedRemote $true -ExpectedWorkingDirectory 'C:\caller\worktree'
+Test-Route -Name 'exec' -Arguments @('exec', 'summarize') -ExpectedProfile $true -ExpectedRemote $false
+Test-Route -Name 'app server' -Arguments @('app-server', '--help') -ExpectedProfile $false -ExpectedRemote $false
+Test-Route -Name 'explicit remote' -Arguments @('--remote=ws://127.0.0.1:4600') -ExpectedProfile $true -ExpectedRemote $false
+Test-Route -Name 'explicit sandbox' -Arguments @('--sandbox', 'read-only') -ExpectedProfile $true -ExpectedRemote $false
+Test-Route -Name 'non-Windows profile' -Arguments @() -ExpectedProfile $true -ExpectedRemote $false -EnvironmentProfile 'cluster'
+Test-Route -Name 'explicit other profile' -Arguments @('--profile', 'other') -ExpectedProfile $false -ExpectedRemote $false
+
+$env:CODEX_PROFILE = 'windows'
+$script:hostStarts = 0
+$script:codexArguments = @()
+function codex-host {
+    $script:hostStarts++
+    $global:LASTEXITCODE = 0
+}
+function codex.cmd {
+    $script:codexArguments = @($args)
+}
+
+$resolvedWorkingDirectory = (Resolve-Path -LiteralPath '.').ProviderPath
+codex
+Assert-Equal 'host starts' $script:hostStarts 1
+Assert-Equal 'remote endpoint' $script:codexArguments[5] 'ws://127.0.0.1:4500'
+Assert-Equal 'working directory flag' $script:codexArguments[6] '--cd'
+Assert-Equal 'working directory value' $script:codexArguments[7] $resolvedWorkingDirectory
+
+$script:codexCalled = $false
+function codex-host {
+    $global:LASTEXITCODE = 1
+}
+function codex.cmd {
+    $script:codexCalled = $true
+}
+$previousPreference = $ErrorActionPreference
+$ErrorActionPreference = 'SilentlyContinue'
+codex
+$ErrorActionPreference = $previousPreference
+Assert-Equal 'host failure is not silently bypassed' $script:codexCalled $false
 
 if ($failures -gt 0) {
     exit 1

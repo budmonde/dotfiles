@@ -96,16 +96,19 @@ function Get-CodexSubcommand {
 function Get-CodexInvocationPlan {
     param(
         [string[]]$Arguments,
-        [string]$EnvironmentProfile = $env:CODEX_PROFILE
+        [string]$EnvironmentProfile = $env:CODEX_PROFILE,
+        [string]$CallerWorkingDirectory = (Resolve-Path -LiteralPath '.').ProviderPath
     )
 
     $hasExplicitProfile = $false
     $explicitProfile = $null
     $hasExplicitRemote = $false
     $hasExplicitSandbox = $false
+    $hasExplicitWorkingDirectory = $false
     $expectProfileValue = $false
     $expectRemoteValue = $false
     $expectSandboxValue = $false
+    $expectWorkingDirectoryValue = $false
 
     foreach ($argument in $Arguments) {
         if ($expectProfileValue) {
@@ -119,6 +122,10 @@ function Get-CodexInvocationPlan {
         }
         if ($expectSandboxValue) {
             $expectSandboxValue = $false
+            continue
+        }
+        if ($expectWorkingDirectoryValue) {
+            $expectWorkingDirectoryValue = $false
             continue
         }
 
@@ -138,6 +145,11 @@ function Get-CodexInvocationPlan {
             $expectSandboxValue = $true
         } elseif ($argument -like '--sandbox=*') {
             $hasExplicitSandbox = $true
+        } elseif ($argument -eq '--cd' -or $argument -ceq '-C') {
+            $hasExplicitWorkingDirectory = $true
+            $expectWorkingDirectoryValue = $true
+        } elseif ($argument -like '--cd=*' -or $argument -clike '-C=*') {
+            $hasExplicitWorkingDirectory = $true
         }
     }
 
@@ -155,9 +167,15 @@ function Get-CodexInvocationPlan {
     }
     $useManagedRemote = [bool](
         $remoteEligible -and
+        $resolvedProfile -eq 'windows' -and
         -not $hasExplicitRemote -and
         -not $hasExplicitSandbox
     )
+    $managedWorkingDirectory = if (
+        $useManagedRemote -and
+        @('', 'resume') -contains $subcommand -and
+        -not $hasExplicitWorkingDirectory
+    ) { $CallerWorkingDirectory } else { $null }
 
     [pscustomobject]@{
         Subcommand = $subcommand
@@ -172,11 +190,14 @@ function Get-CodexInvocationPlan {
         HasExplicitProfile = $hasExplicitProfile
         HasExplicitRemote = $hasExplicitRemote
         HasExplicitSandbox = $hasExplicitSandbox
+        HasExplicitWorkingDirectory = $hasExplicitWorkingDirectory
+        ManagedWorkingDirectory = $managedWorkingDirectory
     }
 }
 
 function codex {
-    $plan = Get-CodexInvocationPlan -Arguments $args
+    $callerWorkingDirectory = (Resolve-Path -LiteralPath '.').ProviderPath
+    $plan = Get-CodexInvocationPlan -Arguments $args -CallerWorkingDirectory $callerWorkingDirectory
     $invocationArguments = @()
 
     Write-Host "Codex profile: $($plan.Profile)"
@@ -187,18 +208,23 @@ function codex {
 
     if ($plan.UseManagedRemote) {
         $hostCommand = Get-Command codex-host -ErrorAction SilentlyContinue
-        if ($hostCommand) {
-            & $hostCommand start
-            if ($LASTEXITCODE -eq 0) {
-                if ($plan.ManagedSandbox) {
-                    $invocationArguments += @('--sandbox', $plan.ManagedSandbox)
-                }
-                $invocationArguments += @('--remote', 'ws://127.0.0.1:4500')
-            } else {
-                Write-Warning 'Codex App Server startup failed; continuing in direct mode without managed notifications.'
-            }
-        } else {
-            Write-Warning 'codex-host is unavailable; continuing in direct mode without managed notifications.'
+        if (-not $hostCommand) {
+            Write-Error 'codex-host is unavailable; managed Codex invocation aborted.'
+            return
+        }
+
+        & $hostCommand start
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error 'Codex App Server startup failed; managed Codex invocation aborted.'
+            return
+        }
+
+        if ($plan.ManagedSandbox) {
+            $invocationArguments += @('--sandbox', $plan.ManagedSandbox)
+        }
+        $invocationArguments += @('--remote', 'ws://127.0.0.1:4500')
+        if ($plan.ManagedWorkingDirectory) {
+            $invocationArguments += @('--cd', $plan.ManagedWorkingDirectory)
         }
     }
 
