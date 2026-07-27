@@ -214,6 +214,13 @@ For metadata without reading content: `papergrep info /path/to/paper.pdf`
 
 ## Troubleshooting
 
+- **`papergrep fetch` reports a Scholar transient error**: Scholar sometimes
+  returns HTTP 200 with a page saying it cannot perform the operation now, even
+  for valid queries. papergrep exits nonzero by design so this is not mistaken
+  for an empty result set. Treat it as an upstream availability condition, not
+  evidence that the local index or Windows throttle failed. Do not immediately
+  retry in a loop or run fetches in parallel. Share the printed Scholar URL,
+  use a known direct PDF URL when available, or wait and retry later.
 - **`papergrep fetch` hits a CAPTCHA**: Scholar has flagged the IP. papergrep
   will automatically launch Chromium for the user to solve the CAPTCHA. Once
   solved and the browser window is closed, papergrep reads the recovery cookie
