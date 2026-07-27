@@ -97,7 +97,7 @@
       description: Restarting AHK startup script
 
     # PowerToys settings
-    - command: powershell -NoProfile -Command "Sync-PowerToysSettings"
+    - command: powershell -NoProfile -File windows\powertoys\Sync-PowerToysSettings.ps1
       description: Applying PowerToys settings
 
     # Cleanup
