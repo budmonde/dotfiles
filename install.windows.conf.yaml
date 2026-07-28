@@ -1,8 +1,8 @@
 # Run via: .\install.ps1 (which loads this after install.conf.yaml)
 # Requires: admin shell (for symlinks), winget, python
 #
-# install.ps1 exports %DOCUMENTS% (via GetFolderPath) before invoking dotbot,
-# so link paths can reference it regardless of OneDrive redirection.
+# The profile-loader helper resolves MyDocuments at runtime and writes regular
+# profile loaders, so a machine-specific symlink never enters OneDrive.
 
 - defaults:
     link:
@@ -10,8 +10,6 @@
         relink: true
 
 - link:
-    "%DOCUMENTS%\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1": profile.ps1
-    "%DOCUMENTS%\\PowerShell\\Microsoft.PowerShell_profile.ps1": profile.ps1
     "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json": windows/terminal/settings.json
     "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\startup.ahk": windows/ahk/startup.ahk
     ~/.config/powertoys/settings: windows/powertoys/settings
@@ -34,6 +32,8 @@
       description: Setting up git hooks
     - command: powershell -NoProfile -Command "foreach ($h in 'commit-msg','post-commit') { New-Item -ItemType SymbolicLink -Force -Path \".githooks/$h\" -Target \"$HOME/.config/git/hooks/$h\" | Out-Null }"
       description: Linking global git hooks into .githooks
+    - command: powershell -NoProfile -File windows\powershell\Install-ProfileLoader.ps1
+      description: Writing machine-local PowerShell profile loaders
 
     # Desktop tools (winget wrapper handles "already up-to-date" exit code)
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId AutoHotkey.AutoHotkey
