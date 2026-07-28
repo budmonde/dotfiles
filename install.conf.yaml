@@ -6,7 +6,15 @@
         create: true
         relink: true
 
-- clean: ['~', '~/.config', '~/.codex']
+- clean:
+    - '~'
+    - '~/.config'
+    - '~/.codex'
+    - '~/.ssh'
+    - '~/.local/bin'
+    - '~/.config/claude'
+    - '$XDG_DATA_HOME/jupyter'
+    - '~/.local/share/jupyter'
 
 - link:
     # Git / SSH

@@ -9,6 +9,11 @@
         create: true
         relink: true
 
+- clean:
+    - ~/.config/powertoys
+    - ~/.codex/app-server
+    - "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+
 - link:
     "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json": windows/terminal/settings.json
     "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\startup.ahk": windows/ahk/startup.ahk
