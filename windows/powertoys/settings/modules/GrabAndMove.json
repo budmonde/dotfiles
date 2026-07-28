@@ -1,6 +1,6 @@
 {
     "properties": {
-        "modifierKey": { "value": 0 },
+        "modifierKey": { "value": 1 },
         "shouldAbsorbAlt": { "value": true },
         "showGeometry": { "value": false },
         "useAltResize": { "value": true },
