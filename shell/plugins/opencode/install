@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+opencode_application_paths() {
+    local remaining="${PATH:-}"
+    local directory candidate seen= last_entry
+
+    while :; do
+        if [[ "$remaining" == *:* ]]; then
+            directory="${remaining%%:*}"
+            remaining="${remaining#*:}"
+            last_entry=0
+        else
+            directory="$remaining"
+            remaining=
+            last_entry=1
+        fi
+
+        [ -n "$directory" ] || directory=.
+        candidate="$directory/opencode"
+        if [ -x "$candidate" ]; then
+            case ":$seen:" in
+                *":$candidate:"*) ;;
+                *)
+                    printf '%s\n' "$candidate"
+                    seen="${seen:+$seen:}$candidate"
+                    ;;
+            esac
+        fi
+
+        [ "$last_entry" -eq 0 ] || break
+    done
+}
+
+public_opencode_install_allowed() {
+    local candidate version
+
+    while IFS= read -r candidate; do
+        [ -n "$candidate" ] || continue
+        if ! version="$("$candidate" --version 2>/dev/null)"; then
+            printf 'Skipping public OpenCode install: version inspection failed for %s.\n' "$candidate"
+            return 1
+        fi
+        if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            printf 'Skipping public OpenCode install: preserving %s (%s).\n' \
+                "$candidate" "${version:-<no version>}"
+            return 1
+        fi
+    done < <(opencode_application_paths)
+
+    return 0
+}
+
+install_public_opencode() {
+    if ! public_opencode_install_allowed; then
+        return
+    fi
+
+    curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    install_public_opencode
+fi

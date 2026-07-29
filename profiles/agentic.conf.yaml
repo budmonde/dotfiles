@@ -1,0 +1,21 @@
+# Shared agentic configuration applied after the platform-specific fragment.
+
+- defaults:
+    link:
+        backup: true
+        create: true
+        relink: true
+
+- clean:
+    - ~/.config/claude
+    - ~/.config/codex
+    - ~/.config/opencode
+
+- link:
+    ~/.agents: agents
+    ~/.config/codex/AGENTS.md: agents/AGENTS.md
+    ~/.config/codex/config.toml: codex/config.toml
+    ~/.config/claude/settings.json: claude/settings.json
+    ~/.config/claude/keybindings.json: claude/keybindings.json
+
+    ~/.config/opencode: opencode

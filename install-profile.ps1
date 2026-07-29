@@ -2,6 +2,7 @@
 # Usage: .\install-profile.ps1 <profile> [profile...]
 #
 # Profiles are discovered dynamically from profiles\windows\*.conf.yaml.
+# A matching profiles\<name>.conf.yaml is applied after the platform fragment.
 #
 # Examples:
 #   .\install-profile.ps1 collab
@@ -35,6 +36,10 @@ foreach ($profile in $Args) {
         Write-Error "Config not found: $conf"
     }
     $Configs += $conf
+    $sharedConf = "profiles\$profile.conf.yaml"
+    if (Test-Path (Join-Path $BASEDIR $sharedConf)) {
+        $Configs += $sharedConf
+    }
 }
 
 Set-Location $BASEDIR

@@ -4,6 +4,7 @@
 # Usage: ./install-profile <profile> [profile...]
 #
 # Profiles are discovered dynamically from profiles/unix/*.conf.yaml.
+# A matching profiles/<name>.conf.yaml is applied after the platform fragment.
 #
 # Examples:
 #   ./install-profile agentic
@@ -61,15 +62,16 @@ for profile in "$@"; do
         exit 1
     fi
     CONFIGS+=("${conf}")
+    shared_conf="profiles/${profile}.conf.yaml"
+    if [ -f "${BASEDIR}/${shared_conf}" ]; then
+        CONFIGS+=("${shared_conf}")
+    fi
 done
 
 cd "${BASEDIR}"
 git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
 git submodule update --init --recursive "${DOTBOT_DIR}"
 
-DOTBOT_ARGS=()
-for c in "${CONFIGS[@]}"; do
-    DOTBOT_ARGS+=(-c "${c}")
-done
-
-"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" "${DOTBOT_ARGS[@]}"
+"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" \
+    -d "${BASEDIR}" \
+    -c "${CONFIGS[@]}"

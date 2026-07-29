@@ -11,8 +11,6 @@
     - '~/.config'
     - '~/.ssh'
     - '~/.local/bin'
-    - '~/.config/codex'
-    - '~/.config/claude'
     - '$XDG_DATA_HOME/jupyter'
     - '~/.local/share/jupyter'
 
@@ -24,14 +22,6 @@
     # Editors
     ~/.vim:
     ~/.config/nvim: nvim
-
-    # AI tools
-    ~/.config/opencode: opencode
-    ~/.agents: agents
-    ~/.config/codex/AGENTS.md: agents/AGENTS.md
-    ~/.config/codex/config.toml: codex/config.toml
-    ~/.config/claude/settings.json: claude/settings.json
-    ~/.config/claude/keybindings.json: claude/keybindings.json
 
     # Languages
     ~/.config/python: python
