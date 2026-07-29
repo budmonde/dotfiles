@@ -1,3 +1,52 @@
+function Test-InteractiveShell {
+    if (-not [Environment]::UserInteractive -or
+        [Console]::IsInputRedirected -or
+        [Console]::IsOutputRedirected) {
+        return $false
+    }
+
+    $keepShellOpen = $false
+    $startupArguments = [Environment]::GetCommandLineArgs()
+
+    foreach ($argument in $startupArguments | Select-Object -Skip 1) {
+        $normalizedArgument = $argument.ToLowerInvariant()
+
+        if ($normalizedArgument -in @('-noexit', '-noe')) {
+            $keepShellOpen = $true
+            continue
+        }
+
+        if ($normalizedArgument -in @(
+                '-noninteractive',
+                '-noni',
+                '-servermode',
+                '-socketservermode',
+                '-namedpipeservermode',
+                '-sshservermode',
+                '-sshs'
+            )) {
+            return $false
+        }
+
+        if ($normalizedArgument -in @(
+                '-command',
+                '-c',
+                '-commandwithargs',
+                '-cwa',
+                '-encodedcommand',
+                '-e',
+                '-ec',
+                '-enc',
+                '-file',
+                '-f'
+            )) {
+            return $keepShellOpen
+        }
+    }
+
+    return $true
+}
+
 function Remove-PathEntry {
     param([string]$Dir)
     $parts = $env:PATH -split ';' | Where-Object { $_ -ne $Dir -and $_ -ne '' }

@@ -8,7 +8,9 @@ Set-PSReadLineOption -EditMode Vi
 # CompletionPredictor module loads successfully. Requires PSReadLine >= 2.2.0;
 # Windows PowerShell 5.1 ships 2.0.0, so powershell/plugins/psreadline/install.ps1
 # upgrades the module via PSGallery as part of the install pipeline.
-Set-PSReadLineOption -PredictionSource History -PredictionViewStyle InlineView
+if ($Host.UI.SupportsVirtualTerminal) {
+    Set-PSReadLineOption -PredictionSource History -PredictionViewStyle InlineView
+}
 
 Set-PSReadLineKeyHandler -Chord 'Ctrl+d' -Function DeleteCharOrExit
 

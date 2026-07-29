@@ -13,8 +13,9 @@ if (Test-Path "$HOME\.psprofile_local.ps1") {
     . "$HOME\.psprofile_local.ps1"
 }
 
-# Interactive shell setup
-. $DotfilesDir\powershell\settings.ps1
-. $DotfilesDir\powershell\plugins.ps1
-. $DotfilesDir\powershell\aliases.ps1
-. $DotfilesDir\powershell\prompt.ps1
+if (Test-InteractiveShell) {
+    . $DotfilesDir\powershell\settings.ps1
+    . $DotfilesDir\powershell\plugins.ps1
+    . $DotfilesDir\powershell\aliases.ps1
+    . $DotfilesDir\powershell\prompt.ps1
+}
