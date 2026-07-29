@@ -11,7 +11,7 @@
 
 - clean:
     - ~/.config/powertoys
-    - ~/.codex/app-server
+    - ~/.config/codex/app-server
     - "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
 
 - link:
@@ -124,8 +124,8 @@
     ~/.local/bin/set-title.cmd: bin/set-title.cmd
     ~/.local/bin/winget-install.ps1: windows/bin/winget-install.ps1
 
-    ~/.codex/app-server/codex-host.ps1: codex/app-server/codex-host.ps1
-    ~/.codex/app-server/notification-monitor.mjs: codex/app-server/notification-monitor.mjs
+    ~/.config/codex/app-server/codex-host.ps1: codex/app-server/codex-host.ps1
+    ~/.config/codex/app-server/notification-monitor.mjs: codex/app-server/notification-monitor.mjs
 
 - clean:
-    - ~/.codex/hooks
+    - ~/.config/codex/hooks

@@ -9,9 +9,9 @@
 - clean:
     - '~'
     - '~/.config'
-    - '~/.codex'
     - '~/.ssh'
     - '~/.local/bin'
+    - '~/.config/codex'
     - '~/.config/claude'
     - '$XDG_DATA_HOME/jupyter'
     - '~/.local/share/jupyter'
@@ -26,14 +26,12 @@
     ~/.config/nvim: nvim
 
     # AI tools
-    ~/.config/claude/settings.json: claude/settings.json
-    ~/.config/claude/keybindings.json: claude/keybindings.json
     ~/.config/opencode: opencode
     ~/.agents: agents
-    ~/.codex/AGENTS.md: agents/AGENTS.md
-    ~/.codex/config.toml:
-        path: codex/config.toml
-        backup: true
+    ~/.config/codex/AGENTS.md: agents/AGENTS.md
+    ~/.config/codex/config.toml: codex/config.toml
+    ~/.config/claude/settings.json: claude/settings.json
+    ~/.config/claude/keybindings.json: claude/keybindings.json
 
     # Languages
     ~/.config/python: python

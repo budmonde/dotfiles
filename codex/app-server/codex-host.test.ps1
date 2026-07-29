@@ -12,6 +12,7 @@ if ($parseErrors.Count -gt 0) {
     exit 1
 }
 
+Remove-Item Env:\CODEX_HOME -ErrorAction SilentlyContinue
 . $hostPath -LibraryMode
 
 $failures = 0
@@ -35,6 +36,9 @@ function Assert-SequenceEqual {
 }
 
 Assert-Equal 'endpoint' $Endpoint 'ws://127.0.0.1:4500'
+Assert-Equal 'Codex home' $CodexHome (Join-Path $UserHome '.config\codex')
+Assert-Equal 'Base config path' $BaseConfigPath (Join-Path $CodexHome 'config.toml')
+Assert-Equal 'Windows config path' $ProfileConfigPath (Join-Path $CodexHome 'windows.config.toml')
 Assert-SequenceEqual 'App Server arguments' (Get-AppServerArguments) @(
     'app-server', '--listen', 'ws://127.0.0.1:4500'
 )
@@ -79,6 +83,7 @@ foreach ($forbidden in @(
     'healthFile',
     'WindowsProfileConfigPath',
     'Resolve-CodexNativeExecutable',
+    '.codex\\',
     'unix://'
 )) {
     if ($source -match [regex]::Escape($forbidden)) {

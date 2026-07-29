@@ -21,8 +21,16 @@ $HostErrorLog = Join-Path $StateDirectory 'host-error.log'
 $MonitorOutputLog = Join-Path $StateDirectory 'monitor.log'
 $MonitorErrorLog = Join-Path $StateDirectory 'monitor-error.log'
 $MonitorPath = Join-Path $PSScriptRoot 'notification-monitor.mjs'
-$BaseConfigPath = Join-Path $UserHome '.codex\config.toml'
-$ProfileConfigPath = Join-Path $UserHome '.codex\windows.config.toml'
+$CodexHome = if ($env:CODEX_HOME) {
+    $env:CODEX_HOME
+} elseif ($env:XDG_CONFIG_HOME) {
+    Join-Path $env:XDG_CONFIG_HOME 'codex'
+} else {
+    Join-Path $UserHome '.config\codex'
+}
+$env:CODEX_HOME = $CodexHome
+$BaseConfigPath = Join-Path $CodexHome 'config.toml'
+$ProfileConfigPath = Join-Path $CodexHome 'windows.config.toml'
 
 function Get-AppServerArguments {
     return @(
