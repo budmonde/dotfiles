@@ -46,6 +46,8 @@
       description: Installing PowerToys
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Mozilla.Firefox
       description: Installing Firefox
+    - command: powershell -NoProfile -File windows\vscode\Set-VSCodeUserData.ps1
+      description: Configuring VS Code XDG user data
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Microsoft.VisualStudioCode
       description: Installing VS Code
 
