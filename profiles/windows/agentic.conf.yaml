@@ -6,12 +6,3 @@
       description: Installing OpenCode
     - command: npm install -g '@openai/codex'
       description: Installing Codex
-
-- clean:
-    - ~/.config/codex/app-server
-    - ~/.config/codex/hooks
-
-- link:
-    ~/.local/bin/codex-host.cmd: windows/bin/codex-host.cmd
-    ~/.config/codex/app-server/codex-host.ps1: codex/app-server/codex-host.ps1
-    ~/.config/codex/app-server/notification-monitor.mjs: codex/app-server/notification-monitor.mjs
