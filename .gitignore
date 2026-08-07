@@ -3,5 +3,5 @@ tags
 opencode.jsonc
 opencode/agents/nv_*.md
 __pycache__/
-.githooks/commit-msg
-.githooks/post-commit
+.githooks/*
+!.githooks/pre-commit

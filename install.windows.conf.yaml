@@ -34,7 +34,7 @@
       description: Installing submodules
     - command: git config core.hooksPath .githooks
       description: Setting up git hooks
-    - command: powershell -NoProfile -Command "foreach ($h in 'commit-msg','post-commit') { New-Item -ItemType SymbolicLink -Force -Path \".githooks/$h\" -Target \"$HOME/.config/git/hooks/$h\" | Out-Null }"
+    - command: powershell -NoProfile -Command "foreach ($h in 'commit-msg','post-commit','reference-transaction') { New-Item -ItemType SymbolicLink -Force -Path \".githooks/$h\" -Target \"$HOME/.config/git/hooks/$h\" | Out-Null }"
       description: Linking global git hooks into .githooks
     - command: powershell -NoProfile -File windows\powershell\Install-ProfileLoader.ps1
       description: Writing machine-local PowerShell profile loaders

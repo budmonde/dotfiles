@@ -1,19 +1,31 @@
 #!/usr/bin/env node
-// Rename the auditor session created by the commit-msg hook so it carries
-// the commit hash and subject. Non-blocking by design: git ignores this
-// hook's exit code, and a missed rename leaves the auditor session with
-// its create-time title, which is still readable.
+// Finalize the auditor session with the commit hash and subject.
+// Git ignores this hook's exit code, so lifecycle failures are warnings.
 
 "use strict";
 
 const path = require("path");
-const { makeDebug, gitOutput, httpJson, withTimeout } = require(path.join(__dirname, "lib"));
+const { spawnSync } = require("child_process");
+const {
+    appendAuditLog,
+    makeDebug,
+    gitOutput,
+    httpJson,
+    withTimeout,
+} = require(path.join(__dirname, "lib"));
+const {
+    buildGateCommand,
+    classifyRuntime,
+    clearPendingReceipt,
+    readPendingReceipt,
+} = require(path.join(__dirname, "commit-auditor-controller"));
 
 const HOOK_TAG = "[post-commit]";
 const debug = makeDebug(HOOK_TAG);
 
 async function main() {
-    if (!process.env.OPENCODE_SERVER_URL) process.exit(0);
+    const runtime = classifyRuntime(process.env);
+    if (runtime.kind === "local" || runtime.kind === "invalid") process.exit(0);
 
     const info = gitOutput("log -1 --format=%H%x00%s HEAD");
     if (!info) process.exit(0);
@@ -23,6 +35,73 @@ async function main() {
 
     const shortHash = hash.slice(0, 12);
     const title = `[git-hook:commit-msg] ${shortHash}: ${subject}`;
+
+    if (runtime.kind === "codex") {
+        const gitDir = gitOutput("rev-parse --absolute-git-dir");
+        if (!gitDir) process.exit(0);
+        let receipt;
+        try {
+            receipt = readPendingReceipt(gitDir);
+        } catch (error) {
+            appendAuditLog({
+                provider: "codex",
+                result: "GATE_FINALIZE_FAILED",
+                infrastructure_failure: true,
+                origin_session_id: runtime.originThreadId,
+                generation_id: runtime.generationId,
+                rationale: error.message,
+            });
+            process.stderr.write(
+                `${HOOK_TAG} WARNING: cannot read gate finalization receipt (${error.message})\n`,
+            );
+            process.exit(0);
+        }
+        if (!receipt) process.exit(0);
+
+        const gate = buildGateCommand(runtime, "finalize", [
+            "--invocation",
+            receipt.invocationId,
+            "--json",
+        ]);
+        const finalize = spawnSync(gate.command, gate.args, {
+            cwd: process.cwd(),
+            encoding: "utf8",
+            input: JSON.stringify({
+                finalizationToken: receipt.finalizationToken,
+                outcome: {
+                    status: "succeeded",
+                    commitHash: hash,
+                    commitSubject: subject,
+                },
+            }),
+            maxBuffer: 1024 * 1024,
+            timeout: 30_000,
+            windowsHide: true,
+        });
+        if (finalize.error || finalize.status !== 0) {
+            const reason = finalize.error?.message || finalize.stderr.trim() || `exit ${finalize.status}`;
+            appendAuditLog({
+                provider: "codex",
+                result: "GATE_FINALIZE_FAILED",
+                infrastructure_failure: true,
+                gate_id: receipt.gateId,
+                invocation_id: receipt.invocationId,
+                origin_session_id: runtime.originThreadId,
+                generation_id: runtime.generationId,
+                rationale: reason,
+            });
+            process.stderr.write(
+                `${HOOK_TAG} WARNING: managed gate finalization failed (${reason})\n`,
+            );
+            process.exit(0);
+        }
+        clearPendingReceipt(gitDir);
+        process.stdout.write(
+            `${HOOK_TAG} finalized gate invocation ${receipt.invocationId}\n`,
+        );
+        process.exit(0);
+    }
+
     const serverBase = process.env.OPENCODE_SERVER_URL.replace(/\/$/, "");
     const projectDir =
         process.env.OPENCODE_PROJECT_DIR || gitOutput("rev-parse --show-toplevel") || process.cwd();

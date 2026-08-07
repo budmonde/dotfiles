@@ -1,0 +1,130 @@
+#!/usr/bin/env node
+
+"use strict";
+
+const fs = require("fs");
+const path = require("path");
+const { execFileSync, spawnSync } = require("child_process");
+const {
+    appendAuditLog,
+    gitOutput,
+} = require(path.join(__dirname, "lib"));
+const {
+    buildGateCommand,
+    classifyRuntime,
+    clearPendingReceipt,
+    readPendingReceipt,
+    validateCommitAuditBinding,
+} = require(path.join(__dirname, "commit-auditor-controller"));
+
+const HOOK_TAG = "[reference-transaction]";
+
+function readUpdates() {
+    return fs.readFileSync(0, "utf8")
+        .split(/\r?\n/u)
+        .filter(Boolean)
+        .map((line) => {
+            const [oldCommit, newCommit, ref, ...extra] = line.split(" ");
+            if (!oldCommit || !newCommit || !ref || extra.length > 0) {
+                throw new Error(`invalid reference transaction update ${JSON.stringify(line)}`);
+            }
+            return { oldCommit, newCommit, ref };
+        });
+}
+
+function inspectCommit(commit) {
+    const raw = execFileSync("git", ["cat-file", "-p", commit], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+    });
+    const header = raw.split(/\r?\n\r?\n/u, 1)[0];
+    const tree = header.match(/^tree ([0-9a-f]+)$/mu)?.[1] || null;
+    const parents = [...header.matchAll(/^parent ([0-9a-f]+)$/gmu)].map((match) => match[1]);
+    if (!tree) throw new Error(`proposed object ${commit} is not a commit`);
+    return { tree, parents };
+}
+
+function abortInvocation(runtime, receipt, reason) {
+    try {
+        const gate = buildGateCommand(runtime, "abort", [
+            "--invocation",
+            receipt.invocationId,
+            "--json",
+        ]);
+        const result = spawnSync(gate.command, gate.args, {
+            cwd: process.cwd(),
+            encoding: "utf8",
+            input: JSON.stringify({
+                finalizationToken: receipt.finalizationToken,
+                reason,
+            }),
+            maxBuffer: 1024 * 1024,
+            timeout: 30_000,
+            windowsHide: true,
+        });
+        if (result.error || result.status !== 0) {
+            const detail = result.error?.message || result.stderr.trim() || `exit ${result.status}`;
+            process.stderr.write(`${HOOK_TAG} WARNING: unable to archive gate invocation (${detail})\n`);
+        }
+    } catch (error) {
+        process.stderr.write(`${HOOK_TAG} WARNING: unable to archive gate invocation (${error.message})\n`);
+    }
+}
+
+function reject(runtime, gitDir, receipt, reason) {
+    appendAuditLog({
+        provider: "codex",
+        result: "GATE_FINAL_DIFF_MISMATCH",
+        infrastructure_failure: false,
+        gate_id: receipt?.gateId || null,
+        invocation_id: receipt?.invocationId || null,
+        origin_session_id: runtime.originThreadId,
+        generation_id: runtime.generationId,
+        rationale: reason,
+    });
+    if (receipt) abortInvocation(runtime, receipt, reason);
+    if (gitDir) clearPendingReceipt(gitDir);
+    process.stderr.write(`${HOOK_TAG} REJECT: ${reason}\n`);
+    process.exit(1);
+}
+
+function main() {
+    if (process.argv[2] !== "prepared") process.exit(0);
+
+    const runtime = classifyRuntime(process.env);
+    if (runtime.kind !== "codex") process.exit(0);
+
+    const gitDir = gitOutput("rev-parse --absolute-git-dir");
+    if (!gitDir) process.exit(0);
+
+    let receipt;
+    try {
+        receipt = readPendingReceipt(gitDir);
+    } catch (error) {
+        reject(runtime, gitDir, null, `cannot read the audit binding (${error.message})`);
+    }
+    if (!receipt) process.exit(0);
+
+    try {
+        const expectedRef = receipt.auditBinding.headRef || "HEAD";
+        const updates = readUpdates().filter((update) => update.ref === expectedRef);
+        if (updates.length === 0) process.exit(0);
+        if (updates.length !== 1) {
+            throw new Error(`transaction contains multiple updates for audited ref ${expectedRef}`);
+        }
+        const update = updates[0];
+        const commit = inspectCommit(update.newCommit);
+        validateCommitAuditBinding({
+            auditBinding: receipt.auditBinding,
+            oldCommit: update.oldCommit,
+            ref: update.ref,
+            tree: commit.tree,
+            parents: commit.parents,
+        });
+    } catch (error) {
+        reject(runtime, gitDir, receipt, error.message);
+    }
+}
+
+main();

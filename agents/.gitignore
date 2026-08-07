@@ -1,8 +1,12 @@
 /*
 !/.gitignore
 !/AGENTS.md
+!/instructions/
+/instructions/*
+!/instructions/commit-auditor.md
 !/skills/
 /skills/*
+!/skills/commit-auditor/
 !/skills/feature-dev/
 !/skills/imgen/
 !/skills/markdown/
