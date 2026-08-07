@@ -8,3 +8,5 @@
       description: Installing Darktable
     - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId GIMP.GIMP
       description: Installing GIMP
+    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Inkscape.Inkscape
+      description: Installing Inkscape
