@@ -1,0 +1,11 @@
+node_modules/
+bun.lock
+package.json
+package-lock.json
+opencode.jsonc
+AGENTS_PRIVATE.md
+plugins/retry-on-prefill-error.ts
+agents/nv_*.md
+skills/glean-cli
+skills/imdex
+skills/ocmp-*

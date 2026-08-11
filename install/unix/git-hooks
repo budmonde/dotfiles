@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+eval "$("${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm" env --shell bash)"
+cd "$REPO_DIR/config/git/hooks"
+npm install --silent --no-audit --no-fund

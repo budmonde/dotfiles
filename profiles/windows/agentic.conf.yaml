@@ -2,7 +2,7 @@
 # Usage: .\install-profile.ps1 agentic
 
 - shell:
-    - command: powershell -NoProfile -File powershell\plugins\opencode\install.ps1
+    - command: powershell -NoProfile -File install\windows\opencode.ps1
       description: Installing OpenCode
     - command: npm install -g '@openai/codex'
       description: Installing Codex

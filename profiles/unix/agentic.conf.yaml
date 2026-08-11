@@ -4,6 +4,6 @@
 # On WSL, also masks systemd-timesyncd as an opencode-specific workaround.
 
 - shell:
-    - [bash ./shell/plugins/opencode/install, Installing OpenCode]
+    - [bash ./install/unix/opencode, Installing OpenCode]
     - ["npm install -g '@openai/codex'", Installing Codex]
     - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL (opencode workaround)]

@@ -1,5 +1,5 @@
 # Unix-specific configuration (Linux, macOS, WSL)
-# Run via: ./install (which loads this after install.conf.yaml)
+# Run via: ./install.sh (which loads this after install.conf.yaml)
 
 - defaults:
     link:
@@ -8,36 +8,42 @@
 
 - link:
     # Root rc files (required by shell spec)
-    ~/.bash_profile:
-    ~/.bashrc:
-    ~/.profile:
-    ~/.zshenv:
-    ~/.zshrc:
+    ~/.bash_profile: config/bash_profile
+    ~/.bashrc: config/bashrc
+    ~/.profile: config/profile
+    ~/.zshenv: config/zshenv
+    ~/.zshrc: config/zshrc
 
     # Shell
-    ~/.config/bash: bash
-    ~/.config/zsh: zsh
-    ~/.config/shell: shell
-    ~/.config/tmux: tmux
+    ~/.config/bash: config/bash
+    ~/.config/zsh: config/zsh
+    ~/.config/shell: config/shell
+    ~/.config/tmux: config/tmux
 
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
     - [git config core.hooksPath .githooks, Setting up git hooks]
     - ['for h in commit-msg post-commit reference-transaction; do ln -sfn "$HOME/.config/git/hooks/$h" ".githooks/$h"; done', Linking global git hooks into .githooks]
-    - ['chmod +x git/hooks/commit-msg git/hooks/post-commit git/hooks/reference-transaction 2>/dev/null || true', Marking global hook scripts executable]
+    - ['chmod +x config/git/hooks/commit-msg config/git/hooks/post-commit config/git/hooks/reference-transaction 2>/dev/null || true', Marking global hook scripts executable]
 
     # CLI tools
-    - [./shell/plugins/fzf/install --bin, Installing fzf]
-    - [./shell/plugins/fnm/install, Installing fnm]
-    - ['${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm install --lts && ${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm default lts-latest || true', Installing Node LTS]
-    - ['eval "$(${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm env --shell bash)" && cd git/hooks && npm install --silent --no-audit --no-fund', Installing git hook dependencies]
-    - [./shell/plugins/nvim/install, Installing neovim]
-    - ['curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR="$HOME/.local/bin" UV_NO_MODIFY_PATH=1 sh', Installing uv]
-    - [./shell/plugins/gh/install, Installing GitHub CLI]
-    - [./shell/plugins/rg/install, Installing ripgrep]
-    - [./shell/plugins/rclone/install, Installing rclone]
-    - [./shell/plugins/push-notify/install, Installing push-notify]
+    - [./install/unix/fzf, Installing fzf]
+    - [./install/unix/fnm, Installing fnm]
+    - [./install/unix/node, Installing Node LTS]
+    - [./install/unix/git-hooks, Installing git hook dependencies]
+    - [./install/unix/nvim, Installing neovim]
+    - [./install/unix/uv, Installing uv]
+    - [./install/unix/gh, Installing GitHub CLI]
+    - [./install/unix/rg, Installing ripgrep]
+    - [./install/unix/rclone, Installing rclone]
 
-# Symlinks for binaries installed above
+# User commands and binaries installed above
 - link:
-    ~/.local/bin/fzf: shell/plugins/fzf/bin/fzf
+    ~/.local/bin/git-fetch-repos: bin/git-fetch-repos
+    ~/.local/bin/git-filter-repo: bin/git-filter-repo
+    ~/.local/bin/imgen: bin/imgen
+    ~/.local/bin/reddit: bin/reddit
+    ~/.local/bin/set-title: bin/set-title
+    ~/.local/bin/push-notify:
+        path: bin/push-notify
+        if: '[ -n "$WSL_DISTRO_NAME" ]'

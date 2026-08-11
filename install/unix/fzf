@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+install_dir="$data_home/fzf"
+
+for command in curl tar; do
+    command -v "$command" >/dev/null || {
+        printf 'Missing required command: %s\n' "$command" >&2
+        exit 1
+    }
+done
+
+release_url="$(curl --fail --silent --show-error --location --output /dev/null --write-out '%{url_effective}' \
+    'https://github.com/junegunn/fzf/releases/latest')"
+release_tag="${release_url##*/}"
+
+if [[ ! $release_tag =~ ^v[0-9] ]]; then
+    printf 'Could not resolve an fzf release tag from %s\n' "$release_url" >&2
+    exit 1
+fi
+
+mkdir -p "$data_home"
+temporary_dir="$(mktemp -d "$data_home/fzf.install.XXXXXX")"
+backup_dir=
+
+cleanup() {
+    if [[ -n $temporary_dir && -d $temporary_dir ]]; then
+        rm -rf "$temporary_dir"
+    fi
+
+    if [[ -n $backup_dir && ! -e $install_dir && -e $backup_dir ]]; then
+        mv "$backup_dir" "$install_dir"
+    fi
+}
+
+trap cleanup EXIT
+
+printf 'Installing fzf %s into %s\n' "$release_tag" "$install_dir"
+curl --fail --silent --show-error --location "https://github.com/junegunn/fzf/archive/refs/tags/$release_tag.tar.gz" |
+    tar -xz --strip-components=1 -C "$temporary_dir"
+"$temporary_dir/install" --bin
+
+if [[ -e $install_dir && ! -d $install_dir ]]; then
+    printf 'Refusing to replace non-directory fzf installation: %s\n' "$install_dir" >&2
+    exit 1
+fi
+
+if [[ -d $install_dir ]]; then
+    backup_dir="$data_home/fzf.previous.$$"
+    mv "$install_dir" "$backup_dir"
+fi
+
+mv "$temporary_dir" "$install_dir"
+temporary_dir=
+
+if [[ -n $backup_dir ]]; then
+    rm -rf "$backup_dir"
+    backup_dir=
+fi

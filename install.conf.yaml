@@ -16,31 +16,24 @@
 
 - link:
     # Git / SSH
-    ~/.config/git: git
-    ~/.ssh/config: ssh/config
+    ~/.config/git: config/git
+    ~/.ssh/config: config/ssh/config
 
     # Editors
-    ~/.vim:
-    ~/.config/nvim: nvim
+    ~/.vim: config/vim
+    ~/.config/nvim: config/nvim
 
     # Languages
-    ~/.config/python: python
-    ~/.pdbrc: python/pdbrc
-    ~/.config/npm: npm
-    ~/.config/jupyter: jupyter
+    ~/.config/python: config/python
+    ~/.pdbrc: config/python/pdbrc
+    ~/.config/npm: config/npm
+    ~/.config/jupyter: config/jupyter
     $XDG_DATA_HOME/jupyter/nbextensions:
-        path: jupyter/nbextensions
+        path: config/jupyter/nbextensions
         if: '[ -n "$XDG_DATA_HOME" ]'
     ~/.local/share/jupyter/nbextensions:
-        path: jupyter/nbextensions
+        path: config/jupyter/nbextensions
         if: '[ -z "$XDG_DATA_HOME" ]'
 
     # Misc
-    ~/.config/readline: readline
-
-    # Personal bin scripts
-    ~/.local/bin/git-fetch-repos: bin/git-fetch-repos
-    ~/.local/bin/git-filter-repo: bin/git-filter-repo
-    ~/.local/bin/imgen: bin/imgen
-    ~/.local/bin/reddit: bin/reddit
-    ~/.local/bin/set-title: bin/set-title
+    ~/.config/readline: config/readline

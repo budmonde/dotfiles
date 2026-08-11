@@ -11,10 +11,10 @@
     - ~/.config/opencode
 
 - link:
-    ~/.agents: agents
-    ~/.config/codex/AGENTS.md: agents/AGENTS.md
-    ~/.config/codex/config.toml: codex/config.toml
-    ~/.config/claude/settings.json: claude/settings.json
-    ~/.config/claude/keybindings.json: claude/keybindings.json
+    ~/.agents: config/agents
+    ~/.config/codex/AGENTS.md: config/agents/AGENTS.md
+    ~/.config/codex/config.toml: config/codex/config.toml
+    ~/.config/claude/settings.json: config/claude/settings.json
+    ~/.config/claude/keybindings.json: config/claude/keybindings.json
 
-    ~/.config/opencode: opencode
+    ~/.config/opencode: config/opencode

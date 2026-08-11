@@ -2,11 +2,11 @@
 # Usage: .\install-profile.ps1 creative
 
 - shell:
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId BlenderFoundation.Blender
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId BlenderFoundation.Blender
       description: Installing Blender
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId darktable.darktable
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId darktable.darktable
       description: Installing Darktable
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId GIMP.GIMP
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId GIMP.GIMP
       description: Installing GIMP
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Inkscape.Inkscape
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Inkscape.Inkscape
       description: Installing Inkscape

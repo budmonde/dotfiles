@@ -3,66 +3,62 @@
 	url = https://github.com/anishathalye/dotbot
 	ignore = dirty
 [submodule "zsh/plugins/zsh-syntax-highlighting"]
-	path = zsh/plugins/zsh-syntax-highlighting
+	path = config/zsh/plugins/zsh-syntax-highlighting
 	url = https://github.com/zsh-users/zsh-syntax-highlighting
 [submodule "vim/pack/vendor/start/nerdtree"]
-	path = vim/pack/vendor/start/nerdtree
+	path = config/vim/pack/vendor/start/nerdtree
 	url = https://github.com/preservim/nerdtree
 [submodule "vim/pack/vendor/start/nerdtree-git-plugin"]
-	path = vim/pack/vendor/start/nerdtree-git-plugin
+	path = config/vim/pack/vendor/start/nerdtree-git-plugin
 	url = https://github.com/Xuyuanp/nerdtree-git-plugin
 [submodule "vim/pack/vendor/start/vim-airline-themes"]
-	path = vim/pack/vendor/start/vim-airline-themes
+	path = config/vim/pack/vendor/start/vim-airline-themes
 	url = https://github.com/vim-airline/vim-airline-themes
 [submodule "vim/pack/vendor/start/vim-airline"]
-	path = vim/pack/vendor/start/vim-airline
+	path = config/vim/pack/vendor/start/vim-airline
 	url = https://github.com/vim-airline/vim-airline
 [submodule "vim/pack/vendor/start/vim-fugitive"]
-	path = vim/pack/vendor/start/vim-fugitive
+	path = config/vim/pack/vendor/start/vim-fugitive
 	url = https://github.com/tpope/vim-fugitive
 [submodule "vim/pack/vendor/start/vim-gitgutter"]
-	path = vim/pack/vendor/start/vim-gitgutter
+	path = config/vim/pack/vendor/start/vim-gitgutter
 	url = https://github.com/airblade/vim-gitgutter
 [submodule "vim/pack/vendor/start/vim-surround"]
-	path = vim/pack/vendor/start/vim-surround
+	path = config/vim/pack/vendor/start/vim-surround
 	url = https://github.com/tpope/vim-surround
 [submodule "vim/pack/vendor/start/vim-tmux-navigator"]
-	path = vim/pack/vendor/start/vim-tmux-navigator
+	path = config/vim/pack/vendor/start/vim-tmux-navigator
 	url = https://github.com/christoomey/vim-tmux-navigator
 [submodule "zsh/plugins/zsh-autosuggestions"]
-	path = zsh/plugins/zsh-autosuggestions
+	path = config/zsh/plugins/zsh-autosuggestions
 	url = https://github.com/zsh-users/zsh-autosuggestions
 [submodule "jupyter/nbextensions/jupyter-vim-binding"]
-	path = jupyter/nbextensions/jupyter-vim-binding
+	path = config/jupyter/nbextensions/jupyter-vim-binding
 	url = https://github.com/lambdalisue/jupyter-vim-binding
 [submodule "vim/pack/vendor/start/jedi-vim"]
-	path = vim/pack/vendor/start/jedi-vim
+	path = config/vim/pack/vendor/start/jedi-vim
 	url = https://github.com/davidhalter/jedi-vim
 [submodule "vim/pack/vendor/start/vim-easymotion"]
-	path = vim/pack/vendor/start/vim-easymotion
+	path = config/vim/pack/vendor/start/vim-easymotion
 	url = https://github.com/easymotion/vim-easymotion
 [submodule "vim/pack/vendor/start/vim-abolish"]
-	path = vim/pack/vendor/start/vim-abolish
+	path = config/vim/pack/vendor/start/vim-abolish
 	url = https://github.com/tpope/vim-abolish.git
 [submodule "vim/pack/vendor/start/fzf.vim"]
-	path = vim/pack/vendor/start/fzf.vim
+	path = config/vim/pack/vendor/start/fzf.vim
 	url = https://github.com/junegunn/fzf.vim.git
 [submodule "shell/plugins/dircolors-solarized"]
-	path = shell/plugins/dircolors-solarized
+	path = config/shell/plugins/dircolors-solarized
 	url = https://github.com/seebi/dircolors-solarized.git
 [submodule "vim/pack/vendor/start/vim-better-whitespace"]
-	path = vim/pack/vendor/start/vim-better-whitespace
+	path = config/vim/pack/vendor/start/vim-better-whitespace
 	url = https://github.com/ntpeters/vim-better-whitespace.git
 [submodule "vim/pack/vendor/start/gruvbox-material"]
-	path = vim/pack/vendor/start/gruvbox-material
+	path = config/vim/pack/vendor/start/gruvbox-material
 	url = https://github.com/sainnhe/gruvbox-material.git
 [submodule "vim/pack/vendor/start/vim-solarized8"]
-	path = vim/pack/vendor/start/vim-solarized8
+	path = config/vim/pack/vendor/start/vim-solarized8
 	url = https://github.com/lifepillar/vim-solarized8.git
 [submodule "tmux/plugins/tpm"]
-	path = tmux/plugins/tpm
+	path = config/tmux/plugins/tpm
 	url = https://github.com/tmux-plugins/tpm
-[submodule "shell/plugins/fzf"]
-	path = shell/plugins/fzf
-	url = https://github.com/junegunn/fzf
-

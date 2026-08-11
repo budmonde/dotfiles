@@ -14,20 +14,23 @@
     - "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
 
 - link:
-    "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json": windows/terminal/settings.json
-    "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\startup.ahk": windows/ahk/startup.ahk
-    ~/.config/powertoys/settings: windows/powertoys/settings
-    ~/.local/bin/Sync-PowerToysSettings.ps1: windows/powertoys/Sync-PowerToysSettings.ps1
+    "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json":
+        path: config/terminal/settings.json
+        force: true
+    "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\startup.ahk": config/ahk/startup.ahk
+    ~/.config/powertoys/settings: config/powertoys/settings
+    ~/.local/bin/Sync-CmdPalSettings.ps1: bin/Sync-CmdPalSettings.ps1
+    ~/.local/bin/Sync-PowerToysSettings.ps1: bin/Sync-PowerToysSettings.ps1
 
     # Git Bash support: minimal bash config so rare bash sessions write history
     # to XDG-compliant paths (~/.local/state/bash/history) instead of
     # ~/.bash_history. No content changes needed; .bashrc / .bash_profile
     # already source ~/.config/{bash,shell}/.
-    ~/.bashrc: bashrc
-    ~/.bash_profile: bash_profile
-    ~/.profile: profile
-    ~/.config/bash: bash
-    ~/.config/shell: shell
+    ~/.bashrc: config/bashrc
+    ~/.bash_profile: config/bash_profile
+    ~/.profile: config/profile
+    ~/.config/bash: config/bash
+    ~/.config/shell: config/shell
 
 - shell:
     - command: git submodule update --init --recursive
@@ -36,64 +39,61 @@
       description: Setting up git hooks
     - command: powershell -NoProfile -Command "foreach ($h in 'commit-msg','post-commit','reference-transaction') { New-Item -ItemType SymbolicLink -Force -Path \".githooks/$h\" -Target \"$HOME/.config/git/hooks/$h\" | Out-Null }"
       description: Linking global git hooks into .githooks
-    - command: powershell -NoProfile -File windows\powershell\Install-ProfileLoader.ps1
+    - command: powershell -NoProfile -File install\windows\profile-loader.ps1
       description: Writing machine-local PowerShell profile loaders
 
     # Desktop tools (winget wrapper handles "already up-to-date" exit code)
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId AutoHotkey.AutoHotkey
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId AutoHotkey.AutoHotkey
       description: Installing AutoHotkey
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Microsoft.PowerToys
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerToys
       description: Installing PowerToys
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Mozilla.Firefox
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Mozilla.Firefox
       description: Installing Firefox
-    - command: powershell -NoProfile -File windows\vscode\Set-VSCodeUserData.ps1
+    - command: powershell -NoProfile -File install\windows\vscode-user-data.ps1
       description: Configuring VS Code XDG user data
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Microsoft.VisualStudioCode
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Microsoft.VisualStudioCode
       description: Installing VS Code
 
     # CLI tools
-    - command: powershell -NoProfile -File shell\plugins\fzf\install.ps1
+    - command: powershell -NoProfile -File install\windows\fzf.ps1
       description: Installing fzf
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Microsoft.PowerShell
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerShell
       description: Installing PowerShell 7
     - command: >-
         powershell -NoProfile -Command
         "& pwsh -NoProfile -Command \"if ((Get-ExecutionPolicy -Scope CurrentUser) -eq 'Restricted') { Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }\""
       description: Setting PowerShell 7 execution policy
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Schniz.fnm
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Schniz.fnm
       description: Installing fnm
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Neovim.Neovim
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Neovim.Neovim
       description: Installing Neovim
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId astral-sh.uv
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId astral-sh.uv
       description: Installing uv
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId GitHub.cli
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId GitHub.cli
       description: Installing GitHub CLI
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC
       description: Installing ripgrep
-    - command: powershell -NoProfile -File windows\bin\winget-install.ps1 -PackageId Rclone.Rclone
+    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Rclone.Rclone
       description: Installing rclone
 
     # Node.js / npm (scripts refresh PATH and activate fnm)
-    - command: powershell -NoProfile -File powershell\plugins\node\install.ps1
+    - command: powershell -NoProfile -File install\windows\node.ps1
       description: Installing Node.js LTS
 
-    - command: powershell -NoProfile -File git\hooks\install.ps1
+    - command: powershell -NoProfile -File install\windows\git-hooks.ps1
       description: Installing git hook dependencies
 
-    - command: powershell -NoProfile -File powershell\plugins\push-notify\install.ps1
-      description: Installing push-notify
-
-    - command: powershell -NoProfile -File powershell\plugins\fonts\install.ps1
+    - command: powershell -NoProfile -File install\windows\fonts.ps1
       description: Installing fonts
 
     # PowerShell modules (bootstraps PackageManagement if needed).
     # Invoked via pwsh so modules land under Documents\PowerShell\Modules
     # rather than Documents\WindowsPowerShell\Modules.
-    - command: pwsh -NoProfile -File powershell\plugins\psreadline\install.ps1
+    - command: pwsh -NoProfile -File install\windows\psreadline.ps1
       description: Upgrading PSReadLine
-    - command: pwsh -NoProfile -File powershell\plugins\psfzf\install.ps1
+    - command: pwsh -NoProfile -File install\windows\psfzf.ps1
       description: Installing PSFzf
-    - command: pwsh -NoProfile -File powershell\plugins\completion-predictor\install.ps1
+    - command: pwsh -NoProfile -File install\windows\completion-predictor.ps1
       description: Installing CompletionPredictor
 
     # Post-link actions
@@ -103,23 +103,31 @@
       description: Restarting AHK startup script
 
     # PowerToys settings
-    - command: powershell -NoProfile -File windows\powertoys\Sync-PowerToysSettings.ps1
+    - command: powershell -NoProfile -File bin\Sync-PowerToysSettings.ps1
       description: Applying PowerToys settings
 
     # Cleanup
-    - command: powershell -NoProfile -File powershell\plugins\debloat\cleanup.ps1
+    - command: powershell -NoProfile -File install\windows\debloat.ps1
       description: Removing bloatware
 
-# Symlinks for binaries installed above
+# Windows command launchers and their Python support files
 - defaults:
     link:
         create: true
         relink: true
 
 - link:
-    ~/.local/bin/fzf.exe: shell/plugins/fzf/bin/fzf.exe
-    ~/.local/bin/imgen.cmd: windows/bin/imgen.cmd
-    ~/.local/bin/reddit.cmd: windows/bin/reddit.cmd
-    ~/.local/bin/git-fetch-repos.cmd: windows/bin/git-fetch-repos.cmd
+    ~/.local/bin/git-fetch-repos: bin/git-fetch-repos
+    ~/.local/bin/git-fetch-repos.cmd: bin/git-fetch-repos.cmd
+    ~/.local/bin/git-filter-repo: bin/git-filter-repo
+    ~/.local/bin/git-filter-repo.cmd: bin/git-filter-repo.cmd
+    ~/.local/bin/imgen: bin/imgen
+    ~/.local/bin/imgen.cmd: bin/imgen.cmd
+    ~/.local/bin/reddit: bin/reddit
+    ~/.local/bin/reddit.cmd: bin/reddit.cmd
     ~/.local/bin/set-title.cmd: bin/set-title.cmd
-    ~/.local/bin/winget-install.ps1: windows/bin/winget-install.ps1
+    ~/.local/bin/push-notify.ps1: bin/push-notify.ps1
+    ~/.local/bin/push-notify.cmd:
+        path: bin/push-notify.cmd
+        force: true
+    ~/.local/bin/optimize-wsl-vhd.bat: bin/optimize-wsl-vhd.bat

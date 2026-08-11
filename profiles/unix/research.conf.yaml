@@ -6,4 +6,4 @@
 # Windows-native packaging); both deliver the same `latex`/`xelatex` capability.
 
 - shell:
-    - [./shell/plugins/texlive/install, Installing texlive]
+    - [./install/unix/texlive, Installing texlive]

@@ -1,7 +1,7 @@
 *~
 tags
-opencode.jsonc
-opencode/agents/nv_*.md
 __pycache__/
-.githooks/*
-!.githooks/pre-commit
+
+# Keep this repository-owned guard; the remaining hooks are installer-created links.
+/.githooks/*
+!/.githooks/pre-commit

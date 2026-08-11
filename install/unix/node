@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+FNM="${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm"
+"$FNM" install --lts
+"$FNM" default lts-latest
