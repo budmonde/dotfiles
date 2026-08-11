@@ -1,14 +1,15 @@
+. (Join-Path $PSScriptRoot '..\..\config\powershell\external.ps1')
 $env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
             [Environment]::GetEnvironmentVariable('PATH', 'User')
 fnm env --shell powershell | Out-String | Invoke-Expression
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$hooksDir = Join-Path $repoRoot 'config\git\hooks'
-Push-Location $hooksDir
+$pluginDir = Join-Path $repoRoot 'config\agents\plugins\git-auditor'
+Push-Location $pluginDir
 try {
     npm install --silent --no-audit --no-fund
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "npm install in config/git/hooks failed with exit code $LASTEXITCODE"
+        Write-Error "npm install in config/agents/plugins/git-auditor failed with exit code $LASTEXITCODE"
         exit $LASTEXITCODE
     }
 } finally {

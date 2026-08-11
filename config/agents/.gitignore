@@ -4,6 +4,10 @@
 !/instructions/
 /instructions/*
 !/instructions/commit-auditor.md
+!/git-auditor.config
+!/plugins/
+!/plugins/git-auditor/
+!/plugins/git-auditor/**
 !/skills/
 /skills/*
 !/skills/commit-auditor/

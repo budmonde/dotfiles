@@ -1,6 +1,0 @@
-node_modules/
-package-lock.json
-
-# Installed by Git LFS in the shared hooks directory.
-post-checkout
-pre-push
