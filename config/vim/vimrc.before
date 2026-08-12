@@ -6,9 +6,30 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 set nocompatible             " Disable Vi compatibility mode
+set fileformats=unix,dos
 nmap Q <Nop>
 let mapleader = ","
 let maplocalleader = "\\"
+
+function! s:NormalizeMixedLineEndings() abort
+    if &l:buftype !=# '' || !&l:modifiable || &l:binary || &l:fileformat !=# 'unix'
+        return
+    endif
+    if search('\r$', 'nw') == 0
+        return
+    endif
+
+    let l:view = winsaveview()
+    keeppatterns silent! %s/\r$//e
+    call winrestview(l:view)
+    echom 'Normalized mixed line endings to LF; write the buffer to persist'
+endfunction
+
+augroup CrossPlatformLineEndings
+    autocmd!
+    autocmd BufWinEnter * call <SID>NormalizeMixedLineEndings()
+    autocmd BufNewFile * setlocal fileformat=unix
+augroup END
 
 " XDG state directory for viminfo (Vim only; Neovim uses ShaDa)
 if !has('nvim')

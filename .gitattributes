@@ -1,9 +1,1 @@
-bin/set-title.cmd -text
-bin/git-fetch-repos text eol=lf
-bin/git-filter-repo text eol=lf
-bin/imgen text eol=lf
-bin/reddit text eol=lf
-bin/set-title text eol=lf
-bin/push-notify text eol=lf
-install.sh text eol=lf
-install/unix/** text eol=lf
+bin/set-title.cmd -text !eol

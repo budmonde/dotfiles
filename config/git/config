@@ -5,8 +5,10 @@
 [core]
 	editor = vi
 	excludesfile = ~/.config/git/ignore
+	attributesfile = ~/.config/git/attributes
 	fsmonitor = true
 	untrackedCache = true
+	autocrlf = false
 
 [feature]
 	manyFiles = true
@@ -99,9 +101,9 @@
 	sl2-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(auto)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)'
 	sl3-specific = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) %C(bold cyan)(committed: %cD)%C(reset) %C(auto)%d%C(reset)%n''          %C(white)%s%C(reset)%n''          %C(dim white)- %an <%ae> %C(reset) %C(dim white)(committer: %cn <%ce>)%C(reset)'
 
-# WSL: repos on Windows mounts (/mnt/) need CRLF and no filemode
+# WSL: repos on Windows mounts (/mnt/) do not preserve executable bits
 [includeIf "gitdir:/mnt/"]
-	path = ~/.config/git/config-crlf
+	path = ~/.config/git/config-windows-mount
 
 [include]
 	path = ~/.config/git/config.local
