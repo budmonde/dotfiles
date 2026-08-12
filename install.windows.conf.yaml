@@ -37,8 +37,6 @@
       description: Installing submodules
     - command: git config core.hooksPath .githooks
       description: Setting up git hooks
-    - command: powershell -NoProfile -Command "foreach ($h in 'commit-msg','post-commit','reference-transaction') { New-Item -ItemType SymbolicLink -Force -Path \".githooks/$h\" -Target \"$HOME/.config/git/hooks/$h\" | Out-Null }"
-      description: Linking global git hooks into .githooks
     - command: powershell -NoProfile -File install\windows\profile-loader.ps1
       description: Writing machine-local PowerShell profile loaders
 
@@ -79,9 +77,6 @@
     # Node.js / npm (scripts refresh PATH and activate fnm)
     - command: powershell -NoProfile -File install\windows\node.ps1
       description: Installing Node.js LTS
-
-    - command: powershell -NoProfile -File install\windows\git-hooks.ps1
-      description: Installing git hook dependencies
 
     - command: powershell -NoProfile -File install\windows\fonts.ps1
       description: Installing fonts

@@ -23,14 +23,11 @@
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
     - [git config core.hooksPath .githooks, Setting up git hooks]
-    - ['for h in commit-msg post-commit reference-transaction; do ln -sfn "$HOME/.config/git/hooks/$h" ".githooks/$h"; done', Linking global git hooks into .githooks]
-    - ['chmod +x config/git/hooks/commit-msg config/git/hooks/post-commit config/git/hooks/reference-transaction 2>/dev/null || true', Marking global hook scripts executable]
 
     # CLI tools
     - [./install/unix/fzf, Installing fzf]
     - [./install/unix/fnm, Installing fnm]
     - [./install/unix/node, Installing Node LTS]
-    - [./install/unix/git-hooks, Installing git hook dependencies]
     - [./install/unix/nvim, Installing neovim]
     - [./install/unix/uv, Installing uv]
     - [./install/unix/gh, Installing GitHub CLI]
