@@ -2,6 +2,7 @@
 # Usage: ./install-profile agentic
 #
 # On WSL, also masks systemd-timesyncd as an opencode-specific workaround.
+# Requires the common `node` profile to be installed before starting this shell.
 
 - shell:
     - [./install/unix/git-auditor, Installing commit-auditor hook dependencies]

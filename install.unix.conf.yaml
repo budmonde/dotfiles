@@ -27,8 +27,6 @@
 
     # CLI tools
     - [./install/unix/fzf, Installing fzf]
-    - [./install/unix/fnm, Installing fnm]
-    - [./install/unix/node, Installing Node LTS]
     - [./install/unix/nvim, Installing neovim]
     - [./install/unix/uv, Installing uv]
     - [./install/unix/gh, Installing GitHub CLI]

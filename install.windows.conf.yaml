@@ -62,8 +62,6 @@
         powershell -NoProfile -Command
         "& pwsh -NoProfile -Command \"if ((Get-ExecutionPolicy -Scope CurrentUser) -eq 'Restricted') { Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }\""
       description: Setting PowerShell 7 execution policy
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Schniz.fnm
-      description: Installing fnm
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Neovim.Neovim
       description: Installing Neovim
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId astral-sh.uv
@@ -74,10 +72,6 @@
       description: Installing ripgrep
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Rclone.Rclone
       description: Installing rclone
-
-    # Node.js / npm
-    - command: powershell -NonInteractive -File install\windows\node.ps1
-      description: Installing Node.js LTS
 
     - command: powershell -NonInteractive -File install\windows\fonts.ps1
       description: Installing fonts

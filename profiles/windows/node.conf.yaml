@@ -1,0 +1,9 @@
+# Profile: node — managed Node.js runtime
+# Usage: .\install-profile.ps1 node
+# Start a new shell after the first install before running npm-consuming profiles.
+
+- shell:
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Schniz.fnm
+      description: Installing fnm
+    - command: powershell -NonInteractive -File install\windows\node.ps1 -VersionFile profiles\node-version
+      description: Installing pinned Node.js version

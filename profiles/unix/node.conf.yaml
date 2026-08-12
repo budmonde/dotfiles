@@ -1,0 +1,7 @@
+# Profile: node — managed Node.js runtime
+# Usage: ./install-profile node
+# Start a new shell after the first install before running npm-consuming profiles.
+
+- shell:
+    - [./install/unix/fnm, Installing fnm]
+    - [./install/unix/node profiles/node-version, Installing pinned Node.js version]

@@ -2,6 +2,24 @@
 
 set -euo pipefail
 
-FNM="${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm"
-"$FNM" install --lts
-"$FNM" default lts-latest
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <version-file>" >&2
+    exit 1
+fi
+
+node_version_file="$1"
+if [ ! -f "${node_version_file}" ]; then
+    echo "Error: ${node_version_file} does not exist." >&2
+    exit 1
+fi
+
+node_version="$(tr -d '[:space:]' < "${node_version_file}")"
+fnm="${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm"
+
+if [ -z "${node_version}" ]; then
+    echo "Error: ${node_version_file} is empty." >&2
+    exit 1
+fi
+
+"${fnm}" install "${node_version}"
+"${fnm}" default "${node_version}"
