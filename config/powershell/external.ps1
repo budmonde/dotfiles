@@ -4,7 +4,8 @@ $env:XDG_DATA_HOME = "$HOME\.local\share"
 $env:XDG_STATE_HOME = "$HOME\.local\state"
 $env:XDG_CACHE_HOME = "$HOME\.cache"
 
-# Tool-specific overrides (for tools that don't check XDG)
+# XDG Base Directory Specification paths
+# https://specifications.freedesktop.org/basedir/latest/
 $env:INPUTRC = "$env:XDG_CONFIG_HOME\readline\inputrc"
 $env:CLAUDE_CONFIG_DIR = "$env:XDG_CONFIG_HOME\claude"
 $env:PYTHONSTARTUP = "$env:XDG_CONFIG_HOME\python\pythonrc"
@@ -12,17 +13,19 @@ $env:IPYTHONDIR = "$env:XDG_CONFIG_HOME\ipython"
 $env:JUPYTER_CONFIG_DIR = "$env:XDG_CONFIG_HOME\jupyter"
 $env:JUPYTER_DATA_DIR = "$env:XDG_DATA_HOME\jupyter"
 $env:CODEX_HOME = "$env:XDG_CONFIG_HOME\codex"
+$env:FNM_DIR = "$env:XDG_DATA_HOME\fnm"
 $env:NPM_CONFIG_USERCONFIG = "$env:XDG_CONFIG_HOME\npm\npmrc"
 $env:GOPATH = "$env:XDG_DATA_HOME\go"
 $env:GOMODCACHE = "$env:XDG_CACHE_HOME\go\mod"
 $env:KERAS_HOME = "$env:XDG_DATA_HOME\keras"
-$env:DOCKER_CONFIG = "$env:XDG_CONFIG_HOME\docker"
 $env:BUN_INSTALL_CACHE_DIR = "$env:XDG_CACHE_HOME\bun"
 $env:CUPY_CACHE_DIR = "$env:XDG_CACHE_HOME\cupy"
 $env:MPLCONFIGDIR = "$env:XDG_CACHE_HOME\matplotlib"
 $env:LESSHISTFILE = "$env:XDG_STATE_HOME\less\history"
 $env:NODE_REPL_HISTORY = "$env:XDG_STATE_HOME\node\history"
 $env:PYTHONHISTFILE = "$env:XDG_STATE_HOME\python\history"
+$env:DOCKER_CONFIG = "$env:XDG_CONFIG_HOME\docker"
+$env:UV_TOOL_BIN_DIR = "$HOME/.local/bin"
 
 # opencode: use the shared ~/.agents/skills root but skip Claude-compatible
 # skill discovery.

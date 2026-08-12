@@ -8,16 +8,17 @@
 
 - link:
     # Root rc files (required by shell spec)
-    ~/.bash_profile: config/bash_profile
-    ~/.bashrc: config/bashrc
+    ~/.shellenv: config/shellenv
     ~/.profile: config/profile
+    ~/.bashrc: config/bashrc
+    ~/.bash_profile: config/bash_profile
     ~/.zshenv: config/zshenv
     ~/.zshrc: config/zshrc
 
     # Shell
+    ~/.config/shell: config/shell
     ~/.config/bash: config/bash
     ~/.config/zsh: config/zsh
-    ~/.config/shell: config/shell
     ~/.config/tmux: config/tmux
 
 - shell:

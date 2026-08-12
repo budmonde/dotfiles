@@ -1,8 +1,3 @@
-. (Join-Path $PSScriptRoot '..\..\config\powershell\external.ps1')
-$env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
-            [Environment]::GetEnvironmentVariable('PATH', 'User')
-fnm env --shell powershell | Out-String | Invoke-Expression
-
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $pluginDir = Join-Path $repoRoot 'config\agents\plugins\git-auditor'
 Push-Location $pluginDir

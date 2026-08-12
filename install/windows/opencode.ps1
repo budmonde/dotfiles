@@ -30,15 +30,11 @@ function Install-PublicOpenCode {
         return
     }
 
-    $env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
-                [Environment]::GetEnvironmentVariable('PATH', 'User')
-
     $fnm = Get-Command fnm -ErrorAction SilentlyContinue
     if (-not $fnm) {
         throw 'fnm not found on PATH'
     }
 
-    fnm env --shell powershell | Out-String | Invoke-Expression
     npm install -g opencode-ai
     if ($LASTEXITCODE -ne 0) {
         throw "npm failed to install public OpenCode (exit $LASTEXITCODE)"

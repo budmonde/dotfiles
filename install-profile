@@ -68,6 +68,15 @@ for profile in "$@"; do
     fi
 done
 
+# Bash does not load bashrc for ordinary noninteractive commands; installers load shellenv directly.
+# Dotbot children inherit the managed noninteractive shell environment.
+if [ ! -f "$HOME/.shellenv" ]; then
+    echo "Error: Run ./install.sh before installing a profile." >&2
+    exit 1
+fi
+. "$HOME/.shellenv"
+. "${XDG_CONFIG_HOME:-$HOME/.config}/bash/integrations.bash"
+
 cd "${BASEDIR}"
 git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
 git submodule update --init --recursive "${DOTBOT_DIR}"

@@ -3,5 +3,5 @@
 # Note: WSL install requires admin privileges and may trigger a reboot.
 
 - shell:
-    - command: powershell -NoProfile -Command "wsl --install --no-launch"
+    - command: powershell -NonInteractive -Command "wsl --install --no-launch"
       description: Installing WSL

@@ -1,0 +1,20 @@
+# shellenv is the shared environment loader for bash and zsh
+
+. ~/.config/shell/functions.sh
+
+# Early local environment: HOME correction, secrets, cluster detection, and XDG redirects.
+# It must run before external and bootstrap so downstream paths use the corrected environment.
+if [ -f "$HOME/.shellenv_local_early" ]; then
+    . "$HOME/.shellenv_local_early"
+fi
+
+# External tool environment variables.
+. ~/.config/shell/external.sh
+
+# PATH setup.
+. ~/.config/shell/bootstrap.sh
+
+# Late local environment: overrides that depend on the base dotfiles setup.
+if [ -f "$HOME/.shellenv_local" ]; then
+    . "$HOME/.shellenv_local"
+fi

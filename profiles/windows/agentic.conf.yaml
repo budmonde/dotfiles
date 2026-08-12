@@ -2,13 +2,13 @@
 # Usage: .\install-profile.ps1 agentic
 
 - shell:
-    - command: powershell -NoProfile -File install\windows\git-auditor.ps1
+    - command: powershell -NonInteractive -File install\windows\git-auditor.ps1
       description: Installing commit-auditor hook dependencies
     - command: git config core.hooksPath .githooks
       description: Selecting the common repository hook system
     - command: powershell -NoProfile -Command "foreach ($h in 'commit-msg','post-commit','reference-transaction') { New-Item -ItemType SymbolicLink -Force -Path \".githooks/$h\" -Target \"$HOME/.agents/plugins/git-auditor/hooks/$h\" | Out-Null }"
       description: Registering agentic Git-auditor hooks with the common repository
-    - command: powershell -NoProfile -File install\windows\opencode.ps1
+    - command: powershell -NonInteractive -File install\windows\opencode.ps1
       description: Installing OpenCode
-    - command: npm install -g '@openai/codex'
+    - command: powershell -NonInteractive -Command "npm install -g '@openai/codex'"
       description: Installing Codex

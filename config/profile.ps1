@@ -1,21 +1,10 @@
-# Resolve real directory when loaded through a symlink
-$script:DotfilesDir = $PSScriptRoot
-$script:ProfileTarget = (Get-Item $PSCommandPath).Target
-if ($ProfileTarget) { $script:DotfilesDir = Split-Path $ProfileTarget }
+. "$PSScriptRoot\powershell\functions.ps1"
+$isInteractive = Test-InteractiveShell
+. "$PSScriptRoot\environment.ps1" -Interactive:$isInteractive
 
-# Environment variables and PATH setup
-
-. $DotfilesDir\powershell\functions.ps1
-. $DotfilesDir\powershell\bootstrap.ps1
-. $DotfilesDir\powershell\external.ps1
-
-if (Test-Path "$HOME\.psprofile_local.ps1") {
-    . "$HOME\.psprofile_local.ps1"
-}
-
-if (Test-InteractiveShell) {
-    . $DotfilesDir\powershell\settings.ps1
-    . $DotfilesDir\powershell\plugins.ps1
-    . $DotfilesDir\powershell\aliases.ps1
-    . $DotfilesDir\powershell\prompt.ps1
+if ($isInteractive) {
+    . "$PSScriptRoot\powershell\settings.ps1"
+    . "$PSScriptRoot\powershell\plugins.ps1"
+    . "$PSScriptRoot\powershell\aliases.ps1"
+    . "$PSScriptRoot\powershell\prompt.ps1"
 }

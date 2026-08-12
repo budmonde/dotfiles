@@ -47,6 +47,26 @@ function Test-InteractiveShell {
     return $true
 }
 
+# Preserve inherited process entries while picking up persistent PATH changes made after its parent started.
+function Merge-EnvironmentPath {
+    $pathEntries = @(
+        $env:PATH -split ';'
+        [Environment]::GetEnvironmentVariable('PATH', 'Machine') -split ';'
+        [Environment]::GetEnvironmentVariable('PATH', 'User') -split ';'
+    )
+    $seenPathEntries = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $mergedPathEntries = [System.Collections.Generic.List[string]]::new()
+
+    foreach ($pathEntry in $pathEntries) {
+        $normalizedPathEntry = $pathEntry.Trim()
+        if ($normalizedPathEntry -and $seenPathEntries.Add($normalizedPathEntry)) {
+            $mergedPathEntries.Add($normalizedPathEntry)
+        }
+    }
+
+    $env:PATH = $mergedPathEntries -join ';'
+}
+
 function Remove-PathEntry {
     param([string]$Dir)
     $parts = $env:PATH -split ';' | Where-Object { $_ -ne $Dir -and $_ -ne '' }

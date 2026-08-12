@@ -10,11 +10,7 @@ if ($releaseTag -notmatch '^v[0-9]' -or $asset.Count -ne 1) {
     throw "Could not resolve the Windows x64 asset for fzf release '$releaseTag'"
 }
 
-$dataHome = if ($env:XDG_DATA_HOME) {
-    $env:XDG_DATA_HOME
-} else {
-    Join-Path $HOME '.local\share'
-}
+$dataHome = $env:XDG_DATA_HOME
 $installDir = Join-Path $dataHome 'fzf'
 $temporaryDir = Join-Path $dataHome "fzf.install.$PID"
 $sourceArchivePath = Join-Path $dataHome "fzf.source.$PID.zip"

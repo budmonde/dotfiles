@@ -2,13 +2,13 @@
 # Usage: .\install-profile.ps1 dev
 
 - shell:
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Microsoft.VisualStudio.2022.Community
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.VisualStudio.2022.Community
       description: Installing Visual Studio Community 2022
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Kitware.CMake
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Kitware.CMake
       description: Installing CMake
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId GnuWin32.Make
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GnuWin32.Make
       description: Installing GnuWin32 Make
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId GoLang.Go
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GoLang.Go
       description: Installing Go toolchain
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Nvidia.Nsight.Compute
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Nvidia.Nsight.Compute
       description: Installing NVIDIA Nsight Compute

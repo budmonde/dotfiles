@@ -26,11 +26,12 @@
     # to XDG-compliant paths (~/.local/state/bash/history) instead of
     # ~/.bash_history. No content changes needed; .bashrc / .bash_profile
     # already source ~/.config/{bash,shell}/.
+    ~/.shellenv: config/shellenv
+    ~/.profile: config/profile
     ~/.bashrc: config/bashrc
     ~/.bash_profile: config/bash_profile
-    ~/.profile: config/profile
-    ~/.config/bash: config/bash
     ~/.config/shell: config/shell
+    ~/.config/bash: config/bash
 
 - shell:
     - command: git submodule update --init --recursive
@@ -41,68 +42,68 @@
       description: Writing machine-local PowerShell profile loaders
 
     # Desktop tools (winget wrapper handles "already up-to-date" exit code)
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId AutoHotkey.AutoHotkey
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId AutoHotkey.AutoHotkey
       description: Installing AutoHotkey
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerToys
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerToys
       description: Installing PowerToys
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Mozilla.Firefox
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Mozilla.Firefox
       description: Installing Firefox
-    - command: powershell -NoProfile -File install\windows\vscode-user-data.ps1
+    - command: powershell -NonInteractive -File install\windows\vscode-user-data.ps1
       description: Configuring VS Code XDG user data
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Microsoft.VisualStudioCode
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.VisualStudioCode
       description: Installing VS Code
 
     # CLI tools
-    - command: powershell -NoProfile -File install\windows\fzf.ps1
+    - command: powershell -NonInteractive -File install\windows\fzf.ps1
       description: Installing fzf
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerShell
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerShell
       description: Installing PowerShell 7
     - command: >-
         powershell -NoProfile -Command
         "& pwsh -NoProfile -Command \"if ((Get-ExecutionPolicy -Scope CurrentUser) -eq 'Restricted') { Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }\""
       description: Setting PowerShell 7 execution policy
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Schniz.fnm
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Schniz.fnm
       description: Installing fnm
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Neovim.Neovim
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Neovim.Neovim
       description: Installing Neovim
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId astral-sh.uv
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId astral-sh.uv
       description: Installing uv
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId GitHub.cli
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GitHub.cli
       description: Installing GitHub CLI
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC
       description: Installing ripgrep
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Rclone.Rclone
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Rclone.Rclone
       description: Installing rclone
 
-    # Node.js / npm (scripts refresh PATH and activate fnm)
-    - command: powershell -NoProfile -File install\windows\node.ps1
+    # Node.js / npm
+    - command: powershell -NonInteractive -File install\windows\node.ps1
       description: Installing Node.js LTS
 
-    - command: powershell -NoProfile -File install\windows\fonts.ps1
+    - command: powershell -NonInteractive -File install\windows\fonts.ps1
       description: Installing fonts
 
     # PowerShell modules (bootstraps PackageManagement if needed).
     # Invoked via pwsh so modules land under Documents\PowerShell\Modules
     # rather than Documents\WindowsPowerShell\Modules.
-    - command: pwsh -NoProfile -File install\windows\psreadline.ps1
+    - command: pwsh -NonInteractive -File install\windows\psreadline.ps1
       description: Upgrading PSReadLine
-    - command: pwsh -NoProfile -File install\windows\psfzf.ps1
+    - command: pwsh -NonInteractive -File install\windows\psfzf.ps1
       description: Installing PSFzf
-    - command: pwsh -NoProfile -File install\windows\completion-predictor.ps1
+    - command: pwsh -NonInteractive -File install\windows\completion-predictor.ps1
       description: Installing CompletionPredictor
 
     # Post-link actions
     - command: >-
-        powershell -NoProfile -Command
+        powershell -NonInteractive -Command
         "Start-Process '%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\startup.ahk' -ArgumentList '/restart'"
       description: Restarting AHK startup script
 
     # PowerToys settings
-    - command: powershell -NoProfile -File bin\Sync-PowerToysSettings.ps1
+    - command: powershell -NonInteractive -File bin\Sync-PowerToysSettings.ps1
       description: Applying PowerToys settings
 
     # Cleanup
-    - command: powershell -NoProfile -File install\windows\debloat.ps1
+    - command: powershell -NonInteractive -File install\windows\debloat.ps1
       description: Removing bloatware
 
 # Windows command launchers and their Python support files

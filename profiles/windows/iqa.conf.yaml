@@ -2,7 +2,7 @@
 # Usage: .\install-profile.ps1 iqa
 
 - shell:
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId VideoLAN.VLC
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId VideoLAN.VLC
       description: Installing VLC
-    - command: powershell -NoProfile -File install\windows\winget-install.ps1 -PackageId Gyan.FFmpeg
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Gyan.FFmpeg
       description: Installing FFmpeg

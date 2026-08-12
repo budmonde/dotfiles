@@ -1,10 +1,10 @@
 # Platform detection
-if [ -n "$WSL_DISTRO_NAME" ]; then
+if [ -n "${WSL_DISTRO_NAME:-}" ]; then
     export IS_WSL=1
 fi
-if [[ "$OSTYPE" == darwin* ]]; then
-    export IS_MACOS=1
-fi
+case "${OSTYPE:-}" in
+    darwin*) export IS_MACOS=1 ;;
+esac
 
 # XDG Base Directory Specification paths
 # https://specifications.freedesktop.org/basedir/latest/
@@ -15,6 +15,7 @@ export IPYTHONDIR="${XDG_CONFIG_HOME:-$HOME/.config}/ipython"
 export JUPYTER_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/jupyter"
 export JUPYTER_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/jupyter"
 export CODEX_HOME="${XDG_CONFIG_HOME:-$HOME/.config}/codex"
+export FNM_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/fnm"
 export NPM_CONFIG_USERCONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/npm/npmrc"
 export GOPATH="${XDG_DATA_HOME:-$HOME/.local/share}/go"
 export GOMODCACHE="${XDG_CACHE_HOME:-$HOME/.cache}/go/mod"
@@ -40,13 +41,13 @@ export OPENCODE_DISABLE_TERMINAL_TITLE=1
 
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 
-if command -v nvim &> /dev/null; then
+if command -v nvim >/dev/null 2>&1; then
     export EDITOR=nvim
 else
     export EDITOR=vim
 fi
 
-if [ -n "$IS_WSL" ]; then
+if [ -n "${IS_WSL:-}" ]; then
     export PDF_VIEWER=wslview
     if [ -z "${WINDOWS_USER:-}" ]; then
         export WINDOWS_USER=$(powershell.exe -NoProfile -Command \
