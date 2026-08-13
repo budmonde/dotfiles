@@ -1,5 +1,5 @@
 ---
-description: Logs an instance of an agent-behavior anti-pattern to a tracking WAL in the dotfiles wiki. Dispatched by the /flag command (or directly) with a parent session id, a turn locator, and a short operator description of the issue. Reads the parent session transcript via the local opencode HTTP API, decides whether an existing FLAG WAL already tracks this category of issue, and either appends a new instance entry or creates a new WAL. Read-only against the source session; write-only against wiki/research/.
+description: Logs an instance of an agent-behavior anti-pattern to a tracking WAL in the dotfiles wiki. Dispatched by the /flag command (or directly) with a parent session id, a turn locator, and a short operator description of the issue. Reads the parent session transcript through codex-ctl, decides whether an existing FLAG WAL already tracks this category of issue, and either appends a new instance entry or creates a new WAL. Read-only against the source session; write-only against wiki/research/.
 mode: subagent
 permission:
   edit: allow
@@ -69,25 +69,43 @@ Do not attempt to create the directory yourself.
 
 ### Step 2 — Fetch the parent session transcript
 
-The opencode local HTTP server is at `$env:OPENCODE_SERVER_URL` (typically `http://127.0.0.1:4096/`).
-The endpoint:
+Managed OpenCode sessions receive a bounded controller environment from the
+codex-ctl connector. Verify that `CODEX_CTL_RUNTIME_KIND` is `opencode`, then
+read the parent transcript through the runtime control surface:
 
-```text
-GET {OPENCODE_SERVER_URL}session/{PARENT_SESSION_ID}/message
+```powershell
+& $env:CODEX_CTL_EXECUTABLE `
+  --instance $env:CODEX_CTL_INSTANCE `
+  runtime logs $env:CODEX_CTL_RUNTIME_INSTANCE `
+  --session $PARENT_SESSION_ID `
+  --json
 ```
 
-returns a JSON array of `{ info, parts }` objects in chronological order.
-Use `Invoke-RestMethod` on Windows or `curl.exe -s` cross-platform.
+On Unix-like systems, invoke the same executable and arguments with the
+corresponding shell variables. Abort with a clear error if any required
+`CODEX_CTL_*` value is missing. Do not connect to the OpenCode server directly
+or attempt to discover its credentials.
+
+The command returns a JSON array of `{ info, parts }` objects in chronological
+order.
 
 Each `info` carries `id` (a `msg_*` handle), `role` (`user` | `assistant`), `agent` (e.g. `build`, `general`, custom subagent name), and `time.created` (epoch ms).
 Each `parts` is an ordered list of `{ type, ... }` where `type` is one of `step-start`, `text`, `tool`, `step-finish`.
 Tool calls are inlined as parts of type `tool` with full input and output content.
 The transcript shape also admits synthetic message types — tolerate `SessionMessageSynthetic`, `SessionMessageAgentSwitched`, `SessionMessageModelSwitched`, `SessionMessageCompaction` without failing.
 
-Be aware: your *own* `OPENCODE_SESSION_ID` is the flag-logger's id, not the parent's.
-Do not use your own env var as the parent id.
+The injected `CODEX_CTL_SESSION_ID` is the flag-logger's id, not the parent's.
+Do not use it as the transcript id.
 The parent id is what the dispatcher passes you.
-If you need to verify the parent, `GET {OPENCODE_SERVER_URL}session/{your-own-id}` returns metadata including `parentID` that you can sanity-check against the dispatcher's value.
+If you need to verify the relationship, run the following through the same
+controller executable and inspect the candidate session metadata:
+
+```powershell
+& $env:CODEX_CTL_EXECUTABLE `
+  --instance $env:CODEX_CTL_INSTANCE `
+  runtime sessions $env:CODEX_CTL_RUNTIME_INSTANCE `
+  --json
+```
 
 ### Step 3 — Identify the turn(s) the operator means
 
@@ -164,7 +182,8 @@ If you found nothing to log (e.g. the operator's description doesn't match any o
 
 While you execute, the dispatching environment may inject synthetic user-turn messages of the form `[AUDIT: <name>] ...`.
 These are not operator messages and they are not part of the dispatching prompt.
-They originate from the inject-hook plugin in the parent workspace and arrive in your context because the same hook fires on subagent tool calls.
+They originate from codex-ctl's managed tool-policy connector and arrive in
+your context because the same policy fires on subagent tool calls.
 
 Treat audit messages as follows:
 

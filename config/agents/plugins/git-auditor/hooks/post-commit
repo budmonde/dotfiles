@@ -10,8 +10,6 @@ const {
     appendAuditLog,
     makeDebug,
     gitOutput,
-    httpJson,
-    withTimeout,
 } = require(path.join(__dirname, "lib"));
 const {
     buildGateCommand,
@@ -33,140 +31,68 @@ async function main() {
     const subject = subjParts.join("\0").trim();
     if (!hash) process.exit(0);
 
-    const shortHash = hash.slice(0, 12);
-    const title = `[git-hook:commit-msg] ${shortHash}: ${subject}`;
-
-    if (runtime.kind === "codex") {
-        const gitDir = gitOutput("rev-parse --absolute-git-dir");
-        if (!gitDir) process.exit(0);
-        let receipt;
-        try {
-            receipt = readPendingReceipt(gitDir);
-        } catch (error) {
-            appendAuditLog({
-                provider: "codex",
-                result: "GATE_FINALIZE_FAILED",
-                infrastructure_failure: true,
-                origin_session_id: runtime.originThreadId,
-                generation_id: runtime.generationId,
-                rationale: error.message,
-            });
-            process.stderr.write(
-                `${HOOK_TAG} WARNING: cannot read gate finalization receipt (${error.message})\n`,
-            );
-            process.exit(0);
-        }
-        if (!receipt) process.exit(0);
-
-        const gate = buildGateCommand(runtime, "finalize", [
-            "--invocation",
-            receipt.invocationId,
-            "--json",
-        ]);
-        const finalize = spawnSync(gate.command, gate.args, {
-            cwd: process.cwd(),
-            encoding: "utf8",
-            input: JSON.stringify({
-                finalizationToken: receipt.finalizationToken,
-                outcome: {
-                    status: "succeeded",
-                    commitHash: hash,
-                    commitSubject: subject,
-                },
-            }),
-            maxBuffer: 1024 * 1024,
-            timeout: 30_000,
-            windowsHide: true,
+    const gitDir = gitOutput("rev-parse --absolute-git-dir");
+    if (!gitDir) process.exit(0);
+    let receipt;
+    try {
+        receipt = readPendingReceipt(gitDir);
+    } catch (error) {
+        appendAuditLog({
+            provider: runtime.kind,
+            result: "GATE_FINALIZE_FAILED",
+            infrastructure_failure: true,
+            origin_session_id: runtime.originThreadId,
+            generation_id: runtime.generationId,
+            rationale: error.message,
         });
-        if (finalize.error || finalize.status !== 0) {
-            const reason = finalize.error?.message || finalize.stderr.trim() || `exit ${finalize.status}`;
-            appendAuditLog({
-                provider: "codex",
-                result: "GATE_FINALIZE_FAILED",
-                infrastructure_failure: true,
-                gate_id: receipt.gateId,
-                invocation_id: receipt.invocationId,
-                origin_session_id: runtime.originThreadId,
-                generation_id: runtime.generationId,
-                rationale: reason,
-            });
-            process.stderr.write(
-                `${HOOK_TAG} WARNING: managed gate finalization failed (${reason})\n`,
-            );
-            process.exit(0);
-        }
-        clearPendingReceipt(gitDir);
-        process.stdout.write(
-            `${HOOK_TAG} finalized gate invocation ${receipt.invocationId}\n`,
-        );
-        process.exit(0);
-    }
-
-    const serverBase = process.env.OPENCODE_SERVER_URL.replace(/\/$/, "");
-    const projectDir =
-        process.env.OPENCODE_PROJECT_DIR || gitOutput("rev-parse --show-toplevel") || process.cwd();
-    const directoryQuery = `?directory=${encodeURIComponent(projectDir)}`;
-
-    let listRes;
-    try {
-        listRes = await withTimeout(
-            httpJson("GET", `${serverBase}/session${directoryQuery}`),
-            5_000,
-            "session.list",
-        );
-    } catch (err) {
-        debug(`session.list failed: ${err.message}`);
-        process.exit(0);
-    }
-
-    if (!listRes.ok || !Array.isArray(listRes.data)) {
-        debug(`session.list bad response status=${listRes.status}`);
-        process.exit(0);
-    }
-
-    const titlePrefix = "[git-hook:commit-msg] running";
-    const parentId = process.env.OPENCODE_SESSION_ID || null;
-    const candidates = listRes.data.filter((s) => {
-        if (!s || typeof s.title !== "string") return false;
-        if (!s.title.startsWith(titlePrefix)) return false;
-        if (parentId && s.parentID !== parentId) return false;
-        return true;
-    });
-    candidates.sort((a, b) => {
-        const at = (a.time && (a.time.updated || a.time.created)) || 0;
-        const bt = (b.time && (b.time.updated || b.time.created)) || 0;
-        return bt - at;
-    });
-
-    const target = candidates[0];
-    if (!target || !target.id) {
-        debug(`no matching auditor session found`);
-        process.exit(0);
-    }
-
-    let updateRes;
-    try {
-        updateRes = await withTimeout(
-            httpJson("PATCH", `${serverBase}/session/${target.id}${directoryQuery}`, { title }),
-            5_000,
-            "session.update",
-        );
-    } catch (err) {
-        process.stderr.write(`${HOOK_TAG} WARNING: failed to rename auditor session ${target.id} (${err.message})\n`);
-        debug(`session.update failed: ${err.message}`);
-        process.exit(0);
-    }
-
-    if (!updateRes.ok) {
         process.stderr.write(
-            `${HOOK_TAG} WARNING: failed to rename auditor session ${target.id} (status ${updateRes.status})\n`,
+            `${HOOK_TAG} WARNING: cannot read gate finalization receipt (${error.message})\n`,
         );
-        debug(`session.update bad status: ${updateRes.text}`);
         process.exit(0);
     }
+    if (!receipt) process.exit(0);
 
-    process.stdout.write(`${HOOK_TAG} renamed auditor session ${target.id} -> "${title}"\n`);
-    debug(`renamed ${target.id}`);
+    const gate = buildGateCommand(runtime, "finalize", [
+        "--invocation",
+        receipt.invocationId,
+        "--json",
+    ]);
+    const finalize = spawnSync(gate.command, gate.args, {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        input: JSON.stringify({
+            finalizationToken: receipt.finalizationToken,
+            outcome: {
+                status: "succeeded",
+                commitHash: hash,
+                commitSubject: subject,
+            },
+        }),
+        maxBuffer: 1024 * 1024,
+        timeout: 30_000,
+        windowsHide: true,
+    });
+    if (finalize.error || finalize.status !== 0) {
+        const reason = finalize.error?.message || finalize.stderr.trim() || `exit ${finalize.status}`;
+        appendAuditLog({
+            provider: runtime.kind,
+            result: "GATE_FINALIZE_FAILED",
+            infrastructure_failure: true,
+            gate_id: receipt.gateId,
+            invocation_id: receipt.invocationId,
+            origin_session_id: runtime.originThreadId,
+            generation_id: runtime.generationId,
+            rationale: reason,
+        });
+        process.stderr.write(
+            `${HOOK_TAG} WARNING: managed gate finalization failed (${reason})\n`,
+        );
+        process.exit(0);
+    }
+    clearPendingReceipt(gitDir);
+    process.stdout.write(
+        `${HOOK_TAG} finalized gate invocation ${receipt.invocationId}\n`,
+    );
     process.exit(0);
 }
 

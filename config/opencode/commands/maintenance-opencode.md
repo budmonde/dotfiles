@@ -1,5 +1,5 @@
 ---
-description: Audit OpenCode plugin API for upstream changes and update local plugins accordingly
+description: Audit codex-ctl's OpenCode 1.18.16 connector and integration contract for upstream changes
 ---
 Run maintenance checks on OpenCode-related components in this dotfiles repository.
 
@@ -7,10 +7,13 @@ Run maintenance checks on OpenCode-related components in this dotfiles repositor
 
 ### 1. Check Plugin API Compatibility
 
-Check the latest `@opencode-ai/plugin` and `@opencode-ai/sdk` packages:
-- Fetch https://www.npmjs.com/package/@opencode-ai/plugin and note current version
-- Review changelog or release notes for breaking changes
-- Compare with patterns used in our plugin at `opencode/plugins/notify-on-idle.ts`
+Use public OpenCode `1.18.16` as the compatibility baseline:
+
+- Review the matching `@opencode-ai/plugin` and `@opencode-ai/sdk` contracts.
+- Review changelog or release notes before proposing a baseline upgrade.
+- Compare hook signatures with
+  `codex-ctl/app-server/opencode-connector.mjs` and normalized event handling
+  with `codex-ctl/src/opencode-events.mjs`.
 
 ### 2. Review Recent Upstream Changes
 
@@ -38,7 +41,7 @@ Fetch and analyze well-maintained reference plugins:
 - https://github.com/mohak34/opencode-notifier
 - https://github.com/kdcokenny/opencode-notify
 
-Compare their event handling patterns with ours:
+Compare their event handling patterns with codex-ctl's implementation:
 - Events handled (and how)
 - Debouncing/deduplication strategy
 - Session ID extraction patterns
@@ -56,32 +59,39 @@ Produce a report with:
 ### 5. Update Local Components
 
 If changes are needed:
-- Update `config/opencode/plugins/notify-on-idle.ts` with fixes
-- Update `bin/push-notify*` if notification script changes are needed
-- Update `scratch/notify-plugin-design.md` if design patterns change
-- Test the plugin still works after changes
+
+- Update the OpenCode adapter or packaged connector in `codex-ctl`.
+- Update `codex-ctl/src/runtime-integrations.mjs` when normalized integration
+  behavior changes.
+- Update `bin/push-notify*` only if the provider-neutral notification sink
+  changes.
+- Add or update controller tests for the pinned compatibility contract.
+- Record a baseline change in codex-ctl's PMP documents before upgrading.
 
 ## Component Locations
 
-### OpenCode Plugin
-- **Plugin**: `config/opencode/plugins/notify-on-idle.ts`
-- **Design doc**: `scratch/notify-plugin-design.md`
+### Controller-owned OpenCode integration
+
+- **Connector**: `codex-ctl/app-server/opencode-connector.mjs`
+- **Event adapter**: `codex-ctl/src/opencode-events.mjs`
+- **Integration service**: `codex-ctl/src/runtime-integrations.mjs`
+- **Private policy**: `local/codex-ctl/config.json`
 
 ### Push-notify Script
 - **Unix script**: `bin/push-notify`
 - **Windows script**: `bin/push-notify.ps1`
 - **Windows launcher**: `bin/push-notify.cmd`
 
-## Events Our Plugin Handles
+## Events the controller handles
 
 | Event | Type | Purpose |
 |-------|------|---------|
 | Completion | `event: session.idle` | Task finished (350ms delay) |
 | Error | `event: session.error` | Error occurred (skip MessageAbortedError) |
 | Permission | `event: permission.asked` | Approval needed |
-| Question | `hook: tool.execute.before` (tool=question) | User input needed |
+| Question | `hook: tool.execute.before` (`tool=question`) | User input needed |
 
-## Plugin Hook Signatures
+## Connector hook signatures
 
 Based on OpenCode docs (https://opencode.ai/docs/plugins):
 

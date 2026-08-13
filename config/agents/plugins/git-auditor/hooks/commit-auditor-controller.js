@@ -5,21 +5,18 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { sanitizeToAscii } = require(path.join(__dirname, "lib"));
 
-const CODEX_REQUIRED_ENV = [
-    "CODEX_THREAD_ID",
+const GATE_REQUIRED_ENV = [
     "CODEX_CTL_GATE_ENDPOINT",
     "CODEX_CTL_GATE_TOKEN",
-    "CODEX_CTL_GENERATION_ID",
     "CODEX_CTL_GATE_PROTOCOL",
     "CODEX_CTL_EXECUTABLE",
     "CODEX_CTL_INSTANCE",
 ];
-const CODEX_CAPABILITY_ENV = CODEX_REQUIRED_ENV.slice(1);
-const OPENCODE_MARKER_ENV = [
-    "OPENCODE_SERVER_URL",
-    "OPENCODE_SESSION_ID",
-    "OPENCODE_CALL_ID",
-    "OPENCODE_PROJECT_DIR",
+const RUNTIME_REQUIRED_ENV = [
+    "CODEX_CTL_RUNTIME_KIND",
+    "CODEX_CTL_RUNTIME_INSTANCE",
+    "CODEX_CTL_SESSION_ID",
+    "CODEX_CTL_WORKING_DIRECTORY",
 ];
 
 function present(env, key) {
@@ -27,49 +24,41 @@ function present(env, key) {
 }
 
 function classifyRuntime(env = process.env) {
-    const managedCodexPresent = CODEX_CAPABILITY_ENV.some((key) => present(env, key));
-    const openCodePresent = OPENCODE_MARKER_ENV.some((key) => present(env, key));
-
-    if (managedCodexPresent && openCodePresent) {
-        return {
-            kind: "invalid",
-            reason: "mixed managed Codex and OpenCode runtime markers make the gate provider ambiguous",
-        };
-    }
-
-    if (managedCodexPresent) {
-        const missing = CODEX_REQUIRED_ENV.filter((key) => !present(env, key));
+    const managedPresent = GATE_REQUIRED_ENV.some((key) => present(env, key));
+    if (managedPresent) {
+        const protocol = env.CODEX_CTL_GATE_PROTOCOL;
+        const required = protocol === "2"
+            ? [...GATE_REQUIRED_ENV, ...RUNTIME_REQUIRED_ENV]
+            : [...GATE_REQUIRED_ENV, "CODEX_CTL_GENERATION_ID", "CODEX_THREAD_ID"];
+        const missing = required.filter((key) => !present(env, key));
         if (missing.length > 0) {
             return {
                 kind: "invalid",
-                reason: `incomplete managed Codex gate environment; missing ${missing.join(", ")}`,
+                reason: `incomplete managed gate environment; missing ${missing.join(", ")}`,
             };
         }
-        if (env.CODEX_CTL_GATE_PROTOCOL !== "1") {
+        if (!["1", "2"].includes(protocol)) {
             return {
                 kind: "invalid",
-                reason: `unsupported managed Codex gate protocol ${JSON.stringify(env.CODEX_CTL_GATE_PROTOCOL)}`,
+                reason: `unsupported managed gate protocol ${JSON.stringify(protocol)}`,
+            };
+        }
+        if (protocol === "2" && (present(env, "CODEX_THREAD_ID") || present(env, "CODEX_CTL_GENERATION_ID"))) {
+            return {
+                kind: "invalid",
+                reason: "mixed generation and runtime gate markers are not allowed",
             };
         }
         return {
-            kind: "codex",
+            kind: protocol === "1" ? "codex" : env.CODEX_CTL_RUNTIME_KIND,
+            managed: true,
             executable: env.CODEX_CTL_EXECUTABLE,
-            generationId: env.CODEX_CTL_GENERATION_ID,
+            generationId: protocol === "1" ? env.CODEX_CTL_GENERATION_ID : null,
             instance: env.CODEX_CTL_INSTANCE,
-            originThreadId: env.CODEX_THREAD_ID,
+            originThreadId: protocol === "1" ? env.CODEX_THREAD_ID : env.CODEX_CTL_SESSION_ID,
+            runtimeInstanceId: protocol === "2" ? env.CODEX_CTL_RUNTIME_INSTANCE : null,
         };
     }
-
-    if (openCodePresent) {
-        if (!present(env, "OPENCODE_SERVER_URL")) {
-            return {
-                kind: "invalid",
-                reason: "incomplete OpenCode audit environment; missing OPENCODE_SERVER_URL",
-            };
-        }
-        return { kind: "opencode" };
-    }
-
     return { kind: "local" };
 }
 
@@ -176,8 +165,8 @@ async function applyVerdict(messagePath, verdict) {
 }
 
 function buildGateCommand(runtime, action, args = []) {
-    if (runtime.kind !== "codex") {
-        throw new Error("managed gate commands require a Codex runtime");
+    if (!runtime.managed) {
+        throw new Error("managed gate commands require a controller runtime");
     }
     return {
         command: process.execPath,

@@ -28,6 +28,18 @@ const managedEnvironment = {
     CODEX_CTL_INSTANCE: "dev",
 };
 
+const runtimeManagedEnvironment = {
+    CODEX_CTL_GATE_ENDPOINT: "http://127.0.0.1:14600/api/managed-gate",
+    CODEX_CTL_GATE_TOKEN: "runtime-capability",
+    CODEX_CTL_GATE_PROTOCOL: "2",
+    CODEX_CTL_EXECUTABLE: "C:\\dev\\codex-ctl\\bin\\codex-ctl.mjs",
+    CODEX_CTL_INSTANCE: "dev",
+    CODEX_CTL_RUNTIME_KIND: "opencode",
+    CODEX_CTL_RUNTIME_INSTANCE: "opencode-main",
+    CODEX_CTL_SESSION_ID: "session-a",
+    CODEX_CTL_WORKING_DIRECTORY: "C:\\work",
+};
+
 function runGit(directory, args) {
     return execFileSync("git", args, {
         cwd: directory,
@@ -45,11 +57,39 @@ test("an unmanaged Codex thread remains in local policy mode", () => {
 test("a complete managed capability identifies its generation and executable", () => {
     assert.deepEqual(classifyRuntime(managedEnvironment), {
         kind: "codex",
+        managed: true,
         executable: managedEnvironment.CODEX_CTL_EXECUTABLE,
         generationId: "generation-4",
         instance: "dev",
         originThreadId: "thread-origin",
+        runtimeInstanceId: null,
     });
+});
+
+test("a runtime-neutral capability identifies an OpenCode origin without provider credentials", () => {
+    assert.deepEqual(classifyRuntime(runtimeManagedEnvironment), {
+        kind: "opencode",
+        managed: true,
+        executable: runtimeManagedEnvironment.CODEX_CTL_EXECUTABLE,
+        generationId: null,
+        instance: "dev",
+        originThreadId: "session-a",
+        runtimeInstanceId: "opencode-main",
+    });
+    assert.deepEqual(
+        buildGateCommand(classifyRuntime(runtimeManagedEnvironment), "invoke", ["git-commit"]),
+        {
+            command: process.execPath,
+            args: [
+                runtimeManagedEnvironment.CODEX_CTL_EXECUTABLE,
+                "--instance",
+                "dev",
+                "gate",
+                "invoke",
+                "git-commit",
+            ],
+        },
+    );
 });
 
 test("partial and mixed runtime markers fail closed", () => {
@@ -58,14 +98,14 @@ test("partial and mixed runtime markers fail closed", () => {
         CODEX_CTL_GATE_ENDPOINT: "http://127.0.0.1:49152",
     });
     assert.equal(partial.kind, "invalid");
-    assert.match(partial.reason, /incomplete managed Codex gate environment/);
+    assert.match(partial.reason, /incomplete managed gate environment/);
 
     const mixed = classifyRuntime({
-        ...managedEnvironment,
-        OPENCODE_SERVER_URL: "http://127.0.0.1:4096",
+        ...runtimeManagedEnvironment,
+        CODEX_THREAD_ID: "thread-origin",
     });
     assert.equal(mixed.kind, "invalid");
-    assert.match(mixed.reason, /mixed managed Codex and OpenCode runtime markers/);
+    assert.match(mixed.reason, /mixed generation and runtime gate markers/);
 });
 
 test("audit bindings tie the final commit to the audited base and index tree", () => {

@@ -4,16 +4,13 @@
 
 const fs = require("fs");
 const crypto = require("crypto");
-const os = require("os");
 const path = require("path");
 const { spawnSync } = require("child_process");
 const {
     appendAuditLog,
     gitOutput,
-    httpJson,
     makeDebug,
     sanitizeToAscii,
-    withTimeout,
 } = require(path.join(__dirname, "lib"));
 const {
     applyVerdict,
@@ -27,7 +24,6 @@ const {
 } = require(path.join(__dirname, "commit-auditor-controller"));
 
 const HOOK_TAG = "[commit-msg]";
-const AUDITOR_AGENT = process.env.OPENCODE_AUDITOR_AGENT || "commit-auditor";
 const MSG_FILE = process.argv[2];
 const debug = makeDebug(HOOK_TAG);
 
@@ -71,131 +67,6 @@ function localPolicyCheck(messageText) {
     }
 }
 
-function buildOpenCodePrompt(messageText, cwd, repo, sessionAgent) {
-    const agentLine = sessionAgent
-        ? `dispatching-agent: ${sessionAgent}`
-        : "dispatching-agent: <unknown>";
-    return `You are auditing a proposed commit message captured by the \`commit-msg\` git hook.
-Apply your agent definition (\`commit-auditor.md\`): mandatory pre-verdict checklist, convention-discovery routing, verdict format (APPROVE / REWRITE / REJECT), and self-check gates.
-
-cwd: ${cwd}
-repo: ${repo}
-${agentLine}
-policy-path: ${
-        process.env.COMMIT_AUDITOR_POLICY_PATH ||
-        path.join(os.homedir(), ".agents", "instructions", "commit-auditor.md")
-    }
-
-Proposed commit message:
-
-\`\`\`
-${messageText}
-\`\`\`
-`;
-}
-
-function stripWrappingFence(text) {
-    if (typeof text !== "string") return text;
-    const lines = text.split(/\r?\n/);
-    while (lines.length > 0 && lines[0].trim() === "") lines.shift();
-    while (lines.length > 0 && lines.at(-1).trim() === "") lines.pop();
-    if (lines.length < 2) return text;
-    const fence = /^\s*`{3,}[a-zA-Z0-9_-]*\s*$/;
-    if (fence.test(lines[0]) && fence.test(lines.at(-1))) {
-        const inner = lines.slice(1, -1);
-        if (inner.length > 0 && /^REWRITE\s*$/i.test(inner[0])) inner.shift();
-        return inner.join("\n");
-    }
-    return text;
-}
-
-function parseOpenCodeVerdict(raw) {
-    const rejectMatch = raw.match(/(?:^|\n)REJECT\b\s*\r?\n---\r?\n([\s\S]*?)\s*$/i);
-    if (rejectMatch) {
-        return { kind: "REJECT", rationale: rejectMatch[1].trim(), message: null };
-    }
-    const rewriteMatch = raw.match(
-        /(?:^|\n)REWRITE\b\s*\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*?)\s*$/i,
-    );
-    if (rewriteMatch) {
-        return {
-            kind: "REWRITE",
-            message: stripWrappingFence(rewriteMatch[1].trim()).trim(),
-            rationale: rewriteMatch[2].trim(),
-        };
-    }
-    if (/(?:^|\n)APPROVE\s*$/im.test(raw)) {
-        return { kind: "APPROVE", rationale: null, message: null };
-    }
-    throw new Error("auditor verdict was not parseable");
-}
-
-function extractOpenCodeVerdictText(data) {
-    const parts = data?.parts || [];
-    for (let index = parts.length - 1; index >= 0; index -= 1) {
-        const part = parts[index];
-        if (part?.type === "text" && typeof part.text === "string" && part.text) {
-            return part.text.trim();
-        }
-    }
-    return "";
-}
-
-async function dispatchOpenCode(messageText, repoTopLevel) {
-    const serverBase = process.env.OPENCODE_SERVER_URL.replace(/\/$/, "");
-    const projectDir = process.env.OPENCODE_PROJECT_DIR || repoTopLevel;
-    const directoryQuery = `?directory=${encodeURIComponent(projectDir)}`;
-    const createBody = { title: "[git-hook:commit-msg] running" };
-    if (process.env.OPENCODE_SESSION_ID) {
-        createBody.parentID = process.env.OPENCODE_SESSION_ID;
-    }
-
-    const createRes = await withTimeout(
-        httpJson("POST", `${serverBase}/session${directoryQuery}`, createBody),
-        10_000,
-        "session.create",
-    );
-    if (!createRes.ok || !createRes.data?.id) {
-        throw new Error(`OpenCode session creation failed with status ${createRes.status}`);
-    }
-    const auditorSessionId = createRes.data.id;
-
-    const promptRes = await withTimeout(
-        httpJson(
-            "POST",
-            `${serverBase}/session/${auditorSessionId}/message${directoryQuery}`,
-            {
-                agent: AUDITOR_AGENT,
-                parts: [
-                    {
-                        type: "text",
-                        text: buildOpenCodePrompt(
-                            messageText,
-                            process.cwd(),
-                            repoTopLevel,
-                            process.env.OPENCODE_SESSION_AGENT,
-                        ),
-                    },
-                ],
-            },
-        ),
-        300_000,
-        "session.prompt",
-    );
-    if (!promptRes.ok) {
-        throw new Error(`OpenCode auditor dispatch failed with status ${promptRes.status}`);
-    }
-    const verdictText = extractOpenCodeVerdictText(promptRes.data);
-    if (!verdictText) throw new Error("OpenCode auditor returned no verdict");
-
-    return {
-        verdict: parseOpenCodeVerdict(verdictText),
-        gateId: null,
-        invocationId: null,
-        evaluatorThreadId: auditorSessionId,
-    };
-}
-
 function parseCommandJson(stdout) {
     const lines = stdout.trim().split(/\r?\n/).filter(Boolean);
     if (lines.length === 0) throw new Error("codex-ctl gate command returned no result");
@@ -225,7 +96,7 @@ function captureAuditBinding() {
     });
 }
 
-async function dispatchCodex(runtime, messageText, repoTopLevel, gitDir, auditBinding) {
+async function dispatchManaged(runtime, messageText, repoTopLevel, gitDir, auditBinding) {
     const gate = buildGateCommand(runtime, "invoke", ["git-commit", "--json"]);
     const child = spawnSync(gate.command, gate.args, {
         cwd: process.cwd(),
@@ -324,7 +195,7 @@ async function main() {
         process.exit(1);
     }
 
-    if (isSpecialCommit() && runtime.kind !== "codex") process.exit(0);
+    if (isSpecialCommit() && !runtime.managed) process.exit(0);
     if (runtime.kind === "local") {
         localPolicyCheck(messageText);
         debug("outside an agent runtime; local policy mode");
@@ -346,22 +217,18 @@ async function main() {
         };
     } else {
         try {
-            if (runtime.kind === "codex") {
-                gitDir = resolveGitDir(repoTopLevel);
-                clearPendingReceipt(gitDir);
-                const auditBinding = captureAuditBinding();
-                dispatch = await dispatchCodex(
-                    runtime,
-                    messageText,
-                    repoTopLevel,
-                    gitDir,
-                    auditBinding,
-                );
-                if (dispatch.verdict.kind !== "REJECT") {
-                    writePendingReceipt(gitDir, dispatch.receipt);
-                }
-            } else {
-                dispatch = await dispatchOpenCode(messageText, repoTopLevel);
+            gitDir = resolveGitDir(repoTopLevel);
+            clearPendingReceipt(gitDir);
+            const auditBinding = captureAuditBinding();
+            dispatch = await dispatchManaged(
+                runtime,
+                messageText,
+                repoTopLevel,
+                gitDir,
+                auditBinding,
+            );
+            if (dispatch.verdict.kind !== "REJECT") {
+                writePendingReceipt(gitDir, dispatch.receipt);
             }
         } catch (error) {
             if (gitDir) clearPendingReceipt(gitDir);
@@ -402,10 +269,8 @@ async function main() {
                 ? Date.parse(dispatch.completedAt) - Date.parse(dispatch.startedAt)
                 : null,
         origin_session_id:
-            runtime.kind === "codex"
-                ? runtime.originThreadId
-                : process.env.OPENCODE_SESSION_ID || null,
-        generation_id: runtime.kind === "codex" ? runtime.generationId : null,
+            runtime.managed ? runtime.originThreadId : null,
+        generation_id: runtime.generationId,
         repo: repoTopLevel,
         git_dir: gitOutput("rev-parse --absolute-git-dir") || null,
         cwd: process.cwd(),

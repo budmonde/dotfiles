@@ -74,7 +74,7 @@ function abortInvocation(runtime, receipt, reason) {
 
 function reject(runtime, gitDir, receipt, reason) {
     appendAuditLog({
-        provider: "codex",
+        provider: runtime.kind,
         result: "GATE_FINAL_DIFF_MISMATCH",
         infrastructure_failure: false,
         gate_id: receipt?.gateId || null,
@@ -93,7 +93,7 @@ function main() {
     if (process.argv[2] !== "prepared") process.exit(0);
 
     const runtime = classifyRuntime(process.env);
-    if (runtime.kind !== "codex") process.exit(0);
+    if (!runtime.managed) process.exit(0);
 
     const gitDir = gitOutput("rev-parse --absolute-git-dir");
     if (!gitDir) process.exit(0);
