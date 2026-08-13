@@ -40,6 +40,13 @@ function Get-VenvPrompt {
     return "$($Color.Yellow)[venv:$($Color.Orange)$name$($Color.Yellow)]$($Color.Reset) "
 }
 
+function Get-ShellverPrompt {
+    if ((Test-Path Function:\Test-ShellverStale) -and (Test-ShellverStale)) {
+        return "$($Color.Red)[shellver stale]$($Color.Reset)`n"
+    }
+    return ''
+}
+
 # Variable-display tracker: yellow if exposed to child processes via $env:,
 # red if only in the PowerShell session scope.
 $script:_pr_var_list = @()
@@ -88,6 +95,7 @@ function prompt {
     $gitBranch = if ($branch) { " $($Color.Cyan)git:$($Color.Reset)($($Color.Red)$branch$($Color.Reset))" } else { '' }
     $venv = Get-VenvPrompt
     $varHeader = Get-VarHeader
+    $shellverPrompt = Get-ShellverPrompt
 
     $arrow = "$($Color.Bold)>$($Color.Reset)"
 
@@ -101,6 +109,7 @@ function prompt {
     $titleBranch = if ($branch) { " : $branch" } else { '' }
     $Host.UI.Write("$ESC]2;PS1 | $dirName$titleBranch$([char]7)")
     "`n" +
+    "$shellverPrompt" +
     "$varHeader" +
     "$statusChar " +
     "$($Color.Teal)$user$($Color.Reset) " +

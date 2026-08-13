@@ -4,3 +4,5 @@
 - shell:
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Unity.UnityHub
       description: Installing Unity Hub
+    - command: powershell -NonInteractive -Command "shellver bump machine"
+      description: Refreshing Shellver machine generation

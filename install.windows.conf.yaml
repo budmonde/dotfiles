@@ -19,6 +19,7 @@
         force: true
     "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\startup.ahk": config/ahk/startup.ahk
     ~/.config/powertoys/settings: config/powertoys/settings
+    ~/.config/shellver/common: shellver
     ~/.local/bin/Sync-CmdPalSettings.ps1: bin/Sync-CmdPalSettings.ps1
     ~/.local/bin/Sync-PowerToysSettings.ps1: bin/Sync-PowerToysSettings.ps1
 
@@ -66,6 +67,8 @@
       description: Installing Neovim
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId astral-sh.uv
       description: Installing uv
+    - command: powershell -NonInteractive -File install\windows\shellver.ps1
+      description: Installing Shellver
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GitHub.cli
       description: Installing GitHub CLI
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC
@@ -121,3 +124,7 @@
         path: bin/push-notify.cmd
         force: true
     ~/.local/bin/optimize-wsl-vhd.bat: bin/optimize-wsl-vhd.bat
+
+- shell:
+    - command: powershell -NonInteractive -Command "shellver bump machine"
+      description: Refreshing Shellver machine generation

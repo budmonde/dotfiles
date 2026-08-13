@@ -10,3 +10,5 @@
       description: Installing Google Drive
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Zoom.Zoom
       description: Installing Zoom
+    - command: powershell -NonInteractive -Command "shellver bump machine"
+      description: Refreshing Shellver machine generation

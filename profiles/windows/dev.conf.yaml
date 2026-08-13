@@ -12,3 +12,5 @@
       description: Installing Go toolchain
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Nvidia.Nsight.Compute
       description: Installing NVIDIA Nsight Compute
+    - command: powershell -NonInteractive -Command "shellver bump machine"
+      description: Refreshing Shellver machine generation

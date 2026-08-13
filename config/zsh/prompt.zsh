@@ -35,6 +35,12 @@ function PR_ERROR() {
     echo "%(?. .%(!.%{$fg[violet]%}.%{$fg[red]%})${PR_ERROR_CHAR}%{$reset_color%})"
 }
 
+function SHELLVER_PROMPT() {
+    if (( $+functions[shellver_is_stale] )) && shellver_is_stale; then
+        printf '%s' "%{$fg[red]%}[shellver stale]%{$reset_color%} "
+    fi
+}
+
 # Prompt Arrow
 PR_ARROW_CHAR="%B›%b"
 _arrow_color="$fg[green]"
@@ -122,9 +128,9 @@ function PYENV() {
 # LHS Prompt Display
 function PCMD() {
     if $_vars_multiline; then
-        echo "$(PR_VARS)$(PR_ERROR) $(PR_DIR) $(PYENV)$(PR_ARROW) " # space at the end
+        echo "$(SHELLVER_PROMPT)$(PR_VARS)$(PR_ERROR) $(PR_DIR) $(PYENV)$(PR_ARROW) " # space at the end
     else
-        echo "$(PR_ERROR)$(PR_VARS) $(PR_DIR) $(PYENV)$(PR_ARROW) " # space at the end
+        echo "$(SHELLVER_PROMPT)$(PR_ERROR)$(PR_VARS) $(PR_DIR) $(PYENV)$(PR_ARROW) " # space at the end
     fi
 }
 

@@ -35,11 +35,11 @@ foreach ($profile in $Args) {
     if (!(Test-Path (Join-Path $BASEDIR $conf))) {
         Write-Error "Config not found: $conf"
     }
-    $Configs += $conf
     $sharedConf = "profiles\$profile.conf.yaml"
     if (Test-Path (Join-Path $BASEDIR $sharedConf)) {
         $Configs += $sharedConf
     }
+    $Configs += $conf
 }
 
 Set-Location $BASEDIR

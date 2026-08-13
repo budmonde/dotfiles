@@ -15,3 +15,4 @@
     - ['command -v apt-get >/dev/null 2>&1 || exit 0; sudo apt-get install -y cmake', Installing CMake]
     - ['command -v apt-get >/dev/null 2>&1 || exit 0; sudo apt-get install -y build-essential', Installing build-essential]
     - ['command -v apt-get >/dev/null 2>&1 || exit 0; if apt-cache show nsight-compute >/dev/null 2>&1; then sudo apt-get install -y nsight-compute; else echo "Skipping nsight-compute (not in apt cache; configure NVIDIA CUDA repo to enable)."; fi', Installing NVIDIA Nsight Compute]
+    - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

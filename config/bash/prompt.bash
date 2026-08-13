@@ -87,6 +87,12 @@ machine_name() {
 PR_ERROR_CHAR="!"
 PR_ARROW_CHAR="${ATTRIBUTE_BOLD}›${ATTRIBUTE_RESET}"
 
+SHELLVER_PROMPT() {
+    if declare -F shellver_is_stale >/dev/null && shellver_is_stale; then
+        printf "%s[shellver stale]%s\n" "$RAW_COLOR_RED" "$RAW_COLOR_DEFAULT"
+    fi
+}
+
 PROMPT_DIRTRIM=3
 _pr_var_list=()
 _vars_multiline=true
@@ -117,6 +123,7 @@ vhide() {
 
 PR_HEADER() {
     local last_status=$?
+    SHELLVER_PROMPT
     # PR_VARS
     local v spc nl
     if $_vars_multiline; then spc=""; nl=$'\n'; else spc=" "; nl=""; fi

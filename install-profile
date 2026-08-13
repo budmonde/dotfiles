@@ -61,11 +61,11 @@ for profile in "$@"; do
         fi
         exit 1
     fi
-    CONFIGS+=("${conf}")
     shared_conf="profiles/${profile}.conf.yaml"
     if [ -f "${BASEDIR}/${shared_conf}" ]; then
         CONFIGS+=("${shared_conf}")
     fi
+    CONFIGS+=("${conf}")
 done
 
 # Bash does not load bashrc for ordinary noninteractive commands; installers load shellenv directly.

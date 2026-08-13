@@ -6,3 +6,5 @@
       description: Installing VLC
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Gyan.FFmpeg
       description: Installing FFmpeg
+    - command: powershell -NonInteractive -Command "shellver bump machine"
+      description: Refreshing Shellver machine generation

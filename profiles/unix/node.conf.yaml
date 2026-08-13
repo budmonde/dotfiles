@@ -5,3 +5,4 @@
 - shell:
     - [./install/unix/fnm, Installing fnm]
     - [./install/unix/node profiles/node-version, Installing pinned Node.js version]
+    - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

@@ -7,3 +7,4 @@
 - shell:
     - ['command -v apt-get >/dev/null 2>&1 || { echo "Skipping iqa profile (apt-get not found)."; exit 0; }; sudo apt-get update && sudo apt-get install -y vlc', Installing VLC]
     - ['command -v apt-get >/dev/null 2>&1 || exit 0; sudo apt-get install -y ffmpeg', Installing FFmpeg]
+    - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

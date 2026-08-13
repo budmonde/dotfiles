@@ -20,6 +20,7 @@
     ~/.config/bash: config/bash
     ~/.config/zsh: config/zsh
     ~/.config/tmux: config/tmux
+    ~/.config/shellver/common: shellver
 
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
@@ -29,6 +30,7 @@
     - [./install/unix/fzf, Installing fzf]
     - [./install/unix/nvim, Installing neovim]
     - [./install/unix/uv, Installing uv]
+    - [./install/unix/shellver, Installing Shellver]
     - [./install/unix/gh, Installing GitHub CLI]
     - [./install/unix/rg, Installing ripgrep]
     - [./install/unix/rclone, Installing rclone]
@@ -43,3 +45,6 @@
     ~/.local/bin/push-notify:
         path: bin/push-notify
         if: '[ -n "$WSL_DISTRO_NAME" ]'
+
+- shell:
+    - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

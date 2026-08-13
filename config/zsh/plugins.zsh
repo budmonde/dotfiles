@@ -20,3 +20,10 @@ source "${XDG_DATA_HOME:-$HOME/.local/share}/fzf/shell/key-bindings.zsh" 2>/dev/
 if [[ "$(tput colors)" == "256" ]]; then
     eval $(dircolors =(cat ~/.config/shell/plugins/dircolors-solarized/dircolors.256dark ~/.config/shell/dircolors.extra))
 fi
+
+###############################################################################
+# Shellver
+###############################################################################
+if command -v shellver >/dev/null 2>&1; then
+    eval "$(shellver init zsh)"
+fi

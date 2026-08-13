@@ -7,3 +7,5 @@
       description: Installing fnm
     - command: powershell -NonInteractive -File install\windows\node.ps1 -VersionFile profiles\node-version
       description: Installing pinned Node.js version
+    - command: powershell -NonInteractive -Command "shellver bump machine"
+      description: Refreshing Shellver machine generation

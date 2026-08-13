@@ -5,3 +5,5 @@
 - shell:
     - command: powershell -NonInteractive -Command "wsl --install --no-launch"
       description: Installing WSL
+    - command: powershell -NonInteractive -Command "shellver bump machine"
+      description: Refreshing Shellver machine generation

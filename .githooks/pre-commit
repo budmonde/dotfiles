@@ -18,4 +18,40 @@ if [ -n "$symlinks" ]; then
     exit 1
 fi
 
+shellver_inputs=$(git diff --cached --name-only --diff-filter=ACDMRTUXB -- \
+    config/shellenv config/environment.ps1 config/profile config/profile.ps1 \
+    config/bashrc config/bash_profile config/zshrc config/zshenv \
+    ':(glob)config/shell/**' ':(glob)config/bash/**' \
+    ':(glob)config/zsh/**' ':(glob)config/powershell/**')
+
+if [ -n "$shellver_inputs" ] && git diff --cached --quiet -- shellver; then
+    echo "ERROR: Shell startup changes require a staged shellver generation bump."
+    echo "$shellver_inputs" | sed 's/^/  /'
+    exit 1
+fi
+
+if ! git diff --cached --quiet -- shellver; then
+    shellver_new=$(git show :shellver 2>/dev/null) || {
+        echo "ERROR: The staged shellver generation must be a file."
+        exit 1
+    }
+    shellver_old=$(git show HEAD:shellver 2>/dev/null || printf '0')
+    case "$shellver_new" in
+        ''|*[!0-9]*)
+            echo "ERROR: Shell generations must be integers."
+            exit 1
+            ;;
+    esac
+    case "$shellver_old" in
+        ''|*[!0-9]*)
+            echo "ERROR: Shell generations must be integers."
+            exit 1
+            ;;
+    esac
+    if [ "$shellver_new" -le "$shellver_old" ]; then
+        echo "ERROR: The staged shellver generation must exceed $shellver_old."
+        exit 1
+    fi
+fi
+
 exit 0

@@ -1,4 +1,4 @@
-# Shared agentic configuration applied after the platform-specific fragment.
+# Shared agentic configuration applied before the platform-specific fragment.
 
 - defaults:
     link:

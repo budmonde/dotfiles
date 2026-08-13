@@ -6,3 +6,5 @@
       description: Installing MiKTeX
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Google.Chrome
       description: Installing Google Chrome
+    - command: powershell -NonInteractive -Command "shellver bump machine"
+      description: Refreshing Shellver machine generation

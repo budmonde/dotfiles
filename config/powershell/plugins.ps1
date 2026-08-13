@@ -16,3 +16,11 @@ if ($Host.UI.SupportsVirtualTerminal -and (Get-Module -ListAvailable -Name Compl
     Import-Module CompletionPredictor
     Set-PSReadLineOption -PredictionSource HistoryAndPlugin
 }
+
+###############################################################################
+### Shellver
+###############################################################################
+$shellverCommand = Get-Command shellver -CommandType Application -ErrorAction SilentlyContinue
+if ($null -ne $shellverCommand) {
+    Invoke-Expression (& $shellverCommand.Path init powershell | Out-String)
+}

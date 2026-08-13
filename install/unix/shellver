@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+"$HOME/.local/bin/uv" tool install \
+    --force \
+    --refresh-package shellver \
+    "git+https://github.com/budmonde/shellver.git@main"

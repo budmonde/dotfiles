@@ -13,3 +13,5 @@
       description: Installing OpenCode
     - command: powershell -NonInteractive -Command "npm install -g '@openai/codex'"
       description: Installing Codex
+    - command: powershell -NonInteractive -Command "shellver bump machine"
+      description: Refreshing Shellver machine generation

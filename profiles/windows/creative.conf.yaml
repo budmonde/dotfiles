@@ -10,3 +10,5 @@
       description: Installing GIMP
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Inkscape.Inkscape
       description: Installing Inkscape
+    - command: powershell -NonInteractive -Command "shellver bump machine"
+      description: Refreshing Shellver machine generation
