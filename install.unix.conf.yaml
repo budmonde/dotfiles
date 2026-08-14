@@ -6,6 +6,11 @@
         create: true
         relink: true
 
+- clean:
+    - '~'
+    - '~/.config'
+    - '~/.config/shellver/common'
+
 - link:
     # Root rc files (required by shell spec)
     ~/.shellenv: config/shellenv
@@ -25,15 +30,17 @@
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
     - [git config core.hooksPath .githooks, Setting up git hooks]
+    - [./install/unix/shellver, Installing Shellver]
+
+    # Shell
+    - [./install/unix/fzf, Installing fzf]
 
     # CLI tools
-    - [./install/unix/fzf, Installing fzf]
     - [./install/unix/nvim, Installing neovim]
     - [./install/unix/uv, Installing uv]
-    - [./install/unix/shellver, Installing Shellver]
-    - [./install/unix/gh, Installing GitHub CLI]
     - [./install/unix/rg, Installing ripgrep]
     - [./install/unix/rclone, Installing rclone]
+    - [./install/unix/gh, Installing GitHub CLI]
 
 # User commands and binaries installed above
 - link:

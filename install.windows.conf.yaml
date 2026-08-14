@@ -10,18 +10,15 @@
         relink: true
 
 - clean:
-    - ~/.config/powertoys
-    - "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+    - '~'
+    - '~/.config'
+    - '~/.config/shellver/common'
 
 - link:
     "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json":
         path: config/terminal/settings.json
         force: true
-    "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\startup.ahk": config/ahk/startup.ahk
-    ~/.config/powertoys/settings: config/powertoys/settings
     ~/.config/shellver/common: shellver
-    ~/.local/bin/Sync-CmdPalSettings.ps1: bin/Sync-CmdPalSettings.ps1
-    ~/.local/bin/Sync-PowerToysSettings.ps1: bin/Sync-PowerToysSettings.ps1
 
     # Git Bash support: minimal bash config so rare bash sessions write history
     # to XDG-compliant paths (~/.local/state/bash/history) instead of
@@ -35,73 +32,36 @@
     ~/.config/bash: config/bash
 
 - shell:
-    - command: git submodule update --init --recursive
-      description: Installing submodules
-    - command: git config core.hooksPath .githooks
-      description: Setting up git hooks
-    - command: powershell -NoProfile -File install\windows\profile-loader.ps1
-      description: Writing machine-local PowerShell profile loaders
+    - [git submodule update --init --recursive, Installing submodules]
+    - [git config core.hooksPath .githooks, Setting up git hooks]
+    - [powershell -NonInteractive -File install\windows\shellver.ps1, Installing Shellver]
 
-    # Desktop tools (winget wrapper handles "already up-to-date" exit code)
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId AutoHotkey.AutoHotkey
-      description: Installing AutoHotkey
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerToys
-      description: Installing PowerToys
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Mozilla.Firefox
-      description: Installing Firefox
-    - command: powershell -NonInteractive -File install\windows\vscode-user-data.ps1
-      description: Configuring VS Code XDG user data
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.VisualStudioCode
-      description: Installing VS Code
-
-    # CLI tools
-    - command: powershell -NonInteractive -File install\windows\fzf.ps1
-      description: Installing fzf
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerShell
-      description: Installing PowerShell 7
+    # Powershell
+    - [powershell -NoProfile -File install\windows\profile-loader.ps1, Writing machine-local PowerShell profile loaders]
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerShell, Installing PowerShell 7]
     - command: >-
         powershell -NoProfile -Command
         "& pwsh -NoProfile -Command \"if ((Get-ExecutionPolicy -Scope CurrentUser) -eq 'Restricted') { Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }\""
       description: Setting PowerShell 7 execution policy
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Neovim.Neovim
-      description: Installing Neovim
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId astral-sh.uv
-      description: Installing uv
-    - command: powershell -NonInteractive -File install\windows\shellver.ps1
-      description: Installing Shellver
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GitHub.cli
-      description: Installing GitHub CLI
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC
-      description: Installing ripgrep
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Rclone.Rclone
-      description: Installing rclone
-
-    - command: powershell -NonInteractive -File install\windows\fonts.ps1
-      description: Installing fonts
+    - [powershell -NonInteractive -File install\windows\fzf.ps1, Installing fzf]
 
     # PowerShell modules (bootstraps PackageManagement if needed).
     # Invoked via pwsh so modules land under Documents\PowerShell\Modules
     # rather than Documents\WindowsPowerShell\Modules.
-    - command: pwsh -NonInteractive -File install\windows\psreadline.ps1
-      description: Upgrading PSReadLine
-    - command: pwsh -NonInteractive -File install\windows\psfzf.ps1
-      description: Installing PSFzf
-    - command: pwsh -NonInteractive -File install\windows\completion-predictor.ps1
-      description: Installing CompletionPredictor
+    - [pwsh -NonInteractive -File install\windows\psreadline.ps1, Upgrading PSReadLine]
+    - [pwsh -NonInteractive -File install\windows\psfzf.ps1, Installing PSFzf]
+    - [pwsh -NonInteractive -File install\windows\completion-predictor.ps1, Installing CompletionPredictor]
 
-    # Post-link actions
-    - command: >-
-        powershell -NonInteractive -Command
-        "Start-Process '%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\startup.ahk' -ArgumentList '/restart'"
-      description: Restarting AHK startup script
+    # CLI tools
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Neovim.Neovim, Installing Neovim]
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId astral-sh.uv, Installing uv]
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC, Installing ripgrep]
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Rclone.Rclone, Installing rclone]
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GitHub.cli, Installing GitHub CLI]
 
-    # PowerToys settings
-    - command: powershell -NonInteractive -File bin\Sync-PowerToysSettings.ps1
-      description: Applying PowerToys settings
+    - [powershell -NonInteractive -File install\windows\fonts.ps1, Installing fonts]
 
-    # Cleanup
-    - command: powershell -NonInteractive -File install\windows\debloat.ps1
-      description: Removing bloatware
+    - [powershell -NonInteractive -File install\windows\debloat.ps1, Removing bloatware]
 
 # Windows command launchers and their Python support files
 - defaults:
@@ -126,5 +86,4 @@
     ~/.local/bin/optimize-wsl-vhd.bat: bin/optimize-wsl-vhd.bat
 
 - shell:
-    - command: powershell -NonInteractive -Command "shellver bump machine"
-      description: Refreshing Shellver machine generation
+    - [powershell -NonInteractive -Command "shellver bump machine", Refreshing Shellver machine generation]

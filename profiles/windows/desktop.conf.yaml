@@ -1,0 +1,36 @@
+# Profile: desktop — desktop applications and customization
+# Usage: .\install-profile.ps1 desktop
+
+- defaults:
+    link:
+        create: true
+        relink: true
+
+- clean:
+    - ~/.config/powertoys
+    - "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+
+- link:
+    "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\startup.ahk": config/ahk/startup.ahk
+    ~/.config/powertoys/settings: config/powertoys/settings
+    ~/.local/bin/Sync-CmdPalSettings.ps1: bin/Sync-CmdPalSettings.ps1
+    ~/.local/bin/Sync-PowerToysSettings.ps1: bin/Sync-PowerToysSettings.ps1
+
+- shell:
+    # AHK
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId AutoHotkey.AutoHotkey, Installing AutoHotkey]
+    - [powershell -NonInteractive -Command "Start-Process '%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\startup.ahk' -ArgumentList '/restart'", Restarting AHK startup script]
+
+    # PowerToys
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerToys, Installing PowerToys]
+    - [powershell -NonInteractive -File bin\Sync-PowerToysSettings.ps1, Applying PowerToys settings]
+
+    # VS Code
+    - [powershell -NonInteractive -File install\windows\vscode-user-data.ps1, Configuring VS Code XDG user data]
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.VisualStudioCode, Installing VS Code]
+
+    # Firefox
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Mozilla.Firefox, Installing Firefox]
+    # TODO: add echo statement instructing the user to configure settings manually
+
+    - [powershell -NonInteractive -Command "shellver bump machine", Refreshing Shellver machine generation]
