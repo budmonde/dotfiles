@@ -6,6 +6,8 @@
       description: Installing Blender
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId darktable.darktable
       description: Installing Darktable
+    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Figma.Figma
+      description: Installing Figma
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GIMP.GIMP
       description: Installing GIMP
     - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Inkscape.Inkscape
