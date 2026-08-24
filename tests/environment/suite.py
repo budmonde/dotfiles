@@ -86,15 +86,30 @@ class EnvironmentCheckTest(unittest.TestCase):
                 result = command_result(contract)
                 self.assertEqual(result.returncode, contract.exit_code)
                 for expected in contract.stdout_contains:
-                    self.assertIn(expected, result.stdout)
+                    self.assertTrue(
+                        expected in result.stdout,
+                        "expected stdout fragment was absent",
+                    )
                 for unexpected in contract.stdout_not_contains:
-                    self.assertNotIn(unexpected, result.stdout)
+                    self.assertFalse(
+                        unexpected in result.stdout,
+                        "unexpected stdout fragment was present",
+                    )
                 for pattern in contract.stdout_not_matches:
-                    self.assertIsNone(re.search(pattern, result.stdout))
+                    self.assertIsNone(
+                        re.search(pattern, result.stdout),
+                        "stdout matched a prohibited pattern",
+                    )
                 for expected in contract.stderr_contains:
-                    self.assertIn(expected, result.stderr)
+                    self.assertTrue(
+                        expected in result.stderr,
+                        "expected stderr fragment was absent",
+                    )
                 for unexpected in contract.stderr_not_contains:
-                    self.assertNotIn(unexpected, result.stderr)
+                    self.assertFalse(
+                        unexpected in result.stderr,
+                        "unexpected stderr fragment was present",
+                    )
 
     def _assert_repositories(self) -> None:
         for contract in self.group.repositories:
