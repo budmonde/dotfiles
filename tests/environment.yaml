@@ -1,0 +1,305 @@
+schema_version: 1
+
+checks:
+  common-repository:
+    repositories:
+      common:
+        path: .
+        clean: true
+        synchronized: true
+
+  git:
+    links:
+      "~/.config/git": config/git
+    path:
+      command: git
+      candidates:
+        minimum: 1
+    commands:
+      version:
+        argv: [git, --version]
+        stdout_contains: [git version]
+      hooks-path:
+        argv: [git, config, --get, core.hooksPath]
+        stdout_contains: [.githooks]
+      submodules:
+        argv: [git, submodule, status, --recursive]
+        stdout_not_matches: ["(?m)^-"]
+
+  ssh:
+    links:
+      "~/.ssh/config": config/ssh/config
+
+  vim:
+    links:
+      "~/.vim": config/vim
+
+  neovim-configuration:
+    links:
+      "~/.config/nvim": config/nvim
+
+  neovim-runtime:
+    platforms: [linux, windows]
+    path:
+      command: nvim
+      candidates:
+        minimum: 1
+    commands:
+      version:
+        argv: [nvim, --version]
+        stdout_contains: [NVIM]
+
+  python:
+    links:
+      "~/.config/python": config/python
+      "~/.pdbrc": config/python/pdbrc
+
+  npm:
+    links:
+      "~/.config/npm": config/npm
+
+  jupyter-configuration:
+    links:
+      "~/.config/jupyter": config/jupyter
+
+  jupyter-extensions-xdg:
+    when:
+      environment:
+        XDG_DATA_HOME: set
+    links:
+      "$XDG_DATA_HOME/jupyter/nbextensions": config/jupyter/nbextensions
+
+  jupyter-extensions-default:
+    when:
+      environment:
+        XDG_DATA_HOME: unset
+    links:
+      "~/.local/share/jupyter/nbextensions": config/jupyter/nbextensions
+
+  readline:
+    links:
+      "~/.config/readline": config/readline
+
+  shell-unix:
+    platforms: [unix]
+    links:
+      "~/.shellenv": config/shellenv
+      "~/.profile": config/profile
+      "~/.bashrc": config/bashrc
+      "~/.bash_profile": config/bash_profile
+      "~/.zshenv": config/zshenv
+      "~/.zshrc": config/zshrc
+      "~/.config/shell": config/shell
+      "~/.config/bash": config/bash
+      "~/.config/zsh": config/zsh
+      "~/.config/tmux": config/tmux
+
+  shell-windows:
+    platforms: [windows]
+    links:
+      "~/.shellenv": config/shellenv
+      "~/.profile": config/profile
+      "~/.bashrc": config/bashrc
+      "~/.bash_profile": config/bash_profile
+      "~/.config/shell": config/shell
+      "~/.config/bash": config/bash
+
+  shellver:
+    links:
+      "~/.config/shellver/common": shellver
+    path:
+      command: shellver
+      candidates:
+        minimum: 1
+    commands:
+      help:
+        argv: [shellver, --help]
+
+  fzf:
+    platforms: [unix, windows]
+    path:
+      command: fzf
+      candidates:
+        minimum: 1
+    commands:
+      version:
+        argv: [fzf, --version]
+
+  uv:
+    platforms: [unix, windows]
+    path:
+      command: uv
+      candidates:
+        minimum: 1
+    commands:
+      version:
+        argv: [uv, --version]
+        stdout_contains: [uv]
+
+  ripgrep:
+    platforms: [unix, windows]
+    path:
+      command: rg
+      candidates:
+        minimum: 1
+    commands:
+      version:
+        argv: [rg, --version]
+        stdout_contains: [ripgrep]
+
+  rclone:
+    platforms: [unix, windows]
+    path:
+      command: rclone
+      candidates:
+        minimum: 1
+    commands:
+      version:
+        argv: [rclone, version]
+        stdout_contains: [rclone]
+
+  github-cli:
+    platforms: [linux, windows]
+    path:
+      command: gh
+      candidates:
+        minimum: 1
+    commands:
+      version:
+        argv: [gh, --version]
+        stdout_contains: [gh version]
+
+  common-launchers-unix:
+    platforms: [unix]
+    links:
+      "~/.local/bin/git-fetch-repos": bin/git-fetch-repos
+      "~/.local/bin/git-filter-repo": bin/git-filter-repo
+      "~/.local/bin/imgen": bin/imgen
+      "~/.local/bin/reddit": bin/reddit
+      "~/.local/bin/set-title": bin/set-title
+
+  common-launcher-push-notify:
+    platforms: [wsl]
+    links:
+      "~/.local/bin/push-notify": bin/push-notify
+
+  windows-terminal:
+    platforms: [windows]
+    links:
+      "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json": config/terminal/settings.json
+
+  windows-powershell:
+    platforms: [windows]
+    path:
+      command: pwsh
+      candidates:
+        minimum: 1
+    files:
+      "~/.profile.ps1": file
+    commands:
+      version:
+        argv: [pwsh, -NoProfile, -Command, "$PSVersionTable.PSVersion.Major"]
+        stdout_contains: ["7"]
+      execution-policy:
+        argv:
+          - pwsh
+          - -NoProfile
+          - -Command
+          - "if ((Get-ExecutionPolicy -Scope CurrentUser) -ne 'Restricted') { 'configured' } else { 'restricted' }"
+        stdout_contains: [configured]
+      profile-loaders:
+        argv:
+          - pwsh
+          - -NoProfile
+          - -Command
+          - >-
+            $documents = [Environment]::GetFolderPath('MyDocuments'); $paths = @(
+            (Join-Path $HOME '.profile.ps1'),
+            (Join-Path $documents 'WindowsPowerShell\\Microsoft.PowerShell_profile.ps1'),
+            (Join-Path $documents 'PowerShell\\Microsoft.PowerShell_profile.ps1'));
+            if (($paths | Where-Object { -not (Test-Path -LiteralPath $_) }).Count -eq 0) { 'configured' } else { 'missing' }
+        stdout_contains: [configured]
+
+  windows-powershell-modules:
+    platforms: [windows]
+    commands:
+      psreadline:
+        argv: [pwsh, -NoProfile, -Command, "if (Get-Module -ListAvailable PSReadLine) { 'installed' } else { 'missing' }"]
+        stdout_contains: [installed]
+      psfzf:
+        argv: [pwsh, -NoProfile, -Command, "if (Get-Module -ListAvailable PSFzf) { 'installed' } else { 'missing' }"]
+        stdout_contains: [installed]
+      completion-predictor:
+        argv: [pwsh, -NoProfile, -Command, "if (Get-Module -ListAvailable CompletionPredictor) { 'installed' } else { 'missing' }"]
+        stdout_contains: [installed]
+
+  windows-launchers:
+    platforms: [windows]
+    links:
+      "~/.local/bin/git-fetch-repos": bin/git-fetch-repos
+      "~/.local/bin/git-fetch-repos.cmd": bin/git-fetch-repos.cmd
+      "~/.local/bin/git-filter-repo": bin/git-filter-repo
+      "~/.local/bin/git-filter-repo.cmd": bin/git-filter-repo.cmd
+      "~/.local/bin/imgen": bin/imgen
+      "~/.local/bin/imgen.cmd": bin/imgen.cmd
+      "~/.local/bin/reddit": bin/reddit
+      "~/.local/bin/reddit.cmd": bin/reddit.cmd
+      "~/.local/bin/set-title.cmd": bin/set-title.cmd
+      "~/.local/bin/push-notify.ps1": bin/push-notify.ps1
+      "~/.local/bin/push-notify.cmd": bin/push-notify.cmd
+      "~/.local/bin/optimize-wsl-vhd.bat": bin/optimize-wsl-vhd.bat
+
+  windows-fonts:
+    platforms: [windows]
+    commands:
+      required-fonts:
+        argv:
+          - pwsh
+          - -NoProfile
+          - -Command
+          - >-
+            $root = Join-Path $env:LOCALAPPDATA 'Microsoft\\Windows\\Fonts';
+            $cascadia = Get-ChildItem -LiteralPath $root -Filter '*NF*.ttf' -ErrorAction SilentlyContinue;
+            $libertinus = Get-ChildItem -LiteralPath $root -Filter '*.otf' -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -like '*Libertinus*' };
+            if ($cascadia -and $libertinus) { 'installed' } else { 'missing' }
+        stdout_contains: [installed]
+
+  windows-debloat:
+    platforms: [windows]
+    commands:
+      removed-apps:
+        argv:
+          - pwsh
+          - -NoProfile
+          - -Command
+          - >-
+            $names = @('Microsoft.BingSearch', 'Microsoft.Copilot', 'Microsoft.Edge.GameAssist',
+            'Microsoft.GetHelp', 'Microsoft.MicrosoftJournal', 'Microsoft.MicrosoftStickyNotes',
+            'Microsoft.Whiteboard', 'Microsoft.Windows.DevHome', 'Microsoft.WindowsCamera',
+            'MicrosoftCorporationII.MicrosoftFamily', 'MicrosoftCorporationII.QuickAssist',
+            'Microsoft.MicrosoftOfficeHub', 'Microsoft.Todos', 'Microsoft.WidgetsPlatformRuntime',
+            'MicrosoftWindows.Client.WebExperience', 'AppUp.IntelTechnologyMDE',
+            'AppUp.IntelManagementandSecurityStatus', 'aimgr', 'Microsoft.Xbox.TCUI',
+            'Microsoft.XboxGamingOverlay', 'Microsoft.XboxIdentityProvider',
+            'Microsoft.XboxSpeechToTextOverlay');
+            $remaining = $names | Where-Object { Get-AppxPackage -Name "*$_*" -ErrorAction SilentlyContinue };
+            if ($remaining.Count -eq 0) { 'clean' } else { 'present' }
+        stdout_contains: [clean]
+      startup-entries:
+        argv:
+          - pwsh
+          - -NoProfile
+          - -Command
+          - >-
+            $run = Get-ItemProperty 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run' -ErrorAction SilentlyContinue;
+            $names = @($run.PSObject.Properties.Name | Where-Object { $_ -like 'MicrosoftEdgeAutoLaunch_*' -or $_ -eq 'Steam' });
+            if ($names.Count -eq 0) { 'clean' } else { 'present' }
+        stdout_contains: [clean]
+      classic-teams:
+        argv:
+          - pwsh
+          - -NoProfile
+          - -Command
+          - "if (((winget list --id Microsoft.Teams.Classic 2>$null) | Out-String) -notmatch 'Microsoft.Teams.Classic') { 'clean' } else { 'present' }"
+        stdout_contains: [clean]
