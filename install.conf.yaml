@@ -36,4 +36,5 @@
         if: '[ -z "$XDG_DATA_HOME" ]'
 
     # Misc
+    ~/.config/gh: config/gh
     ~/.config/readline: config/readline
