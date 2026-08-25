@@ -132,7 +132,7 @@ The expected report structure:
   `| Worker | Category | Finding | Evidence | Severity | Attribution | Root cause | Proposed action |`
   where Attribution is `recent` / `chronic` / `unknown`.
 - **Recommended runbook amendments** section
-  (the runbook-flaw findings, each pointing at the specific section of `workflow.md`, the global PMP, an agent definition, or a skill that needs amendment).
+  (the runbook-flaw findings, each pointing at the relevant operational skill, the global WMP skill, an agent definition, or another skill that needs amendment).
 - **Pre-archival proposals** section
   (artifacts the health-checker proposed for archival, with readiness verdict).
 - **Critic disposition** section
@@ -179,7 +179,7 @@ The operator must investigate before the next audit pass.
 
 If the reconciler reports filed tickets,
 the audit-reconciliation loop is not yet closed.
-The operator must triage each ticket per the project's ticket-discipline section (typically `<docs_root>/workflow.md#ticket-discipline`)
+The operator must triage each ticket per the project's ticket-discipline skill or reference (typically the workspace's wiki-maintenance skill)
 (operator fills in `## Resolution`, then a follow-up agent applies and archives).
 Surface this expectation explicitly:
 

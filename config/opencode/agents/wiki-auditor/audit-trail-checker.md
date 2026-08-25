@@ -152,7 +152,7 @@ Do not pad the report with non-findings or speculation.
 
 - Findings already on the deviations-baseline list are not new findings;
   skip them silently.
-- PMP-discipline issues are the `wiki-auditor/health-checker`'s charter;
+- WMP-discipline issues are the `wiki-auditor/health-checker`'s charter;
   do not surface them here.
 - Code-vs-wiki drift is the `wiki-auditor/wiki-code-alignment-checker`'s charter;
   do not surface those here.

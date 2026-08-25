@@ -97,14 +97,14 @@ your classification is the partitioning input.
 The goal is that no two executors touch the same file.
 Group findings by primary target substrate:
 
-- One partition per foundational document that has findings (`mission.md`, `architecture.md`, `roadmap.md`, `workflow.md`, `index.md`, `todo.md`).
+- One partition per foundational document that has findings (`mission.md`, `architecture.md`, `roadmap.md`, `index.md`, `todo.md`), plus one partition per affected workspace skill.
 - One partition for design-doc edits (active design docs in `<worktree>/design/`).
 - One partition for archive operations (renames into `<worktree>/archive/`, status-line updates inside archived files).
 
 Operator-judgment findings (which become operator-signoff tickets in Phase 4.5) are assigned to the same partition as their primary target substrate;
 the executor for that partition emits the ticket *content* in its return summary, but does not write the ticket file.
 A finding whose proposed action is *only* to file an operator-signoff ticket (no edit to any foundational doc) is assigned to the partition matching the substrate the ticket reasons about (e.g. a Principle 8 classification question rides on the `mission.md` partition;
-an enumeration-update + leak-detector-recommendation rides on the `roadmap.md` or `workflow.md` partition, matching the finding's primary substrate).
+an enumeration-update + leak-detector-recommendation rides on the `roadmap.md` or relevant skill partition, matching the finding's primary substrate).
 There is no homogeneous "tickets-only" partition;
 every operator-judgment finding has a natural primary substrate, and removing the homogeneous partition removes the surface that previously caused gap-burning ticket-counter allocation.
 
@@ -223,7 +223,7 @@ For each ticket in allocation order:
 
 1. Assign the next `TKT<NNN>` handle.
 2. Compose the ticket title from the emission's title field.
-3. Write the file to `<worktree_path>/tickets/TKT<NNN>_<title>.md` using the operator-signoff ticket shape from the project's ticket-discipline section (typically `<docs_root>/workflow.md#ticket-discipline`):
+3. Write the file to `<worktree_path>/tickets/TKT<NNN>_<title>.md` using the operator-signoff ticket shape from the project's conventions skill (typically `<docs_root>/skills/dotfiles-wiki/references/conventions.md#tickets`):
    front matter (`Status: Open`, `Filed-by: wiki-auditor/reconciler`, `Date: <audit_pass_date>`, `Operator-signoff: required`), then `## Decision needed` (one sentence from the emission), `## Quick options` (the two-to-three one-liners from the emission), `## Context` (the two-to-five short paragraphs from the emission), and an empty `## Resolution` section.
 4. Stage the file with `git add tickets/TKT<NNN>_<title>.md` (with `workdir: <worktree_path>`).
 5. Track the filed ticket: handle, finding it resolves, file path.
@@ -246,7 +246,7 @@ Cleanup of the on-disk scratch directory is left to the dispatcher's worktree-cl
 
 Write the rollup commit message to `<worktree>/.audit-scratch/<audit_pass_date>-commit-message.txt`.
 
-The message follows the project's commit convention (see `<docs_root>/workflow.md#commit-message-convention`):
+The message follows the project's commit convention (see the workspace conventions skill, typically `<docs_root>/skills/dotfiles-wiki/references/conventions.md#commit-messages`):
 
 ```text
 [AUDIT] Apply <YYYY-MM-DD> audit reconciliation: <N> findings, <M> operator-signoff tickets

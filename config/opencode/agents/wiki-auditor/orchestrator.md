@@ -147,8 +147,9 @@ Read every foundational doc, anchoring all paths at `path_map.docs_root_in_workt
 - `<docs_root>/mission.md`
 - `<docs_root>/architecture.md`
 - `<docs_root>/roadmap.md`
-- `<docs_root>/workflow.md`
 - `<docs_root>/todo.md`
+
+Also enumerate `<docs_root>/skills/` when it exists; each skill is the operational counterpart to the foundational documents.
 
 These are your reference for what each worker is auditing against.
 You do not check them for findings yourself;
@@ -199,7 +200,7 @@ Each worker receives a prompt containing:
 
 `subagent_type` mapping:
 
-- `wiki-auditor/health-checker` for intra-wiki doc quality and PMP discipline
+- `wiki-auditor/health-checker` for intra-wiki doc quality and WMP discipline
 - `wiki-auditor/wiki-self-consistency-checker` for cross-doc tension detection and reconciliation among the foundational wiki documents
 - `wiki-auditor/wiki-code-alignment-checker` for code-vs-wiki consistency (both directions)
 - `wiki-auditor/audit-trail-checker` for audit-pipeline meta-state
@@ -343,7 +344,7 @@ The report structure:
 
 For each runbook-flaw finding, name the specific target:
 
-- **<finding name>**: amend <`<docs_root>/workflow.md#<section>` | `~/.agents/AGENTS.md#<section>` | `<docs_root>/mission.md#<section>` | agent `<companion-repo>/<path-to-agent>.md` | skill `<path>`>.
+- **<finding name>**: amend <workspace skill `<docs_root>/skills/<name>/SKILL.md` or its reference | global WMP skill `workspace-memory-protocol` | `<docs_root>/mission.md#<section>` | agent `<companion-repo>/<path-to-agent>.md`>.
   Rationale: <why the runbook as written does not prevent this drift>.
 - ...
 

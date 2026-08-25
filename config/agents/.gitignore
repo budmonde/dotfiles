@@ -11,7 +11,9 @@
 !/skills/
 /skills/*
 !/skills/commit-auditor/
-!/skills/feature-dev/
+!/skills/workspace-memory-protocol-migration/
+!/skills/workspace-memory-protocol/
+!/skills/workspace-memory-protocol-feature-development/
 !/skills/imgen/
 !/skills/markdown/
 !/skills/skill-dev/

@@ -127,7 +127,7 @@ For each operator-judgment finding:
 
 1. Compose the ticket title:
    short, descriptive, lowercase `snake_case` suitable for the eventual filename.
-2. Compose the ticket body fields per the operator-signoff ticket shape in the project's ticket-discipline section (typically `<docs_root>/workflow.md#ticket-discipline`):
+2. Compose the ticket body fields per the operator-signoff ticket shape in the project's conventions skill (typically `<docs_root>/skills/dotfiles-wiki/references/conventions.md#tickets`):
    - `## Decision needed` (one sentence, yes/no or named-option).
    - `## Quick options` (two-to-three one-liners).
    - `## Context` (two-to-five short paragraphs that cite the audit finding handle, the audit pass date, and any companion-repo evidence by file path).

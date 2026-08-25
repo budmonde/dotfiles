@@ -8,7 +8,7 @@ When compacting conversation context, follow these rules:
 
 1. **Skills**: For any skills loaded via the skill tool, record only the skill name that was invoked.
    Do NOT reproduce the skill's content.
-   Example: "Loaded skill: feature-dev"
+   Example: "Loaded skill: workspace-memory-protocol-feature-development"
 
 2. **Tool outputs**: Summarize tool results by their purpose and outcome, not their full output.
    For file reads, note which files were read and what was learned.

@@ -1,9 +1,9 @@
 ---
-description: Audit the current session for un-persisted state and reconcile AGENTS/ documentation
+description: Audit the current session for un-persisted state and reconcile WMP documentation
 ---
 
-Audit the current conversation for findings, decisions, and changes that have not been persisted to AGENTS/ documentation.
-This command is useful after compaction, at the end of a long session, or when you suspect AGENTS/ docs have drifted from reality.
+Audit the current conversation for findings, decisions, and changes that have not been persisted to the workspace's WMP documentation.
+This command is useful after compaction, at the end of a long session, or when you suspect WMP documentation has drifted from reality.
 
 ## Process
 
@@ -19,16 +19,16 @@ Scan the conversation history (or compaction summary if post-compaction) and ide
 - **Design doc activity**: Design documents created, updated, or whose status changed
 - **Research artifact activity**: Research chronicles, syntheses, or WAL files created, appended to, or sealed
 
-### 2. Check AGENTS/ State
+### 2. Check WMP state
 
-Read the current AGENTS/ documentation and check for drift:
+Read the workspace index, WMP documents, and relevant skills, then check for drift:
 
 | File | Check |
 |------|-------|
-| `AGENTS.md` | Is the structural map still accurate? Are markers current? Note: the index should NOT enumerate individual design docs or archive entries — those are discovered via `ls`. |
+| Workspace index | Is the structural map still accurate? Are markers current? The index must not enumerate individual design docs or archive entries. |
 | `mission.md` | Has any change in principles, scope, or non-goals been surfaced that needs to land here? Mission edits should be rare and carry provenance in their commit message. |
 | `architecture.md` | Does it reflect architectural changes made this session? Any stale references to old components? Any resolved issues still listed? |
-| `workflow.md` | Do build/test/deploy instructions still work? Any new procedures? |
+| Operational skills | Do relevant build, test, deploy, and recovery procedures still work? Are their vendor and Skilltap installation paths correct? |
 | `roadmap.md` | Are tracked deviations current? Any new deviations from `mission.md` surfaced this session? |
 | `todo.md` | Are completed items flushed? Are new discoveries added? Is the dependency map current? Use `#DOC<NNN>` handle form for design-doc references. |
 | `design/*.md` | Do status lines reflect current state? Should any docs move to `archive/` with the `YYYY-MM-DD_<handle>_<title>.md` naming? |
@@ -51,15 +51,15 @@ After user confirmation, make the updates:
 - Flush completed items from `todo.md`
 - Add newly discovered tasks to `todo.md`
 - Update `architecture.md` with any architectural changes
-- Update `workflow.md` if procedures changed
+- Update the relevant operational skill if procedures changed
 - Update `roadmap.md` if new deviations surfaced
 - Update design doc status lines
 - Move completed design docs to `archive/` with `YYYY-MM-DD_DOC<NNN>_<title>.md` naming (archival date prefix)
 - Seal research artifacts ready for archival by appending a final entry that names the seal cause (e.g. "Sealed: informed `#DOC<NNN>`" or "Superseded by `#RES<NNN>`"), then move to `archive/` with `YYYY-MM-DD_RES<NNN>_<title>.md` naming
 - Move resolved tickets to `archive/` with `YYYY-MM-DD_TKT<NNN>_<title>.md` naming
-- Update `AGENTS.md` structural map if directories were added or removed (do not enumerate individual docs)
+- Update the workspace index structural map if directories were added or removed (do not enumerate individual docs)
 - Write un-persisted research findings to an appropriate research artifact in `research/` (or fold into an existing design doc if the finding is decision-shaped rather than investigation-shaped)
 
 ### 5. Summary
 
-Report what was updated and confirm AGENTS/ is now in sync with the project state.
+Report what was updated and confirm WMP documentation is now in sync with the project state.

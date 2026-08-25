@@ -24,6 +24,10 @@ The hook audits the staged index and binds its `HEAD` and index-tree snapshot to
 Managed amend and replacement commits are rejected because their final diff is not the staged diff that `commit-msg` audited.
 Recreate the intended change as a new holistic commit instead of retrying an amend.
 
+The controller reads only the target repository's root `COMMIT_POLICY.md`.
+When the file is absent, the evaluator applies the default Conventional Commits policy with a capitalized title after the type.
+Do not expect a workspace wiki, a sibling repository, or `workflow.md` to supply commit rules.
+
 If a commit command times out,
 do not immediately retry it.
 First inspect `HEAD`,

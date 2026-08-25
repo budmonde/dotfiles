@@ -90,19 +90,20 @@ Do not skim large diffs, but also do not explore beyond `git diff --cached`.
 
 ### 3. Locate the convention source
 
-Read the project's commit-message convention.
+Read the target repository's commit policy.
 When the transport supplies `convention.path` and `convention.content`,
-that content is the scoped convention read for this audit.
-Otherwise,
-discover and read it as follows.
-Discover it via the project's index file:
+the content is the complete `COMMIT_POLICY.md` from the verified target repository.
+Do not search a workspace wiki, sibling repository, `workflow.md`, `AGENTS.md`, `CONTRIBUTING.md`, or `CONVENTIONS.md` for a substitute.
 
-- If a `wiki/index.md` exists at the workspace root, follow its pointers to the workflow document (typically `wiki/workflow.md`, sections `Commit message convention` and `Commit messages as provenance`).
-- If an `AGENTS.md` exists at the repo or workspace root, follow its structural map to `AGENTS/workflow.md`.
-- If neither index nor workflow document is present, look for `CONTRIBUTING.md` or `CONVENTIONS.md` in the repo root.
-- If none of the above exist, fall back to common Conventional Commits norms and state the fallback in the rationale.
+When `convention.path` is null, apply the default policy:
 
-Extract from whichever source you find:
+- Use a Conventional Commits subject: `type: Capitalized imperative subject` or `type(scope): Capitalized imperative subject`.
+- Use one of `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `refactor`, or `test` as the type.
+- Capitalize the title's first word after the colon, for example `docs: Update commit policy`.
+- Keep the subject concise, accurate, and ASCII-only, with no trailing period.
+- A body is optional unless needed to explain the diff; the default policy imposes no provenance or tag-reservation rules.
+
+When a repository policy is supplied, extract from it:
 
 - The tag taxonomy (or equivalent prefix convention) and the full set of legal tags.
 - Rules for tag selection (most-specific-applicable, splitting rules, cross-cutting fallback).
@@ -153,29 +154,15 @@ A message that is vague (`added stuff`, `updates`, `fixes`, `wip`), inaccurate (
 
 If you find yourself reaching for a vague verb, you have not read the diff carefully enough — re-read it.
 
-### 6. Enforce tag-reservation policy
+### 6. Enforce repository reservation policy
 
-Some tags are reserved for specific dispatching agents.
-The `commit-msg` hook surfaces the calling session's agent identity in the prompt header as `dispatching-agent: <name>` (or `dispatching-agent: <unknown>` when the env var is absent — typically a non-OpenCode commit such as a manual CLI invocation).
+Apply a tag or producer reservation only when the supplied repository policy declares it.
+The `commit-msg` hook surfaces the calling session's agent identity as `dispatching-agent: <name>` (or `dispatching-agent: <unknown>` for callers without that evidence).
 
-Reserved tags:
-
-- **`[AUDIT]`** — reserved for the `wiki-auditor/audit-committer` agent.
-  This is the only legitimate producer of `[AUDIT]`-tagged commits.
-  The reservation lives on `wiki-auditor/audit-committer` rather than on the executor that performed the edits because that agent's session is deliberately short (one tool call) and therefore not vulnerable to the compaction race that overwrites `OPENCODE_SESSION_AGENT` mid-session.
-  Other agents (including the primary, other subagents, the `wiki-auditor/executor` and `wiki-auditor/reconciler` agents that produced the edits but do not commit them, and `<unknown>` callers) must use the substrate tag matching the diff (`[ARCH]`, `[WORKFLOW]`, `[META]`, etc.) per the standard tag-selection rule.
-
-When a non-reserved-holder proposes a reserved tag:
-
-- If the diff is otherwise valid and a non-reserved tag would correctly classify it, emit `REWRITE` swapping the reserved tag for the appropriate substrate tag.
-  Name the policy in the rationale: "`[AUDIT]` is reserved for `wiki-auditor/audit-committer`; this commit's substrate is X."
-- If the diff is invalid for other reasons, the standard verdict rules apply (the tag-policy violation is one of multiple findings).
-
-When the reserved-holder agent dispatches the commit:
-
-- The reserved tag is the *expected* tag for that agent.
-  Apply the rest of the convention as normal (subject must be substantive, body required if foundational docs are touched, etc.).
-- Do not strip the reserved tag for a substrate tag; that is exactly the case the reservation exists to allow.
+When a non-holder proposes a reserved tag, emit `REWRITE` with the policy-compliant tag if the diff is otherwise valid.
+Name the policy, the reservation, and the files that justify the replacement in the rationale.
+When the policy's holder proposes its reserved tag, apply the rest of the policy normally.
+Do not invent a reservation from another repository or from evaluator context.
 
 ## Verdict format
 

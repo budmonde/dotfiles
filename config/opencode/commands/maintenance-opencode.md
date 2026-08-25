@@ -66,7 +66,7 @@ If changes are needed:
 - Update `bin/push-notify*` only if the provider-neutral notification sink
   changes.
 - Add or update controller tests for the pinned compatibility contract.
-- Record a baseline change in codex-ctl's PMP documents before upgrading.
+- Record a baseline change in codex-ctl's WMP documents before upgrading.
 
 ## Component Locations
 

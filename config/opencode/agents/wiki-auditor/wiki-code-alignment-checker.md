@@ -47,7 +47,7 @@ and roll up.
 You audit against:
 
 - `<docs_root>/architecture.md` (the present-state claims).
-- `<docs_root>/workflow.md` (the operational claims).
+- `<docs_root>/skills/` (the operational claims).
 - `<docs_root>/roadmap.md` (the tracked-deviation claims that name code-side mitigations).
 - The actual contents of the live companion repos named in `path_map.live_substrates`.
 
@@ -132,7 +132,7 @@ Read structurally to enumerate:
 
 - Each architectural claim in `architecture.md`
   (seam inventory, mechanical guards inventory, hook-registration substrates, install flow, plugin management, etc.).
-- Each operational claim in `workflow.md`
+- Each operational claim in the relevant workspace skill
   (commit convention, environment setup, audit MO, scope-visibility hygiene, etc.).
 - Each file path or substrate name referenced from the wiki.
 - Each tracked deviation in `roadmap.md` that names a code-side mitigation.
@@ -165,7 +165,7 @@ adapt the chunk boundaries to the project's own seam inventory):
 
 - **Chunk: hook substrates**.
   Touches `architecture.md#hook-registration-substrates`,
-  `workflow.md#hook-registration-mo`,
+  `skills/dotfiles-wiki/references/conventions.md#hook-and-managed-policy-changes`,
   and `<common>/git/hooks/`.
 - **Chunk: mechanical guards**.
   Touches `architecture.md#mechanical-guards-inventory`
@@ -208,7 +208,7 @@ consolidate the per-chunk findings into a single response.
 Add cross-chunk findings here:
 
 - **Architectural concepts that appear in multiple wiki docs**:
-  if a concept (e.g. "the `commit-auditor` subagent") is named in both `architecture.md` and `workflow.md`,
+  if a concept (e.g. "the `commit-auditor` subagent") is named in both `architecture.md` and a workspace skill,
   verify both citations are consistent with each other and with the code substrate.
   An inconsistency between two wiki sections is a finding even if each individually agrees with the code.
 - **Extras-profile cross-check rollup**:
@@ -249,7 +249,7 @@ Severity guidance:
 
 Root-cause guidance:
 
-- **operator-slip**: the runbook (`workflow.md#audit-mo` and related sections) says how to keep code and wiki in sync; the operator didn't follow it.
+- **operator-slip**: the relevant workspace skill says how to keep code and wiki in sync; the operator didn't follow it.
 - **agent-slip**: an agent action landed the change without updating the wiki.
 - **runbook-flaw**: the discipline as written does not catch this class of drift.
 - **n/a**: a carve-out the wiki explicitly does not document at this grain.
@@ -268,7 +268,7 @@ Do not pad the report with non-findings or speculation.
   Do not dispatch other workers or the critic.
 - Findings already on the deviations-baseline list are not new findings;
   skip them silently.
-- PMP-discipline issues (stale handle references, unflushed todos, archival proposals) are the `wiki-auditor/health-checker`'s charter;
+- WMP-discipline issues (stale handle references, unflushed todos, archival proposals) are the `wiki-auditor/health-checker`'s charter;
   do not surface them here.
 - Audit-pipeline meta-state is the `wiki-auditor/audit-trail-checker`'s charter;
   do not surface those here.

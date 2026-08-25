@@ -50,7 +50,7 @@ RES<NNN>_FLAG_<snake_case_title>.md
 - `<snake_case_title>` is a short descriptive title of the **category** of anti-pattern the WAL tracks, not the specific instance.
   Multiple instances of the same category get appended to the same WAL.
 
-Archived flag WALs follow the standard PMP archival rename: they move to `~/dotfiles/wiki/archive/` and gain a `YYYY-MM-DD_` archival-date prefix.
+Archived flag WALs follow the standard WMP archival rename: they move to `~/dotfiles/wiki/archive/` and gain a `YYYY-MM-DD_` archival-date prefix.
 
 ## Workflow
 
@@ -245,7 +245,7 @@ This artifact seals when one of:
   changes). The seal entry explains.
 
 On sealing, the file moves to `~/dotfiles/wiki/archive/` with the
-archival-date prefix per the global Project Memory Protocol.
+archival-date prefix per the global Workspace Memory Protocol.
 
 ## Instances
 

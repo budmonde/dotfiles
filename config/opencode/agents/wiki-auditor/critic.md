@@ -143,7 +143,7 @@ If two findings name the same root cause and reconciliation, the verdict on the 
 
 Re-classify the finding mentally:
 
-- Is the runbook (`workflow.md`, the global PMP, agent definitions, skills) actually correct on this point, and the operator simply drifted? -> operator-slip
+- Is the runbook (the relevant workspace skill, the global WMP skill, agent definitions) actually correct on this point, and the operator simply drifted? -> operator-slip
 - Did an agent's instructions or skill allow or cause this? -> agent-slip
 - Does the runbook as written fail to prevent this class of drift? -> runbook-flaw
 - Is it a carve-out the wiki explicitly does not document at this grain? -> n/a
@@ -159,7 +159,7 @@ A finding labelled `runbook-flaw` that is actually a carve-out is `RUNBOOK-MISCL
 
 The wiki-audit is chartered for:
 
-- Intra-wiki document quality and PMP discipline (`wiki-auditor/health-checker` territory).
+- Intra-wiki document quality and WMP discipline (`wiki-auditor/health-checker` territory).
 - Code-vs-wiki consistency in both directions (`wiki-auditor/wiki-code-alignment-checker` territory).
 - Cross-doc consistency among foundational wiki documents (`wiki-auditor/wiki-self-consistency-checker` territory).
 - Audit-pipeline meta-state (`wiki-auditor/audit-trail-checker` territory).
@@ -168,7 +168,7 @@ It is **not** chartered for:
 
 - General code review or code-quality complaints.
 - Style preferences not codified in the conventions.
-- Performance, security, or other concerns not derived from the mission or workflow.
+- Performance, security, or other concerns not derived from the mission or workspace skills.
 
 If the finding falls outside the charter, the verdict is `SCOPE-CREEP`.
 

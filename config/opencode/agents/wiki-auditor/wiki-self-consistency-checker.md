@@ -38,7 +38,7 @@ Your charter is **cross-doc tension detection and reconciliation** among the fou
 Your concern is not "is this doc well-formed by itself?" (that is `wiki-auditor/health-checker`'s charter)
 nor "do the wiki's claims match the code?" (that is `wiki-auditor/wiki-code-alignment-checker`'s charter).
 Your concern is "do the foundational docs agree with each other?" -
-where mission, architecture, roadmap, workflow, and the index claim related things,
+where mission, architecture, roadmap, operational skills, and the index claim related things,
 and one of those claims may contradict another.
 
 You are a summary-provider:
@@ -113,7 +113,7 @@ The foundational docs form a dependency graph rooted at `mission.md`:
 - `mission.md` is the principles anchor.
 - `architecture.md` describes the present-state mechanism that implements (or deviates from) the mission.
 - `roadmap.md` carries future direction and the **tracked-deviations** list - the canonical place where current architecture or behavior is allowed to diverge from a stated mission principle.
-- `workflow.md` describes the operational MO and references mission principles as the audit anchor.
+- The workspace skills catalog describes the operational MO and references mission principles as the audit anchor.
 - `index.md` (or `AGENTS.md` in protocol-default projects) is the structural map and may reference any of the above.
 
 Per-doc cross-check responsibilities follow this graph:
@@ -123,7 +123,7 @@ Per-doc cross-check responsibilities follow this graph:
 | `mission.md` | `architecture.md`, `roadmap.md` | A stated principle that no architectural decision realizes and no tracked deviation acknowledges; a principle that contradicts a non-goal; a non-goal contradicted by current architectural reality. |
 | `architecture.md` | `mission.md`, `roadmap.md` | A load-bearing architectural decision that serves no mission principle and is not flagged as a tracked deviation; an architectural state that contradicts a mission principle without an entry in roadmap's tracked-deviations list. |
 | `roadmap.md` | `mission.md`, `architecture.md` | A tracked deviation citing a mission principle that no longer exists or has been revised; a tracked deviation whose mitigation has already landed in architecture (resolution pending flush); future-direction items that contradict a non-goal. |
-| `workflow.md` | `mission.md`, `architecture.md` | An operational step that contradicts a mission principle; a workflow procedure naming an architectural substrate that no longer exists. |
+| each workspace skill | `mission.md`, `architecture.md` | An operational step that contradicts a mission principle; a procedure naming an architectural substrate that no longer exists. |
 | `index.md` | every other foundational doc, plus filesystem | A structural-map entry that disagrees with `architecture.md`'s description of the system layout, with the actual directory contents (`ls <docs_root>`), or with any other foundational doc it summarizes; a marker anchor pointing at a heading that no longer exists in its target file. |
 
 Adjust this table to the project's actual foundational-doc set;
@@ -139,8 +139,8 @@ The substrate list is the foundational docs that exist in `<docs_root>`:
 - `mission.md` if present
 - `architecture.md` if present
 - `roadmap.md` if present
-- `workflow.md` if present
 - `index.md` (or `AGENTS.md`) if present
+- Each workspace skill under `skills/` if present
 
 For each present substrate, build a per-doc evaluation prompt tailored to its role,
 and dispatch `wiki-auditor/doc-reader` with that prompt.
@@ -191,19 +191,19 @@ Check:
 - Resolution pending flush: has the cited mitigation for any tracked deviation already landed in `architecture.md`, making the deviation resolved-but-still-listed?
 - Non-goal alignment: do future-direction items respect the mission's non-goals, or do they propose work the mission explicitly excludes?
 
-### `workflow.md`
+### Each workspace skill
 
 Reference context: `<docs_root>/mission.md`, `<docs_root>/architecture.md`.
 
 Check:
 
-- Mission service: does each operational step ultimately serve a mission principle, or does the workflow drift toward operational discipline that the mission does not motivate?
+- Mission service: does each operational step ultimately serve a mission principle, or does the skill drift toward operational discipline that the mission does not motivate?
 - Substrate currency: does each procedure name an architectural substrate that still exists per `architecture.md`?
 - Audit MO coherence: does the documented audit MO target the mission principles that are actually stated, including any recently-added principles?
 
 ### `index.md`
 
-Reference context: every other foundational doc that exists in `<docs_root>` (`mission.md`, `architecture.md`, `roadmap.md`, `workflow.md`),
+Reference context: every other foundational doc that exists in `<docs_root>` (`mission.md`, `architecture.md`, `roadmap.md`), plus the workspace skills catalog,
 plus `ls <docs_root>` for filesystem state.
 
 `index.md` is the lightweight lynchpin of the wiki:
@@ -215,7 +215,7 @@ Check:
 - Structural-map agreement: does the structural map agree with `architecture.md`'s description of the layout, and does it list every foundational doc that actually exists in `<docs_root>`?
 - Directory currency: does the structural map agree with the actual directory contents (no entries for absent files; no missing entries for present files)?
 - Marker-anchor validity: do any named entry-point sections (`<file>.md#<section>` references) still exist in the docs they target? Walk each marker anchor and verify the cited heading is present in the cited file.
-- Workflow-override accuracy: do any project-specific workflow overrides claimed in `index.md` agree with what `workflow.md` and `mission.md` actually say (no contradicting an override here that is not reflected in the source-of-truth doc)?
+- Workspace-override and skill-catalog accuracy: do any project-specific overrides claimed in `index.md` agree with the relevant skill and `mission.md` (no contradicting an override here that is not reflected in the source-of-truth guidance)?
 - Cross-doc summary fidelity: where `index.md` paraphrases another foundational doc (e.g. summarizing the mission's scope, the architecture's repo layout, or the roadmap's current investments), the paraphrase should not contradict the source.
 
 ## Doc-reader output schema
@@ -293,7 +293,7 @@ When the substantive layer cannot resolve the call (the underlying logic is genu
    Run `git log -1 --format=%cd --date=short -- <doc>` (with `workdir: <docs_root>`) for each implicated doc.
    If one is materially newer (e.g. days vs. months) and the others are stable, the older docs likely need to catch up.
 2. **Authoritativeness for principle vs. mechanism**: when the tension is principle-vs-mechanism (mission claims X, architecture does Y), `mission.md` is authoritative for the *principle* (the architecture should change or the deviation should be tracked).
-   When the tension is mechanism-vs-mechanism (architecture claims X, workflow describes Y), `architecture.md` is authoritative for *current state* (the workflow should align).
+   When the tension is mechanism-vs-mechanism (architecture claims X, a skill describes Y), `architecture.md` is authoritative for *current state* (the skill should align).
 3. **Tracked-deviation status**: if a tracked deviation in `roadmap.md` already covers the tension, the resolution is "either make architecture conform OR keep the deviation flagged."
    Both options are correct; flag this as `Resolution-direction: tracked-deviation-already-covers` rather than ambiguous.
 
@@ -320,7 +320,7 @@ the operator's judgment is the correct mechanism for ambiguity.
 
 A resolution direction of `edit-mission.md` is structurally different from any other directional outcome.
 
-`mission.md` is the principles substrate - load-bearing, slow-changing, treated as a legal-document-like artifact per the PMP.
+`mission.md` is the principles substrate - load-bearing, slow-changing, treated as a legal-document-like artifact per the WMP.
 A finding that proposes editing it is a finding that proposes amending the project's stated identity, principles, or scope boundaries.
 This is never a routine mechanical fix;
 even when the substantive layer is confident the project's actual direction has outgrown an old principle, the operator must consciously approve the principle-level change before it lands.
@@ -371,7 +371,7 @@ The `---` separator on its own line delimits clusters.
 Severity guidance:
 
 - **high**: a load-bearing principle or load-bearing architectural decision is silently divergent (no tracked deviation; future readers will be misled). A `Resolution-direction: edit-mission.md` cluster is always **high** by virtue of touching the principles substrate.
-- **medium**: a divergence exists but the implicated docs are peripheral (e.g. workflow naming a deprecated substrate; index pointing at a moved section).
+- **medium**: a divergence exists but the implicated docs are peripheral (e.g. a skill naming a deprecated substrate; index pointing at a moved section).
 - **low**: a watch item; the divergence may resolve organically.
 
 If there are no tensions, return:

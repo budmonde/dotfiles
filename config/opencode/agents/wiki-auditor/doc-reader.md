@@ -62,7 +62,7 @@ The parent passes you:
 - **Evaluation prompt**:
   the checks to run, the conventions to apply, the expected output shape.
 - **Reference context** the parent considers necessary
-  (e.g. relevant PMP rules from `~/.agents/AGENTS.md`,
+  (e.g. relevant WMP rules from the `workspace-memory-protocol` skill,
   relevant claims from a sister wiki doc,
   the deviations-baseline so you do not re-surface tracked deviations).
 
