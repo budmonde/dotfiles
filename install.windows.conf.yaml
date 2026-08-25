@@ -32,8 +32,6 @@
     ~/.config/bash: config/bash
 
 - shell:
-    - [git submodule update --init --recursive, Installing submodules]
-    - [git config core.hooksPath .githooks, Setting up git hooks]
     - [powershell -NonInteractive -File install\windows\shellver.ps1, Installing Shellver]
 
     # Powershell
