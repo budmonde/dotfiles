@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Install optional application profiles via dotbot.
-# Usage: ./install-profile <profile> [profile...]
+# Usage: ./install-profile <profile> [profile...] [dotbot-options...]
 #
 # Profiles are discovered dynamically from profiles/unix/*.conf.yaml.
 # A matching profiles/<name>.conf.yaml is applied after the platform fragment.
@@ -9,6 +9,7 @@
 # Examples:
 #   ./install-profile agentic
 #   ./install-profile agentic research
+#   ./install-profile agentic --only link
 
 set -e
 
@@ -36,7 +37,29 @@ list_profiles() {
 
 VALID_PROFILES="$(list_profiles)"
 
-if [ "$#" -eq 0 ]; then
+PROFILES=()
+DOTBOT_ARGS=()
+FORWARD_DOTBOT_ARGS=0
+for argument in "$@"; do
+    if [ "$FORWARD_DOTBOT_ARGS" -eq 0 ]; then
+        case "$argument" in
+            --)
+                FORWARD_DOTBOT_ARGS=1
+                continue
+                ;;
+            -*)
+                FORWARD_DOTBOT_ARGS=1
+                ;;
+        esac
+    fi
+    if [ "$FORWARD_DOTBOT_ARGS" -eq 1 ]; then
+        DOTBOT_ARGS+=("$argument")
+    else
+        PROFILES+=("$argument")
+    fi
+done
+
+if [ "${#PROFILES[@]}" -eq 0 ]; then
     echo "Available profiles:"
     if [ -z "${VALID_PROFILES}" ]; then
         echo "  (none — add profiles/unix/<name>.conf.yaml)"
@@ -44,12 +67,12 @@ if [ "$#" -eq 0 ]; then
         echo "${VALID_PROFILES}" | sed 's/^/  /'
     fi
     echo
-    echo "Usage: ./install-profile <profile> [profile...]"
+    echo "Usage: ./install-profile <profile> [profile...] [dotbot-options...]"
     exit 0
 fi
 
 CONFIGS=()
-for profile in "$@"; do
+for profile in "${PROFILES[@]}"; do
     conf="profiles/unix/${profile}.conf.yaml"
     if [ ! -f "${BASEDIR}/${conf}" ]; then
         echo "Error: Unknown profile: ${profile}" >&2
@@ -83,4 +106,5 @@ git submodule update --init --recursive "${DOTBOT_DIR}"
 
 "${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" \
     -d "${BASEDIR}" \
-    -c "${CONFIGS[@]}"
+    -c "${CONFIGS[@]}" \
+    "${DOTBOT_ARGS[@]}"

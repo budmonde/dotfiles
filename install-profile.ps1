@@ -1,5 +1,5 @@
 # Install optional application profiles via dotbot.
-# Usage: .\install-profile.ps1 <profile> [profile...]
+# Usage: .\install-profile.ps1 <profile> [profile...] [dotbot-options...]
 #
 # Profiles are discovered dynamically from profiles\windows\*.conf.yaml.
 # A matching profiles\<name>.conf.yaml is applied after the platform fragment.
@@ -7,6 +7,7 @@
 # Examples:
 #   .\install-profile.ps1 collab
 #   .\install-profile.ps1 collab gaming
+#   .\install-profile.ps1 collab --only link
 
 $ErrorActionPreference = "Stop"
 
@@ -19,15 +20,35 @@ $ValidProfiles = @(Get-ChildItem -LiteralPath $ProfilesDir -Filter "*.conf.yaml"
     ForEach-Object { $_.BaseName -replace '\.conf$', '' } |
     Sort-Object)
 
-if ($Args.Count -eq 0) {
+$Profiles = @()
+$DotbotArgs = @()
+$ForwardDotbotArgs = $false
+foreach ($argument in $Args) {
+    if (-not $ForwardDotbotArgs) {
+        if ($argument -eq '--') {
+            $ForwardDotbotArgs = $true
+            continue
+        }
+        if ($argument.StartsWith('-')) {
+            $ForwardDotbotArgs = $true
+        }
+    }
+    if ($ForwardDotbotArgs) {
+        $DotbotArgs += $argument
+    } else {
+        $Profiles += $argument
+    }
+}
+
+if ($Profiles.Count -eq 0) {
     Write-Host "Available profiles:"
     foreach ($p in $ValidProfiles) { Write-Host "  $p" }
-    Write-Host "`nUsage: .\install-profile.ps1 <profile> [profile...]"
+    Write-Host "`nUsage: .\install-profile.ps1 <profile> [profile...] [dotbot-options...]"
     exit 0
 }
 
 $Configs = @()
-foreach ($profile in $Args) {
+foreach ($profile in $Profiles) {
     if ($profile -notin $ValidProfiles) {
         Write-Error "Unknown profile: $profile. Valid profiles: $($ValidProfiles -join ', ')"
     }
@@ -51,7 +72,7 @@ foreach ($PYTHON in ('python', 'python3')) {
             ![string]::IsNullOrEmpty((&$PYTHON -V))
             $ErrorActionPreference = "Stop" }) {
         $DOTBOT_PATH = Join-Path $BASEDIR -ChildPath $DOTBOT_DIR | Join-Path -ChildPath $DOTBOT_BIN
-        &$PYTHON $DOTBOT_PATH -d $BASEDIR -c @Configs
+        &$PYTHON $DOTBOT_PATH -d $BASEDIR -c @Configs @DotbotArgs
         return
     }
 }
