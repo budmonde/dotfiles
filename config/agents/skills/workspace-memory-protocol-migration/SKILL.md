@@ -14,7 +14,7 @@ infer its migration needs from its index, layout, filenames, operational guidanc
 ## Establish the migration boundary
 
 Load `workspace-memory-protocol`, then the workspace index.
-Identify the memory root, repository boundaries, source-owned skill catalog, runtime installation mechanism, and declared deviations from the default layout.
+Identify the memory root, repository boundaries, source-owned skill catalog, runtime installation mechanism, loader configuration, and declared deviations from the default layout.
 Treat archives and sealed research as historical records; do not rewrite them merely to adopt current terminology.
 
 Inventory the live memory surface before editing.
@@ -23,6 +23,7 @@ Classify each as one of:
 
 - **Already conformant** — verify and leave it alone.
 - **Mechanical layout drift** — a safe casing or path rename with an unambiguous target.
+- **Loader-configuration drift** — a non-root Codex index is absent from `project_doc_fallback_filenames`.
 - **Semantic split or merge** — content must be classified between destinations.
 - **Operational-model drift** — procedures must move from a legacy document into scoped skills.
 - **Ambiguous** — the target or destination cannot be inferred safely.
@@ -63,6 +64,8 @@ Source-owned workspace skills belong in the scope owner's declared vendor catalo
 For example, an ordinary repository may vendor `skills/`, a wiki may vendor `wiki/skills/`, and shared WMP skills remain in the common agent-skill catalog.
 Record each workspace skill's scope, vendor location, and installation path in the index.
 
+When a Codex workspace uses a non-root index, add the index's workspace-relative path to `project_doc_fallback_filenames` in `.codex/config.toml` without removing existing fallback entries.
+
 ## Make future drift manageable
 
 Treat every future WMP change as a target-rule delta, not as a reason to invent a new migration command.
@@ -77,6 +80,7 @@ Before completion:
 
 - Validate every new or changed skill with the skill-authoring validator when available.
 - Confirm the index, architecture, roadmap, todo, skill catalog, and runtime configuration describe the resulting workspace only.
+- Confirm every non-root Codex index is registered in `.codex/config.toml` through `project_doc_fallback_filenames`.
 - Search live files for old paths, filenames, headings, and operational entry points that the migration retired.
 - Confirm every migrated repository-specific commit rule now lives in that repository's `COMMIT_POLICY.md`, with no workflow or sibling-workspace fallback left live.
 - Verify artifact handles, archival prefixes, statuses, and path-form references affected by the migration.
