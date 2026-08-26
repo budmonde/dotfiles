@@ -1,0 +1,12 @@
+schema_version: 2
+
+checks:
+  git-auditor:
+    commands:
+      trigger:
+        - >-
+          message=$(mktemp); trap 'rm -f "$message"' EXIT;
+          printf '[TEST] git-auditor hook validation\n' > "$message";
+          env -u CODEX_CTL_GATE_ENDPOINT -u CODEX_CTL_GATE_TOKEN
+          -u CODEX_CTL_GATE_PROTOCOL -u CODEX_CTL_EXECUTABLE -u CODEX_CTL_INSTANCE
+          git hook run commit-msg -- "$message"

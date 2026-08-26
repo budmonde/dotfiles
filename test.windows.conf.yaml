@@ -1,0 +1,77 @@
+schema_version: 2
+
+checks:
+  terminal:
+    links:
+      "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json": config/terminal/settings.json
+
+  powershell:
+    links:
+      "~/.profile.ps1": config/profile.ps1
+    path:
+      command: pwsh
+      locations: ["%ProgramFiles%/WindowsApps"]
+      candidates: 2
+    commands:
+      version: ["$PSVersionTable.PSVersion.Major", "7"]
+      execution-policy: ["if ((Get-ExecutionPolicy -Scope CurrentUser) -ne 'Restricted') { 'configured' } else { 'restricted' }", configured]
+      documents-loaders:
+        - >-
+          $documents = [Environment]::GetFolderPath('MyDocuments'); $paths = @(
+          (Join-Path $documents 'WindowsPowerShell\\Microsoft.PowerShell_profile.ps1'),
+          (Join-Path $documents 'PowerShell\\Microsoft.PowerShell_profile.ps1'));
+          if (($paths | Where-Object { -not (Test-Path -LiteralPath $_) }).Count -eq 0) { 'configured' } else { 'missing' }
+        - configured
+      configuration: ["$env:PYTHONSTARTUP", '(?i)\\.config\\python\\pythonrc']
+
+  powershell-modules:
+    commands:
+      psreadline: ["if (Get-Module -ListAvailable PSReadLine) { 'installed' } else { 'missing' }", installed]
+      psfzf: ["if (Get-Module -ListAvailable PSFzf) { 'installed' } else { 'missing' }", installed]
+      completion-predictor: ["if (Get-Module -ListAvailable CompletionPredictor) { 'installed' } else { 'missing' }", installed]
+
+  launchers:
+    links:
+      "~/.local/bin/git-filter-repo.cmd": bin/git-filter-repo.cmd
+      "~/.local/bin/imgen.cmd": bin/imgen.cmd
+      "~/.local/bin/set-title.cmd": bin/set-title.cmd
+      "~/.local/bin/push-notify.ps1": bin/push-notify.ps1
+      "~/.local/bin/push-notify.cmd": bin/push-notify.cmd
+      "~/.local/bin/optimize-wsl-vhd.bat": bin/optimize-wsl-vhd.bat
+
+  fonts:
+    commands:
+      required-fonts:
+        - >-
+          $root = Join-Path $env:LOCALAPPDATA 'Microsoft\\Windows\\Fonts';
+          $cascadia = Get-ChildItem -LiteralPath $root -Filter '*NF*.ttf' -ErrorAction SilentlyContinue;
+          $libertinus = Get-ChildItem -LiteralPath $root -Filter '*.otf' -ErrorAction SilentlyContinue |
+          Where-Object { $_.Name -like '*Libertinus*' };
+          if ($cascadia -and $libertinus) { 'installed' } else { 'missing' }
+        - installed
+
+  debloat:
+    commands:
+      removed-apps:
+        - >-
+          $names = @('Microsoft.BingSearch', 'Microsoft.Copilot', 'Microsoft.Edge.GameAssist',
+          'Microsoft.GetHelp', 'Microsoft.MicrosoftJournal', 'Microsoft.MicrosoftStickyNotes',
+          'Microsoft.Whiteboard', 'Microsoft.Windows.DevHome', 'Microsoft.WindowsCamera',
+          'MicrosoftCorporationII.MicrosoftFamily', 'MicrosoftCorporationII.QuickAssist',
+          'Microsoft.MicrosoftOfficeHub', 'Microsoft.Todos', 'Microsoft.WidgetsPlatformRuntime',
+          'MicrosoftWindows.Client.WebExperience', 'AppUp.IntelTechnologyMDE',
+          'AppUp.IntelManagementandSecurityStatus', 'aimgr', 'Microsoft.Xbox.TCUI',
+          'Microsoft.XboxGamingOverlay', 'Microsoft.XboxIdentityProvider',
+          'Microsoft.XboxSpeechToTextOverlay');
+          $remaining = $names | Where-Object { Get-AppxPackage -Name "*$_*" -ErrorAction SilentlyContinue };
+          if ($remaining.Count -eq 0) { 'clean' } else { 'present' }
+        - clean
+      startup-entries:
+        - >-
+          $run = Get-ItemProperty 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run' -ErrorAction SilentlyContinue;
+          $names = @($run.PSObject.Properties.Name | Where-Object { $_ -like 'MicrosoftEdgeAutoLaunch_*' -or $_ -eq 'Steam' });
+          if ($names.Count -eq 0) { 'clean' } else { 'present' }
+        - clean
+      classic-teams:
+        - "if (((winget list --id Microsoft.Teams.Classic 2>$null) | Out-String) -notmatch 'Microsoft.Teams.Classic') { 'clean' } else { 'present' }"
+        - clean

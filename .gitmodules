@@ -62,3 +62,6 @@
 [submodule "tmux/plugins/tpm"]
 	path = config/tmux/plugins/tpm
 	url = https://github.com/tmux-plugins/tpm
+[submodule "envtest"]
+	path = envtest
+	url = git@github.com:budmonde/envtest.git

@@ -1,0 +1,8 @@
+schema_version: 2
+
+checks:
+  steam:
+    commands:
+      installed:
+        - "if (((winget list --id Valve.Steam 2>$null) | Out-String) -match 'Valve.Steam') { 'installed' } else { 'missing' }"
+        - installed

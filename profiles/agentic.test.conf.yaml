@@ -1,0 +1,41 @@
+schema_version: 2
+
+checks:
+  agents:
+    links:
+      "~/.agents": config/agents
+
+  git-auditor:
+    files:
+      ".githooks/commit-msg": file
+      ".githooks/post-commit": file
+      ".githooks/reference-transaction": file
+    commands:
+      hooks-path: [git config --get core.hooksPath, '^\.githooks\s*$']
+
+  codex:
+    links:
+      "~/.config/codex/AGENTS.md": config/agents/AGENTS.md
+    commands:
+      version: [codex --version]
+      home:
+        command: >-
+          $report = codex doctor --json | ConvertFrom-Json;
+          $actual = [IO.Path]::GetFullPath([string]$report.checks."config.load".details.CODEX_HOME);
+          $expected = [IO.Path]::GetFullPath($env:CODEX_HOME);
+          if ($actual -ieq $expected) { "configured" } else { "misconfigured" }
+        patterns: [configured]
+        timeout: 30
+      authentication: [codex login status, 'Logged in using']
+
+  opencode:
+    commands:
+      version: [opencode --version]
+
+  claude:
+    links:
+      "~/.config/claude/settings.json": config/claude/settings.json
+      "~/.config/claude/keybindings.json": config/claude/keybindings.json
+    commands:
+      version: [claude --version]
+      authentication: [claude auth status, '"loggedIn":\s*true']

@@ -1,0 +1,14 @@
+schema_version: 2
+
+checks:
+  cmake:
+    commands:
+      version: [cmake --version]
+
+  make:
+    commands:
+      version: [make --version]
+
+  gcc:
+    commands:
+      version: [gcc --version]

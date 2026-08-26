@@ -1,0 +1,22 @@
+schema_version: 2
+
+checks:
+  blender:
+    commands:
+      installed: ["if (((winget list --id BlenderFoundation.Blender 2>$null) | Out-String) -match 'BlenderFoundation.Blender') { 'installed' } else { 'missing' }", installed]
+
+  darktable:
+    commands:
+      installed: ["if (((winget list --id darktable.darktable 2>$null) | Out-String) -match 'darktable.darktable') { 'installed' } else { 'missing' }", installed]
+
+  figma:
+    commands:
+      installed: ["if (((winget list --id Figma.Figma 2>$null) | Out-String) -match 'Figma.Figma') { 'installed' } else { 'missing' }", installed]
+
+  gimp:
+    commands:
+      installed: ["if (((winget list --id GIMP.GIMP 2>$null) | Out-String) -match 'GIMP.GIMP') { 'installed' } else { 'missing' }", installed]
+
+  inkscape:
+    commands:
+      installed: ["if (((winget list --id Inkscape.Inkscape 2>$null) | Out-String) -match 'Inkscape.Inkscape') { 'installed' } else { 'missing' }", installed]

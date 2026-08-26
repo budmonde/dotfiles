@@ -1,0 +1,15 @@
+schema_version: 2
+
+checks:
+  fnm:
+    commands:
+      fnm-directory: ['fnm env --json | grep -F "\"FNM_DIR\":\"${XDG_DATA_HOME:-$HOME/.local/share}/fnm\""']
+
+  node:
+    commands:
+      repl-history: ['test "$NODE_REPL_HISTORY" = "${XDG_STATE_HOME:-$HOME/.local/state}/node/history"']
+
+  npm:
+    commands:
+      npm-userconfig: ['test "$(npm config get userconfig)" = "${XDG_CONFIG_HOME:-$HOME/.config}/npm/npmrc"']
+      npm-cache: ['test "$(npm config get cache)" = "${XDG_CACHE_HOME:-$HOME/.cache}/npm"']

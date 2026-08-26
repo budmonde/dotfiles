@@ -1,0 +1,35 @@
+schema_version: 2
+
+checks:
+  fnm:
+    commands:
+      fnm-directory:
+        - >-
+          $expected = Join-Path $env:XDG_DATA_HOME "fnm";
+          $actual = (fnm env --json | ConvertFrom-Json).FNM_DIR;
+          if ($actual -eq $expected) { "configured" } else { "misconfigured" }
+        - configured
+
+  node:
+    commands:
+      repl-history:
+        - >-
+          $expected = Join-Path $env:XDG_STATE_HOME "node\history";
+          $actual = (node -p "process.env.NODE_REPL_HISTORY").Trim();
+          if ($actual -eq $expected) { "configured" } else { "misconfigured" }
+        - configured
+
+  npm:
+    commands:
+      npm-userconfig:
+        - >-
+          $expected = Join-Path $env:XDG_CONFIG_HOME "npm\npmrc";
+          $actual = (npm config get userconfig).Trim();
+          if ($actual -eq $expected) { "configured" } else { "misconfigured" }
+        - configured
+      npm-cache:
+        - >-
+          $expected = Join-Path $env:XDG_CACHE_HOME "npm";
+          $actual = (npm config get cache).Trim();
+          if ($actual -eq $expected) { "configured" } else { "misconfigured" }
+        - configured

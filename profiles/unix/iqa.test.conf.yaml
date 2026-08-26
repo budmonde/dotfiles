@@ -1,0 +1,10 @@
+schema_version: 2
+
+checks:
+  vlc:
+    commands:
+      version: [vlc --version]
+
+  ffmpeg:
+    commands:
+      version: [ffmpeg -version]

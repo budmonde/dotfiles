@@ -1,0 +1,10 @@
+schema_version: 2
+
+checks:
+  miktex:
+    commands:
+      installed: ["if (((winget list --id MiKTeX.MiKTeX 2>$null) | Out-String) -match 'MiKTeX.MiKTeX') { 'installed' } else { 'missing' }", installed]
+
+  google-chrome:
+    commands:
+      installed: ["if (((winget list --id Google.Chrome 2>$null) | Out-String) -match 'Google.Chrome') { 'installed' } else { 'missing' }", installed]

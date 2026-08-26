@@ -1,0 +1,19 @@
+schema_version: 2
+
+checks:
+  fnm:
+    path: [fnm]
+    commands:
+      version: [fnm --version]
+
+  node:
+    path: [node]
+    commands:
+      version: [node --version]
+
+  npm:
+    links:
+      "~/.config/npm": config/npm
+    path: [npm]
+    commands:
+      version: [npm --version]

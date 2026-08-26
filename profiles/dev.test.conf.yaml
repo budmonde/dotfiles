@@ -1,0 +1,7 @@
+schema_version: 2
+
+checks:
+  go:
+    path: [go]
+    commands:
+      version: [go version]

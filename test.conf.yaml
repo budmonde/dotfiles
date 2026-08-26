@@ -1,0 +1,124 @@
+schema_version: 2
+
+checks:
+  dotfiles-common:
+    commands:
+      worktree-clean: [git status --porcelain, '!\S']
+      upstream-synchronized: ['git rev-list --left-right --count "@{upstream}...HEAD"', '^0\s+0\s*$']
+
+  # Shell
+  shell:
+    links:
+      "~/.shellenv": config/shellenv
+      "~/.profile": config/profile
+      "~/.bashrc": config/bashrc
+      "~/.bash_profile": config/bash_profile
+      "~/.config/shell": config/shell
+      "~/.config/bash": config/bash
+      "~/.config/readline": config/readline
+
+  fzf:
+    path: [fzf, "${XDG_DATA_HOME:-$HOME/.local/share}/fzf/bin"]
+    commands:
+      version: [fzf --version]
+
+  # CLI tools
+  ripgrep:
+    path: [rg, ["~/.local/bin", "%LOCALAPPDATA%/Microsoft/WinGet/Links"]]
+    commands:
+      version: [rg --version, ripgrep]
+
+  rclone:
+    path: [rclone, ["~/.local/bin", "%LOCALAPPDATA%/Microsoft/WinGet/Links"]]
+    commands:
+      version: [rclone version, rclone]
+
+  # Git / SSH
+  ssh:
+    links:
+      "~/.ssh/config": config/ssh/config
+    path: [ssh]
+    commands:
+      configuration: [ssh -G github.com, '(?m)^user git$', '(?m)^identitiesonly yes$']
+
+  git:
+    links:
+      "~/.config/git": config/git
+    path: [git]
+    commands:
+      version: [git --version, git version]
+      configuration: [git config --show-origin --get user.email, '(?i)config[\\/]git[\\/]config"?\s+budmonde@gmail\.com']
+      submodules: ["git submodule status --recursive", "!(?m)^-"]
+      hooks-path: ["git config --get core.hooksPath", '\.githooks']
+      authentication:
+        - ssh -T -o BatchMode=yes -o ConnectTimeout=10 -o ConnectionAttempts=1 -o PermitLocalCommand=no github.com 2>&1; exit 0
+        - successfully authenticated
+
+  # Editors
+  neovim:
+    links:
+      "~/.config/nvim": config/nvim
+    path: [nvim, ["~/.local/bin", "%ProgramFiles%/Neovim"]]
+    commands:
+      version: [nvim --version, NVIM]
+      configuration: ['nvim --headless "+lua print(vim.o.ttimeoutlen)" "+qa"', '(?m)^50$']
+
+  # Python runtime
+  uv:
+    links:
+      "~/.config/python": config/python
+      "~/.pdbrc": config/python/pdbrc
+    path: [uv, ["~/.local/bin", "%LOCALAPPDATA%/Microsoft/WinGet/Packages"]]
+    commands:
+      version: [uv --version, uv]
+      python-startup:
+        - uv run --no-project python -c "import os, runpy; from pathlib import Path; startup = Path(os.environ['PYTHONSTARTUP']); expected = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'python' / 'pythonrc'; assert startup.resolve() == expected.resolve(); runpy.run_path(startup); print('loaded')"
+        - loaded
+      python-history:
+        - uv run --no-project python -c "import os, runpy; from pathlib import Path; startup = Path(os.environ['PYTHONSTARTUP']); expected = Path(os.environ.get('XDG_STATE_HOME', Path.home() / '.local/state')) / 'python' / 'history'; history = Path(os.environ['PYTHONHISTFILE']); assert history.resolve() == expected.resolve(); scope = runpy.run_path(startup); assert scope['readline'] is None or Path(scope['histfile']).resolve() == history.resolve(); print('configured')"
+        - configured
+      pdb:
+        - >-
+          uv run --no-project python -c "import pdb; debugger = pdb.Pdb();
+          assert any('pdb_history' in line for line in debugger.rcLines);
+          exec('\n'.join(line[1:] for line in debugger.rcLines if line.startswith('!')));
+          print('loaded')"
+        - loaded
+
+  # Misc
+  github-cli:
+    links:
+      "~/.config/gh": config/gh
+    path: [gh, ["~/.local/bin", "%ProgramFiles%/GitHub CLI"]]
+    commands:
+      version: [gh --version, gh version]
+      authentication: [gh auth status, 'Logged in to github\.com']
+
+  shellver:
+    links:
+      "~/.config/shellver/common": shellver
+    path: [shellver, "~/.local/bin"]
+    commands:
+      help: [shellver --help]
+      common-status: [shellver status common, 'status:\s+current']
+      machine-status: [shellver status machine, 'status:\s+current']
+
+  git-filter-repo:
+    links:
+      "~/.local/bin/git-filter-repo": bin/git-filter-repo
+    path: [git-filter-repo, "~/.local/bin"]
+    commands:
+      help: [git-filter-repo --help, 'Rewrite \(or analyze\) repository history']
+
+  imgen:
+    links:
+      "~/.local/bin/imgen": bin/imgen
+    path: [imgen, "~/.local/bin"]
+    commands:
+      help: [imgen --help, "usage: imgen"]
+      credentials: [imgen --dry-run -o env-status-check.png "configuration validation", 'Authorization: Bearer <redacted>']
+
+  set-title:
+    links:
+      "~/.local/bin/set-title": bin/set-title
+    path: [set-title, "~/.local/bin"]

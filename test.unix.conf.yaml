@@ -1,0 +1,37 @@
+schema_version: 2
+
+checks:
+  zsh:
+    links:
+      "~/.zshenv": config/zshenv
+      "~/.zshrc": config/zshrc
+      "~/.config/zsh": config/zsh
+    path: [zsh]
+    commands:
+      version: [zsh --version, zsh]
+      configuration: ["zsh -ic 'print -r -- \"$KEYTIMEOUT\"'", '(?m)^1$']
+
+  tmux:
+    links:
+      "~/.config/tmux": config/tmux
+    files:
+      "~/.config/tmux/plugins/tpm/tpm": file
+      "~/.config/tmux/plugins/tmux-resurrect/resurrect.tmux": file
+      "~/.config/tmux/plugins/tmux-continuum/continuum.tmux": file
+    path: [tmux]
+    commands:
+      version: [tmux -V, tmux]
+      configuration:
+        - >-
+          tmux -L dotfiles-test-$$ -f "$HOME/.config/tmux/tmux.conf"
+          start-server \; show-options -gv prefix \; list-keys -T prefix I \; kill-server
+        - C-a
+        - run-shell
+
+  push-notify:
+    if: 'test -n "$WSL_DISTRO_NAME"'
+    links:
+      "~/.local/bin/push-notify": bin/push-notify
+    path: [push-notify, ~/.local/bin]
+    commands:
+      notification: ['push-notify --silent "dotfiles environment test" "push-notify validation"']
