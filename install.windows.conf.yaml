@@ -19,7 +19,6 @@
         force: true # force needed to overwrite windows default
 
     # Windows launchers for bin commands
-    ~/.local/bin/git-fetch-repos.cmd: bin/git-fetch-repos.cmd
     ~/.local/bin/git-filter-repo.cmd: bin/git-filter-repo.cmd
     ~/.local/bin/imgen.cmd: bin/imgen.cmd
     ~/.local/bin/reddit.cmd: bin/reddit.cmd
