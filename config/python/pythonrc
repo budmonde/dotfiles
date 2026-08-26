@@ -16,8 +16,12 @@ if readline is not None:
 
     # Persistent history.
     state_home = os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state"))
-    histfile = os.path.join(state_home, "python", "history")
-    os.makedirs(os.path.dirname(histfile), exist_ok=True)
+    histfile = os.environ.get(
+        "PYTHONHISTFILE", os.path.join(state_home, "python", "history")
+    )
+    histdir = os.path.dirname(histfile)
+    if histdir:
+        os.makedirs(histdir, exist_ok=True)
     try:
         readline.read_history_file(histfile)
     except FileNotFoundError:
