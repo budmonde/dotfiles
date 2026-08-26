@@ -26,9 +26,9 @@
     # CLI tools
     ~/.config/readline: config/readline
 
-    # Git / SSH
-    ~/.config/git: config/git
+    # SSH / Git
     ~/.ssh/config: config/ssh/config
+    ~/.config/git: config/git
 
     # Editors
     ~/.vim: config/vim
