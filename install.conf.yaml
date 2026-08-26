@@ -11,8 +11,6 @@
     - '~/.config'
     - '~/.ssh'
     - '~/.local/bin'
-    - '$XDG_DATA_HOME/jupyter'
-    - '~/.local/share/jupyter'
 
 - link:
     # Git / SSH
@@ -28,12 +26,6 @@
     ~/.pdbrc: config/python/pdbrc
     ~/.config/npm: config/npm
     ~/.config/jupyter: config/jupyter
-    $XDG_DATA_HOME/jupyter/nbextensions:
-        path: config/jupyter/nbextensions
-        if: '[ -n "$XDG_DATA_HOME" ]'
-    ~/.local/share/jupyter/nbextensions:
-        path: config/jupyter/nbextensions
-        if: '[ -z "$XDG_DATA_HOME" ]'
 
     # Misc
     ~/.config/gh: config/gh
