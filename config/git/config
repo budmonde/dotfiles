@@ -108,3 +108,5 @@
 [include]
 	path = ~/.config/git/config.local
 	path = ~/.agents/git-auditor.config
+[credential "https://git.overleaf.com"]
+	provider = generic
