@@ -4,7 +4,7 @@
 # Usage: ./install-profile <profile> [profile...] [dotbot-options...]
 #
 # Profiles are discovered dynamically from profiles/unix/*.conf.yaml.
-# A matching profiles/<name>.conf.yaml is applied after the platform fragment.
+# A matching profiles/<name>.conf.yaml is applied before the platform fragment.
 #
 # Examples:
 #   ./install-profile agentic

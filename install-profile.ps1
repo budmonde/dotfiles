@@ -2,7 +2,7 @@
 # Usage: .\install-profile.ps1 <profile> [profile...] [dotbot-options...]
 #
 # Profiles are discovered dynamically from profiles\windows\*.conf.yaml.
-# A matching profiles\<name>.conf.yaml is applied after the platform fragment.
+# A matching profiles\<name>.conf.yaml is applied before the platform fragment.
 #
 # Examples:
 #   .\install-profile.ps1 collab
