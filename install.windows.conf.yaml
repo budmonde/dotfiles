@@ -21,7 +21,6 @@
     # Windows launchers for bin commands
     ~/.local/bin/git-filter-repo.cmd: bin/git-filter-repo.cmd
     ~/.local/bin/imgen.cmd: bin/imgen.cmd
-    ~/.local/bin/reddit.cmd: bin/reddit.cmd
     ~/.local/bin/set-title.cmd: bin/set-title.cmd
     ~/.local/bin/push-notify.ps1: bin/push-notify.ps1
     ~/.local/bin/push-notify.cmd:
