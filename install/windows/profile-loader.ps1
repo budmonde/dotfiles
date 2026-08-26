@@ -1,27 +1,14 @@
 [CmdletBinding()]
 param(
-    [string]$DocumentsPath = [Environment]::GetFolderPath('MyDocuments'),
-    [string]$HomePath = $HOME
+    [string]$DocumentsPath = [Environment]::GetFolderPath('MyDocuments')
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $ProfileSourcePath = (Resolve-Path (Join-Path $PSScriptRoot '..\..\config\profile.ps1')).Path
-$HomeLoaderStart = '# >>> dotfiles PowerShell profile entry point >>>'
-$HomeLoaderEnd = '# <<< dotfiles PowerShell profile entry point <<<'
 $DocumentsLoaderStart = '# >>> dotfiles PowerShell profile loader >>>'
 $DocumentsLoaderEnd = '# <<< dotfiles PowerShell profile loader <<<'
-$escapedProfileSourcePath = $ProfileSourcePath.Replace("'", "''")
-$HomeLoaderBlock = @"
-$HomeLoaderStart
-`$dotfilesProfile = '$escapedProfileSourcePath'
-
-if (Test-Path -LiteralPath `$dotfilesProfile) {
-    . `$dotfilesProfile
-}
-$HomeLoaderEnd
-"@.TrimEnd()
 $DocumentsLoaderBlock = @"
 $DocumentsLoaderStart
 `$dotfilesProfile = Join-Path `$HOME '.profile.ps1'
@@ -104,9 +91,6 @@ function Install-ProfileLoader {
     [System.IO.File]::WriteAllText($ProfilePath, $updatedContent + [Environment]::NewLine, $encoding)
     Write-Host "PowerShell profile loader installed at $ProfilePath"
 }
-
-$HomeProfilePath = Join-Path $HomePath '.profile.ps1'
-Install-ProfileLoader -ProfilePath $HomeProfilePath -LoaderStart $HomeLoaderStart -LoaderEnd $HomeLoaderEnd -LoaderBlock $HomeLoaderBlock
 
 $DocumentsProfilePaths = @(
     (Join-Path $DocumentsPath 'WindowsPowerShell\Microsoft.PowerShell_profile.ps1'),

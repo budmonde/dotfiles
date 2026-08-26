@@ -1,10 +1,15 @@
-. "$PSScriptRoot\powershell\functions.ps1"
+$profileItem = Get-Item -LiteralPath $PSCommandPath -Force
+$profileTarget = @($profileItem.Target)[0]
+$profilePath = if ($profileTarget) { [string]$profileTarget } else { $PSCommandPath }
+$profileRoot = Split-Path -Parent $profilePath
+
+. "$profileRoot\powershell\functions.ps1"
 $isInteractive = Test-InteractiveShell
-. "$PSScriptRoot\environment.ps1" -Interactive:$isInteractive
+. "$profileRoot\environment.ps1" -Interactive:$isInteractive
 
 if ($isInteractive) {
-    . "$PSScriptRoot\powershell\settings.ps1"
-    . "$PSScriptRoot\powershell\plugins.ps1"
-    . "$PSScriptRoot\powershell\aliases.ps1"
-    . "$PSScriptRoot\powershell\prompt.ps1"
+    . "$profileRoot\powershell\settings.ps1"
+    . "$profileRoot\powershell\plugins.ps1"
+    . "$profileRoot\powershell\aliases.ps1"
+    . "$profileRoot\powershell\prompt.ps1"
 }
