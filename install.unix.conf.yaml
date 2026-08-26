@@ -19,6 +19,11 @@
     # Tmux
     ~/.config/tmux: config/tmux
 
+    # WSL->Windows push notification
+    ~/.local/bin/push-notify:
+        path: bin/push-notify
+        if: '[ -n "$WSL_DISTRO_NAME" ]'
+
 - shell:
     - [./install/unix/shellver, Installing Shellver]
 
@@ -38,16 +43,4 @@
     # Misc
     - [./install/unix/gh, Installing GitHub CLI]
 
-# User commands and binaries installed above
-- link:
-    ~/.local/bin/git-fetch-repos: bin/git-fetch-repos
-    ~/.local/bin/git-filter-repo: bin/git-filter-repo
-    ~/.local/bin/imgen: bin/imgen
-    ~/.local/bin/reddit: bin/reddit
-    ~/.local/bin/set-title: bin/set-title
-    ~/.local/bin/push-notify:
-        path: bin/push-notify
-        if: '[ -n "$WSL_DISTRO_NAME" ]'
-
-- shell:
     - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

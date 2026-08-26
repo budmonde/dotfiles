@@ -43,6 +43,13 @@
     ~/.config/gh: config/gh
     ~/.config/shellver/common: shellver
 
+    # Common launchers
+    ~/.local/bin/git-fetch-repos: bin/git-fetch-repos
+    ~/.local/bin/git-filter-repo: bin/git-filter-repo
+    ~/.local/bin/imgen: bin/imgen
+    ~/.local/bin/reddit: bin/reddit
+    ~/.local/bin/set-title: bin/set-title
+
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
     - [git config core.hooksPath .githooks, Setting up git hooks]
