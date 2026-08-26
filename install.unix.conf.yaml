@@ -29,6 +29,7 @@
 
     # Shell
     - [./install/unix/fzf, Installing fzf]
+    - [~/.config/tmux/plugins/tpm/bin/install_plugins, Installing tmux plugins]
 
     # CLI tools
     - [./install/unix/rg, Installing ripgrep]
