@@ -1,0 +1,9 @@
+# Shared Node.js configuration applied before the platform-specific fragment.
+
+- defaults:
+    link:
+        create: true
+        relink: true
+
+- link:
+    ~/.config/npm: config/npm

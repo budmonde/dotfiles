@@ -12,24 +12,11 @@
 - clean:
     - '~'
     - '~/.config'
-    - '~/.config/shellver/common'
 
 - link:
     "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json":
         path: config/terminal/settings.json
         force: true
-    ~/.config/shellver/common: shellver
-
-    # Git Bash support: minimal bash config so rare bash sessions write history
-    # to XDG-compliant paths (~/.local/state/bash/history) instead of
-    # ~/.bash_history. No content changes needed; .bashrc / .bash_profile
-    # already source ~/.config/{bash,shell}/.
-    ~/.shellenv: config/shellenv
-    ~/.profile: config/profile
-    ~/.bashrc: config/bashrc
-    ~/.bash_profile: config/bash_profile
-    ~/.config/shell: config/shell
-    ~/.config/bash: config/bash
 
 - shell:
     - [powershell -NonInteractive -File install\windows\shellver.ps1, Installing Shellver]
@@ -51,22 +38,21 @@
     - [pwsh -NonInteractive -File install\windows\completion-predictor.ps1, Installing CompletionPredictor]
 
     # CLI tools
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Neovim.Neovim, Installing Neovim]
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId astral-sh.uv, Installing uv]
     - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC, Installing ripgrep]
     - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Rclone.Rclone, Installing rclone]
+
+    # Editors
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Neovim.Neovim, Installing Neovim]
+
+    # Python runtime
+    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId astral-sh.uv, Installing uv]
+
+    # Misc
     - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GitHub.cli, Installing GitHub CLI]
-
     - [powershell -NonInteractive -File install\windows\fonts.ps1, Installing fonts]
-
     - [powershell -NonInteractive -File install\windows\debloat.ps1, Removing bloatware]
 
-# Windows command launchers and their Python support files
-- defaults:
-    link:
-        create: true
-        relink: true
-
+# User commands and binaries installed above
 - link:
     ~/.local/bin/git-fetch-repos: bin/git-fetch-repos
     ~/.local/bin/git-fetch-repos.cmd: bin/git-fetch-repos.cmd

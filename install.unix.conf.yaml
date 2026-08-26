@@ -9,23 +9,15 @@
 - clean:
     - '~'
     - '~/.config'
-    - '~/.config/shellver/common'
 
 - link:
-    # Root rc files (required by shell spec)
-    ~/.shellenv: config/shellenv
-    ~/.profile: config/profile
-    ~/.bashrc: config/bashrc
-    ~/.bash_profile: config/bash_profile
+    # Zshell
     ~/.zshenv: config/zshenv
     ~/.zshrc: config/zshrc
-
-    # Shell
-    ~/.config/shell: config/shell
-    ~/.config/bash: config/bash
     ~/.config/zsh: config/zsh
+
+    # Tmux
     ~/.config/tmux: config/tmux
-    ~/.config/shellver/common: shellver
 
 - shell:
     - [./install/unix/shellver, Installing Shellver]
@@ -34,10 +26,16 @@
     - [./install/unix/fzf, Installing fzf]
 
     # CLI tools
-    - [./install/unix/nvim, Installing neovim]
-    - [./install/unix/uv, Installing uv]
     - [./install/unix/rg, Installing ripgrep]
     - [./install/unix/rclone, Installing rclone]
+
+    # Editors
+    - [./install/unix/nvim, Installing neovim]
+
+    # Python runtime
+    - [./install/unix/uv, Installing uv]
+
+    # Misc
     - [./install/unix/gh, Installing GitHub CLI]
 
 # User commands and binaries installed above

@@ -13,6 +13,19 @@
     - '~/.local/bin'
 
 - link:
+    # Root rc files (required by shell spec)
+    ~/.shellenv: config/shellenv
+    ~/.profile: config/profile
+    ~/.bashrc: config/bashrc
+    ~/.bash_profile: config/bash_profile
+
+    # Bash
+    ~/.config/shell: config/shell
+    ~/.config/bash: config/bash
+
+    # CLI tools
+    ~/.config/readline: config/readline
+
     # Git / SSH
     ~/.config/git: config/git
     ~/.ssh/config: config/ssh/config
@@ -21,15 +34,14 @@
     ~/.vim: config/vim
     ~/.config/nvim: config/nvim
 
-    # Languages
+    # Python runtime
     ~/.config/python: config/python
     ~/.pdbrc: config/python/pdbrc
-    ~/.config/npm: config/npm
     ~/.config/jupyter: config/jupyter
 
     # Misc
     ~/.config/gh: config/gh
-    ~/.config/readline: config/readline
+    ~/.config/shellver/common: shellver
 
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
