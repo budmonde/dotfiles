@@ -1,0 +1,18 @@
+{
+    "security.allowedUNCHosts": [
+        "wsl.localhost"
+    ],
+    "makefile.configureOnOpen": true,
+    "security.workspace.trust.untrustedFiles": "open",
+    "window.enableMenuBarMnemonics": false,
+    "[latex]": {
+        "editor.wordWrap": "on"
+    },
+    "[tex]": {
+        "editor.wordWrap": "on"
+    },
+    "explorer.confirmDragAndDrop": false,
+    "chat.editing.confirmEditRequestRetry": false,
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "editor.unicodeHighlight.nonBasicASCII": false
+}
