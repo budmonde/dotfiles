@@ -11,7 +11,5 @@
       description: Registering agentic Git-auditor hooks with the common repository
     - command: powershell -NonInteractive -File install\windows\opencode.ps1
       description: Installing OpenCode
-    - command: powershell -NonInteractive -Command "npm install -g '@openai/codex'"
-      description: Installing Codex
     - command: powershell -NonInteractive -Command "shellver bump machine"
       description: Refreshing Shellver machine generation

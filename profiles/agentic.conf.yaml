@@ -18,3 +18,7 @@
     ~/.config/claude/keybindings.json: config/claude/keybindings.json
 
     ~/.config/opencode: config/opencode
+
+- shell:
+    - ["npm install -g '@openai/codex'", Installing Codex]
+    - ["npm install -g '@anthropic-ai/claude-code'", Installing Claude Code]

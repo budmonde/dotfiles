@@ -10,6 +10,5 @@
     - ['for h in commit-msg post-commit reference-transaction; do ln -sfn "$HOME/.agents/plugins/git-auditor/hooks/$h" ".githooks/$h"; done', Registering agentic Git-auditor hooks with the common repository]
     - ['chmod +x config/agents/plugins/git-auditor/hooks/commit-msg config/agents/plugins/git-auditor/hooks/post-commit config/agents/plugins/git-auditor/hooks/reference-transaction 2>/dev/null || true', Marking commit-auditor hook scripts executable]
     - [bash ./install/unix/opencode, Installing OpenCode]
-    - ["npm install -g '@openai/codex'", Installing Codex]
     - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL (opencode workaround)]
     - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]
