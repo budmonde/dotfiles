@@ -24,7 +24,12 @@ checks:
 
   # CLI tools
   ripgrep:
-    path: [rg, ["~/.local/bin", "%LOCALAPPDATA%/Microsoft/WinGet/Links"]]
+    path:
+      command: rg
+      locations:
+        - "~/.local/bin"
+        - "%LOCALAPPDATA%/Microsoft/WinGet/Links"
+        - "${XDG_DATA_HOME:-$HOME/.local/share}/fnm/node-versions"
     commands:
       version: [rg --version, ripgrep]
 
