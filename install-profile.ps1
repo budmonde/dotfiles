@@ -14,6 +14,7 @@ $ErrorActionPreference = "Stop"
 $DOTBOT_DIR = "dotbot"
 $DOTBOT_BIN = "bin/dotbot"
 $BASEDIR = $PSScriptRoot
+$DOTBOT_FAILURE_OUTPUT_PLUGIN = Join-Path $BASEDIR "dotbot-plugins\failure_output.py"
 
 $ProfilesDir = Join-Path $BASEDIR "profiles\windows"
 $ValidProfiles = @(Get-ChildItem -LiteralPath $ProfilesDir -Filter "*.conf.yaml" -File |
@@ -72,7 +73,7 @@ foreach ($PYTHON in ('python', 'python3')) {
             ![string]::IsNullOrEmpty((&$PYTHON -V))
             $ErrorActionPreference = "Stop" }) {
         $DOTBOT_PATH = Join-Path $BASEDIR -ChildPath $DOTBOT_DIR | Join-Path -ChildPath $DOTBOT_BIN
-        &$PYTHON $DOTBOT_PATH -d $BASEDIR -c @Configs @DotbotArgs
+        &$PYTHON $DOTBOT_PATH --plugin $DOTBOT_FAILURE_OUTPUT_PLUGIN -d $BASEDIR -c @Configs @DotbotArgs
         return
     }
 }
