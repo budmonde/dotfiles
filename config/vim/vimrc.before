@@ -37,10 +37,6 @@ if !has('nvim')
     let &viminfofile = s:state_dir . '/vim/viminfo'
 endif
 
-" Load device-specific vim config (e.g. dotfiles-local)
-if isdirectory(expand('~/.vim_local'))
-    set rtp+=~/.vim_local
-endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""" Appearance and Window Dynamics
