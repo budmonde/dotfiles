@@ -75,3 +75,6 @@ checks:
       classic-teams:
         - "if (((winget list --id Microsoft.Teams.Classic 2>$null) | Out-String) -notmatch 'Microsoft.Teams.Classic') { 'clean' } else { 'present' }"
         - clean
+      acrobat-artifact:
+        - "if (-not (Test-Path -LiteralPath (Join-Path $env:USERPROFILE '.ms-ad'))) { 'clean' } else { 'present' }"
+        - clean

@@ -92,6 +92,18 @@ if (Test-Path $personalOneDrive) {
     }
 }
 
+$acrobatArtifact = Join-Path $env:USERPROFILE ".ms-ad"
+if (Test-Path -LiteralPath $acrobatArtifact -PathType Container) {
+    $items = Get-ChildItem -LiteralPath $acrobatArtifact -Force
+    if (-not $items) {
+        Write-Host "Removing empty Adobe Acrobat .ms-ad folder" -ForegroundColor Yellow
+        Remove-Item -LiteralPath $acrobatArtifact -Force
+        $removed++
+    } else {
+        Write-Host "Skipping Adobe Acrobat .ms-ad folder (not empty)" -ForegroundColor DarkYellow
+    }
+}
+
 Write-Host ""
 Write-Host "Done. Removed: $removed, Failed: $skipped" -ForegroundColor Green
 
