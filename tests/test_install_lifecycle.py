@@ -114,9 +114,10 @@ class NpmGlobalTests(unittest.TestCase):
 class ManifestTests(unittest.TestCase):
     def manifests(self):
         return [
-            REPO_ROOT / "install.conf.yaml",
+            REPO_ROOT / "install.before.conf.yaml",
             REPO_ROOT / "install.unix.conf.yaml",
             REPO_ROOT / "install.windows.conf.yaml",
+            REPO_ROOT / "install.after.conf.yaml",
             *sorted((REPO_ROOT / "profiles").rglob("*.conf.yaml")),
         ]
 
@@ -169,6 +170,79 @@ class ManifestTests(unittest.TestCase):
         }
         references = {reference for _, reference in self.references()}
         self.assertEqual(resource_installers - references, set())
+
+
+class ManifestOrderingTests(unittest.TestCase):
+    def test_every_link_manifest_declares_its_cleanup_surface(self):
+        manifests = [
+            *REPO_ROOT.glob("install*.conf.yaml"),
+            *(REPO_ROOT / "profiles").rglob("*.conf.yaml"),
+        ]
+        for manifest in manifests:
+            content = manifest.read_text(encoding="utf-8")
+            if "\n- link:\n" in "\n" + content:
+                self.assertIn("\n- clean:\n", "\n" + content, str(manifest))
+
+    def test_root_defaults_are_shared_and_platform_cleanup_is_local(self):
+        before = (REPO_ROOT / "install.before.conf.yaml").read_text(encoding="utf-8")
+        self.assertIn("- defaults:", before)
+        for manifest in ("install.unix.conf.yaml", "install.windows.conf.yaml"):
+            content = (REPO_ROOT / manifest).read_text(encoding="utf-8")
+            self.assertNotIn("- defaults:", content, manifest)
+            self.assertIn("- clean:", content, manifest)
+
+    def test_root_launchers_apply_before_platform_after(self):
+        expected = {
+            "install.sh": '-c "${BEFORE_CONFIG}" "${UNIX_CONFIG}" "${AFTER_CONFIG}"',
+            "install.ps1": "-c $BEFORE_CONFIG $WINDOWS_CONFIG $AFTER_CONFIG",
+        }
+        for launcher, invocation in expected.items():
+            content = (REPO_ROOT / launcher).read_text(encoding="utf-8")
+            self.assertIn(invocation, content, launcher)
+
+    def test_profile_launchers_apply_before_platform_after(self):
+        expectations = {
+            "install-profile": (
+                'CONFIGS+=("${before_conf}")',
+                'CONFIGS+=("${conf}")',
+                'CONFIGS+=("${after_conf}")',
+            ),
+            "install-profile.ps1": (
+                "$Configs += $beforeConf",
+                "$Configs += $conf",
+                "$Configs += $afterConf",
+            ),
+        }
+        for launcher, fragments in expectations.items():
+            content = (REPO_ROOT / launcher).read_text(encoding="utf-8")
+            positions = [content.index(fragment) for fragment in fragments]
+            self.assertEqual(positions, sorted(positions), launcher)
+
+    def test_neovim_restore_is_shared_post_platform_work(self):
+        action = "install/shared/nvim-plugins.py"
+        after = (REPO_ROOT / "install.after.conf.yaml").read_text(encoding="utf-8")
+        self.assertIn(action, after)
+        for manifest in ("install.unix.conf.yaml", "install.windows.conf.yaml"):
+            content = (REPO_ROOT / manifest).read_text(encoding="utf-8")
+            self.assertNotIn(action, content, manifest)
+
+    def test_agentic_shared_setup_is_pre_platform_work(self):
+        installer = "install/shared/git-auditor.py"
+        before = (REPO_ROOT / "profiles" / "agentic.before.conf.yaml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(installer, before)
+        for platform in ("unix", "windows"):
+            manifest = REPO_ROOT / "profiles" / platform / "agentic.conf.yaml"
+            self.assertNotIn(installer, manifest.read_text(encoding="utf-8"))
+
+    def test_cross_platform_profile_finalizers_are_shared(self):
+        for profile in ("agentic", "dev", "iqa", "node", "research"):
+            after = REPO_ROOT / "profiles" / "{}.after.conf.yaml".format(profile)
+            self.assertIn("shellver bump machine", after.read_text(encoding="utf-8"))
+            for platform in ("unix", "windows"):
+                manifest = REPO_ROOT / "profiles" / platform / "{}.conf.yaml".format(profile)
+                self.assertNotIn("shellver bump machine", manifest.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

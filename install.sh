@@ -11,14 +11,16 @@ case "$(uname -s)" in
         ;;
 esac
 
-COMMON_CONFIG="install.conf.yaml"
+BEFORE_CONFIG="install.before.conf.yaml"
 UNIX_CONFIG="install.unix.conf.yaml"
+AFTER_CONFIG="install.after.conf.yaml"
 DOTBOT_DIR="dotbot"
 DOTBOT_BIN="bin/dotbot"
 DOTBOT_FAILURE_OUTPUT_PLUGIN="dotbot-plugins/failure_output.py"
 DOTBOT_INSTALL_DIR="dotbot-plugins/install"
 DOTBOT_INSTALL_PLUGIN="${DOTBOT_INSTALL_DIR}/install.py"
 BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export PATH="${HOME}/.local/bin:${PATH}"
 
 cd "${BASEDIR}"
 git submodule sync --quiet --recursive -- "${DOTBOT_DIR}" "${DOTBOT_INSTALL_DIR}"
@@ -28,5 +30,5 @@ git submodule update --init --recursive -- "${DOTBOT_DIR}" "${DOTBOT_INSTALL_DIR
     --plugin "${BASEDIR}/${DOTBOT_FAILURE_OUTPUT_PLUGIN}" \
     --plugin "${BASEDIR}/${DOTBOT_INSTALL_PLUGIN}" \
     -d "${BASEDIR}" \
-    -c "${COMMON_CONFIG}" "${UNIX_CONFIG}" \
+    -c "${BEFORE_CONFIG}" "${UNIX_CONFIG}" "${AFTER_CONFIG}" \
     "${@}"

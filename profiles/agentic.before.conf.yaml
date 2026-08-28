@@ -6,6 +6,8 @@
         relink: true
 
 - clean:
+    - '~'
+    - ~/.config
     - ~/.config/claude
     - ~/.config/codex
     - ~/.config/opencode
@@ -22,3 +24,7 @@
 - install:
     - [install/shared/codex.py, Installing Codex CLI]
     - [install/shared/claude-code.py, Installing Claude Code]
+    - [install/shared/git-auditor.py, Installing Git-auditor]
+
+- shell:
+    - [git config core.hooksPath .githooks, Selecting the common repository hook system]

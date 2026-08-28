@@ -1,0 +1,7 @@
+# Cross-platform configuration applied after the platform-specific manifest.
+
+- install:
+    - [install/shared/nvim-plugins.py, Restoring Neovim plugins from lazy-lock.json]
+
+- shell:
+    - [shellver bump machine, Refreshing Shellver machine generation]

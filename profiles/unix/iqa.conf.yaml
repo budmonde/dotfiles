@@ -7,6 +7,3 @@
 - install:
     - [install/unix/apt/vlc, Installing VLC]
     - [install/unix/apt/ffmpeg, Installing FFmpeg]
-
-- shell:
-    - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

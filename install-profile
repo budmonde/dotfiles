@@ -4,7 +4,8 @@
 # Usage: ./install-profile <profile> [profile...] [dotbot-options...]
 #
 # Profiles are discovered dynamically from profiles/unix/*.conf.yaml.
-# A matching profiles/<name>.conf.yaml is applied before the platform fragment.
+# Matching profiles/<name>.before.conf.yaml and profiles/<name>.after.conf.yaml
+# fragments are applied around the platform fragment when present.
 #
 # Examples:
 #   ./install-profile agentic
@@ -87,11 +88,15 @@ for profile in "${PROFILES[@]}"; do
         fi
         exit 1
     fi
-    shared_conf="profiles/${profile}.conf.yaml"
-    if [ -f "${BASEDIR}/${shared_conf}" ]; then
-        CONFIGS+=("${shared_conf}")
+    before_conf="profiles/${profile}.before.conf.yaml"
+    if [ -f "${BASEDIR}/${before_conf}" ]; then
+        CONFIGS+=("${before_conf}")
     fi
     CONFIGS+=("${conf}")
+    after_conf="profiles/${profile}.after.conf.yaml"
+    if [ -f "${BASEDIR}/${after_conf}" ]; then
+        CONFIGS+=("${after_conf}")
+    fi
 done
 
 # Bash does not load bashrc for ordinary noninteractive commands; installers load shellenv directly.

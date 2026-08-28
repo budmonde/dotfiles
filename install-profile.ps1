@@ -2,7 +2,8 @@
 # Usage: .\install-profile.ps1 <profile> [profile...] [dotbot-options...]
 #
 # Profiles are discovered dynamically from profiles\windows\*.conf.yaml.
-# A matching profiles\<name>.conf.yaml is applied before the platform fragment.
+# Matching profiles\<name>.before.conf.yaml and profiles\<name>.after.conf.yaml
+# fragments are applied around the platform fragment when present.
 #
 # Examples:
 #   .\install-profile.ps1 collab
@@ -17,6 +18,8 @@ $BASEDIR = $PSScriptRoot
 $DOTBOT_FAILURE_OUTPUT_PLUGIN = Join-Path $BASEDIR "dotbot-plugins\failure_output.py"
 $DOTBOT_INSTALL_DIR = "dotbot-plugins/install"
 $DOTBOT_INSTALL_PLUGIN = Join-Path $BASEDIR "dotbot-plugins\install\install.py"
+$DOTFILES_LOCAL_BIN = Join-Path $HOME ".local\bin"
+$env:Path = "$DOTFILES_LOCAL_BIN;$env:Path"
 
 $ProfilesDir = Join-Path $BASEDIR "profiles\windows"
 $ValidProfiles = @(Get-ChildItem -LiteralPath $ProfilesDir -Filter "*.conf.yaml" -File |
@@ -59,11 +62,15 @@ foreach ($profile in $Profiles) {
     if (!(Test-Path (Join-Path $BASEDIR $conf))) {
         Write-Error "Config not found: $conf"
     }
-    $sharedConf = "profiles\$profile.conf.yaml"
-    if (Test-Path (Join-Path $BASEDIR $sharedConf)) {
-        $Configs += $sharedConf
+    $beforeConf = "profiles\$profile.before.conf.yaml"
+    if (Test-Path (Join-Path $BASEDIR $beforeConf)) {
+        $Configs += $beforeConf
     }
     $Configs += $conf
+    $afterConf = "profiles\$profile.after.conf.yaml"
+    if (Test-Path (Join-Path $BASEDIR $afterConf)) {
+        $Configs += $afterConf
+    }
 }
 
 Set-Location $BASEDIR

@@ -8,7 +8,9 @@
 
 - clean:
     - "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+    - ~/.config/Code/User
     - ~/.config/powertoys
+    - ~/.local/bin
 
 - link:
     "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\startup.ahk": config/ahk/startup.ahk

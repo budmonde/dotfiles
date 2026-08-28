@@ -1,17 +1,13 @@
-# Run via: .\install.ps1 (which loads this after install.conf.yaml)
+# Run via: .\install.ps1 (between install.before.conf.yaml and install.after.conf.yaml)
 # Requires: admin shell (for symlinks), winget, python
 #
 # The profile-loader helper resolves MyDocuments at runtime and writes regular
 # profile loaders, so a machine-specific symlink never enters OneDrive.
 
-- defaults:
-    link:
-        create: true
-        relink: true
-
 - clean:
     - '~'
-    - '~/.config'
+    - '~/.local/bin'
+    - "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState"
 
 - link:
     # Powershell
@@ -55,6 +51,3 @@
     - [install/windows/winget/github-cli.ps1, Installing GitHub CLI]
     - [install/windows/fonts.ps1, Installing configured fonts]
     - [install/windows/debloat.ps1, Applying Windows debloat configuration]
-
-- shell:
-    - [powershell -NonInteractive -Command "shellver bump machine", Refreshing Shellver machine generation]

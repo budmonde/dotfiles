@@ -5,6 +5,3 @@
 - install:
     - [install/unix/fnm, Installing fnm]
     - [install/unix/node, Installing Node.js]
-
-- shell:
-    - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

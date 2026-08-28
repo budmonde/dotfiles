@@ -1,5 +1,4 @@
-# Cross-platform configuration
-# Platform-specific: install.unix.conf.yaml, install.windows.conf.yaml
+# Cross-platform configuration applied before the platform-specific manifest.
 
 - defaults:
     link:
@@ -9,6 +8,7 @@
 - clean:
     - '~'
     - '~/.config'
+    - '~/.config/shellver'
     - '~/.ssh'
     - '~/.local/bin'
 

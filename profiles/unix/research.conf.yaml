@@ -7,6 +7,3 @@
 
 - install:
     - [install/unix/texlive, Installing TeX Live]
-
-- shell:
-    - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

@@ -1,14 +1,10 @@
 # Unix-specific configuration (Linux, macOS, WSL)
-# Run via: ./install.sh (which loads this after install.conf.yaml)
-
-- defaults:
-    link:
-        create: true
-        relink: true
+# Run via: ./install.sh (between install.before.conf.yaml and install.after.conf.yaml)
 
 - clean:
     - '~'
     - '~/.config'
+    - '~/.local/bin'
 
 - link:
     # Zshell
@@ -33,6 +29,3 @@
     - [install/unix/rclone, Installing rclone]
     - [install/unix/nvim, Installing Neovim]
     - [install/unix/gh, Installing GitHub CLI]
-
-- shell:
-    - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

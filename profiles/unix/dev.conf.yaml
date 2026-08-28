@@ -15,6 +15,3 @@
     - [install/unix/apt/cmake, Installing CMake]
     - [install/unix/apt/build-essential, Installing build-essential]
     - [install/unix/apt/nsight-compute, Installing NVIDIA Nsight Compute]
-
-- shell:
-    - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

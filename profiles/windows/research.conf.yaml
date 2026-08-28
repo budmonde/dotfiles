@@ -4,7 +4,3 @@
 - install:
     - [install/windows/winget/miktex.ps1, Installing MiKTeX]
     - [install/windows/winget/chrome.ps1, Installing Google Chrome]
-
-- shell:
-    - command: powershell -NonInteractive -Command "shellver bump machine"
-      description: Refreshing Shellver machine generation

@@ -5,5 +5,8 @@
         create: true
         relink: true
 
+- clean:
+    - ~/.config
+
 - link:
     ~/.config/npm: config/npm

@@ -5,7 +5,3 @@
 - install:
     - [install/windows/winget/fnm.ps1, Installing fnm]
     - [install/windows/node.ps1, Installing Node.js]
-
-- shell:
-    - command: powershell -NonInteractive -Command "shellver bump machine"
-      description: Refreshing Shellver machine generation

@@ -7,7 +7,3 @@
     - [install/windows/winget/make.ps1, Installing Make]
     - [install/windows/winget/go.ps1, Installing Go]
     - [install/windows/winget/nsight-compute.ps1, Installing NVIDIA Nsight Compute]
-
-- shell:
-    - command: powershell -NonInteractive -Command "shellver bump machine"
-      description: Refreshing Shellver machine generation

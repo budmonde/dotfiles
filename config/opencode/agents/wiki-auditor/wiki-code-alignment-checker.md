@@ -145,7 +145,7 @@ referred to in this prose as `<common>`, `<local>`, etc.
 (For `git -C` invocations, `<companion_repo>` denotes whichever live substrate the chunk targets.)
 
 - Each directory under `<common>` and `<local>` (`ls <common>`, `ls <local>`).
-- Each `install.conf.yaml` / `install.windows.conf.yaml` extras profile under `<common>`.
+- Each root before, platform, and after manifest plus each profile manifest under `<common>`.
 - Each hook file in `<common>/git/hooks/`.
 - Renames in the audit window via `git log --since=<last_audit_date> --diff-filter=R --name-status` (with `workdir: <companion_repo>`).
   If `last_audit` does not exist, drop `--since` and walk the full history.
@@ -173,8 +173,8 @@ adapt the chunk boundaries to the project's own seam inventory):
 - **Chunk: install flow and extras profiles**.
   Touches `architecture.md#install-flow`,
   `architecture.md#extras-profiles` if present,
-  `<common>/install.conf.yaml`,
-  `<common>/install.windows.conf.yaml`,
+  `<common>/install.before.conf.yaml`,
+  `<common>/install.after.conf.yaml`,
   and any per-platform install configs.
 - **Chunk: renames since last audit**.
   One chunk per renamed file or substrate (renames are a high-signal drift class).

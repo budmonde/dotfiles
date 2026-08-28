@@ -4,7 +4,3 @@
 - install:
     - [install/windows/winget/vlc.ps1, Installing VLC]
     - [install/windows/winget/ffmpeg.ps1, Installing FFmpeg]
-
-- shell:
-    - command: powershell -NonInteractive -Command "shellver bump machine"
-      description: Refreshing Shellver machine generation
