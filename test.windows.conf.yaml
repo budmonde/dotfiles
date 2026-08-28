@@ -78,3 +78,27 @@ checks:
       acrobat-artifact:
         - "if (-not (Test-Path -LiteralPath (Join-Path $env:USERPROFILE '.ms-ad'))) { 'clean' } else { 'present' }"
         - clean
+      copilot-artifact:
+        - "if (-not (Test-Path -LiteralPath (Join-Path $env:USERPROFILE '.copilot'))) { 'clean' } else { 'present' }"
+        - clean
+      empty-onedrive-artifact:
+        - >-
+          $path = Join-Path $env:USERPROFILE 'OneDrive';
+          if (-not (Test-Path -LiteralPath $path -PathType Container) -or
+          @(Get-ChildItem -LiteralPath $path -Force -ErrorAction SilentlyContinue).Count -gt 0)
+          { 'clean' } else { 'present' }
+        - clean
+      ansel-review-artifact:
+        - >-
+          if (-not (Test-Path -LiteralPath
+          (Join-Path $env:ProgramFiles 'NVIDIA Corporation\Ansel')))
+          { 'clean' } else { 'present' }
+        - clean
+      local-documents-review-artifact:
+        - >-
+          $path = Join-Path $env:USERPROFILE 'Documents';
+          $documents = [Environment]::GetFolderPath('MyDocuments');
+          if (-not (Test-Path -LiteralPath $path) -or -not $documents -or
+          [IO.Path]::GetFullPath($path) -eq [IO.Path]::GetFullPath($documents))
+          { 'clean' } else { 'present' }
+        - clean

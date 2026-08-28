@@ -32,9 +32,19 @@ $bloatApps = @(
     'Microsoft.XboxSpeechToTextOverlay'
 )
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-$emptyArtifacts = @(
+$removablePaths = @(
+    (Join-Path $env:USERPROFILE '.copilot')
+)
+$removableEmptyDirectories = @(
     (Join-Path $env:USERPROFILE 'OneDrive'),
     (Join-Path $env:USERPROFILE '.ms-ad')
+)
+$localDocumentsPath = Join-Path $env:USERPROFILE 'Documents'
+$reviewPaths = @(
+    [pscustomobject]@{
+        Name = 'NVIDIA Ansel'
+        Path = (Join-Path $env:ProgramFiles 'NVIDIA Corporation\Ansel')
+    }
 )
 
 function Test-EmptyDirectory {
@@ -51,6 +61,19 @@ function Test-ClassicTeamsInstalled {
     }
     $output = (& $winget.Path list --id Microsoft.Teams.Classic --exact --details --disable-interactivity 2>$null | Out-String)
     return $output -match '\[Microsoft\.Teams\.Classic\]'
+}
+
+function Get-PresentReviewPaths {
+    $targets = @($reviewPaths)
+    $documentsPath = [Environment]::GetFolderPath('MyDocuments')
+    if ($documentsPath -and
+        [IO.Path]::GetFullPath($documentsPath) -ne [IO.Path]::GetFullPath($localDocumentsPath)) {
+        $targets += [pscustomobject]@{
+            Name = 'local Documents'
+            Path = $localDocumentsPath
+        }
+    }
+    return @($targets | Where-Object { Test-Path -LiteralPath $_.Path })
 }
 
 function Get-DebloatState {
@@ -71,10 +94,18 @@ function Get-DebloatState {
     if (Test-ClassicTeamsInstalled) {
         return 'drifted'
     }
-    foreach ($path in $emptyArtifacts) {
+    foreach ($path in $removablePaths) {
+        if (Test-Path -LiteralPath $path) {
+            return 'drifted'
+        }
+    }
+    foreach ($path in $removableEmptyDirectories) {
         if (Test-EmptyDirectory $path) {
             return 'drifted'
         }
+    }
+    if (@(Get-PresentReviewPaths).Count -gt 0) {
+        return 'drifted'
     }
     return 'current'
 }
@@ -116,7 +147,18 @@ function Remove-Bloat {
         }
     }
 
-    foreach ($path in $emptyArtifacts) {
+    foreach ($path in $removablePaths) {
+        if (Test-Path -LiteralPath $path) {
+            try {
+                Remove-Item -LiteralPath $path -Recurse -Force -ErrorAction Stop
+                Write-DotbotInstallerDiagnostic "Removed path: $path"
+            } catch {
+                $failures += $_.Exception.Message
+            }
+        }
+    }
+
+    foreach ($path in $removableEmptyDirectories) {
         if (Test-EmptyDirectory $path) {
             Remove-Item -LiteralPath $path -Force
             Write-DotbotInstallerDiagnostic "Removed empty directory: $path"
@@ -130,6 +172,9 @@ function Remove-Bloat {
 Invoke-DotbotInstaller {
     if ($RequestedVersion) {
         throw 'Windows cleanup does not accept a requested version'
+    }
+    foreach ($target in @(Get-PresentReviewPaths)) {
+        Write-DotbotInstallerDiagnostic "Review-only debloat target detected and preserved: $($target.Name) [$($target.Path)]"
     }
     $state = Get-DebloatState
     if ($Operation -eq 'status' -or $state -eq 'current') {
