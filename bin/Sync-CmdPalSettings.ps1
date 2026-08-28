@@ -17,19 +17,28 @@
 .PARAMETER Export
     Capture live CmdPal disk state into the settings/ template files.
 
+.PARAMETER Check
+    Check whether live CmdPal state contains the declared settings.
+
 .EXAMPLE
     Sync-CmdPalSettings              # apply declared config
     Sync-CmdPalSettings -DryRun      # preview what would be applied
     Sync-CmdPalSettings -Export      # export live state to template files
+    Sync-CmdPalSettings -Check       # verify declared state is applied
 #>
 [CmdletBinding()]
 param(
     [switch]$DryRun,
-    [switch]$Export
+    [switch]$Export,
+    [switch]$Check
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if (@($DryRun, $Export, $Check).Where({ $_ }).Count -gt 1) {
+    throw '-DryRun, -Export, and -Check are mutually exclusive.'
+}
 
 # --- Paths ---
 $PackageFamily = 'Microsoft.CommandPalette_8wekyb3d8bbwe'
@@ -94,6 +103,39 @@ function ConvertTo-Hashtable {
         }
         return $InputObject
     }
+}
+
+function Get-DeclaredMismatches {
+    param(
+        $Declared,
+        $Actual,
+        [string]$Path
+    )
+
+    if ($Declared -is [System.Collections.IDictionary]) {
+        if ($Actual -isnot [System.Collections.IDictionary]) { return , $Path }
+        $mismatches = @()
+        foreach ($key in $Declared.Keys) {
+            $childPath = if ($Path) { "$Path.$key" } else { $key }
+            if (-not $Actual.Contains($key)) {
+                $mismatches += $childPath
+            } else {
+                $mismatches += @(Get-DeclaredMismatches $Declared[$key] $Actual[$key] $childPath)
+            }
+        }
+        return $mismatches
+    }
+
+    if ($Declared -is [System.Collections.IList] -and $Declared -isnot [string]) {
+        if ($Actual -isnot [System.Collections.IList] -or $Actual -is [string]) { return , $Path }
+        if (($Declared | ConvertTo-Json -Depth 50 -Compress) -cne ($Actual | ConvertTo-Json -Depth 50 -Compress)) {
+            return , $Path
+        }
+        return @()
+    }
+
+    if ($Declared -ne $Actual) { return , $Path }
+    return @()
 }
 
 # --- Helper: Resolve ${ENV_VAR} placeholders in a string ---
@@ -246,6 +288,25 @@ foreach ($file in $SyncFiles) {
 
 if ($changes.Count -eq 0) {
     Write-Host "No settings to apply."
+    exit 0
+}
+
+if ($Check) {
+    $mismatches = @()
+    foreach ($change in $changes) {
+        if (-not (Test-Path $change.DiskPath)) {
+            $mismatches += "$($change.Label) (missing)"
+            continue
+        }
+        $diskContent = [System.IO.File]::ReadAllText($change.DiskPath, [System.Text.Encoding]::UTF8)
+        $actual = $diskContent | ConvertFrom-Json | ConvertTo-Hashtable
+        $mismatches += @(Get-DeclaredMismatches $change.Data $actual $change.Label)
+    }
+    if ($mismatches.Count -gt 0) {
+        Write-Error "Command Palette settings drift:`n- $($mismatches -join "`n- ")"
+        exit 1
+    }
+    Write-Host 'Command Palette settings match the declared state.'
     exit 0
 }
 

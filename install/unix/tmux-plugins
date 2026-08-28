@@ -5,14 +5,35 @@ source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
 
 plugin_root="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/plugins"
 tpm="$plugin_root/tpm"
+tmux_config="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
+
+declared_plugins() {
+    awk '/^[ \t]*set(-option)? +-g +@plugin/ { gsub(/'"'"'/, ""); gsub(/"/, ""); print $4 }' "$tmux_config" |
+        while IFS= read -r plugin; do
+            plugin="${plugin%%#*}"
+            plugin="${plugin##*/}"
+            plugin="${plugin%.git}"
+            [ "$plugin" = tpm ] || printf '%s\n' "$plugin"
+        done
+}
 
 installer_status() {
-    if [ ! -x "$tpm/bin/install_plugins" ]; then
+    if [ ! -f "$tmux_config" ] || [ ! -x "$tpm/bin/install_plugins" ]; then
         printf 'blocked\n'
-    elif [ -d "$plugin_root/tmux-resurrect" ] && [ -d "$plugin_root/tmux-continuum" ]; then
+        return
+    fi
+    local missing= plugin
+    while IFS= read -r plugin; do
+        [ -d "$plugin_root/$plugin" ] || missing="${missing}${missing:+, }$plugin"
+    done < <(declared_plugins)
+    if [ -z "$missing" ]; then
         printf 'current\n'
-    else
+    elif [ ! -d "$plugin_root" ]; then
+        installer_note "Missing declared tmux plugins: $missing"
         printf 'absent\n'
+    else
+        installer_note "Missing declared tmux plugins: $missing"
+        printf 'drifted\n'
     fi
 }
 

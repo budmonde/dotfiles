@@ -17,19 +17,28 @@
 .PARAMETER Export
     Capture live PowerToys disk state into the settings/ template files.
 
+.PARAMETER Check
+    Check whether live PowerToys state contains the declared settings.
+
 .EXAMPLE
     Sync-PowerToysSettings              # apply declared config
     Sync-PowerToysSettings -DryRun      # preview what would be applied
     Sync-PowerToysSettings -Export      # export live state to template files
+    Sync-PowerToysSettings -Check       # verify declared state is applied
 #>
 [CmdletBinding()]
 param(
     [switch]$DryRun,
-    [switch]$Export
+    [switch]$Export,
+    [switch]$Check
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if (@($DryRun, $Export, $Check).Where({ $_ }).Count -gt 1) {
+    throw '-DryRun, -Export, and -Check are mutually exclusive.'
+}
 
 # --- ZoomIt registry path ---
 $ZoomItRegPath = 'HKCU:\Software\Sysinternals\ZoomIt'
@@ -157,6 +166,39 @@ function ConvertTo-Hashtable {
         }
         return $InputObject
     }
+}
+
+function Get-DeclaredMismatches {
+    param(
+        $Declared,
+        $Actual,
+        [string]$Path
+    )
+
+    if ($Declared -is [System.Collections.IDictionary]) {
+        if ($Actual -isnot [System.Collections.IDictionary]) { return , $Path }
+        $mismatches = @()
+        foreach ($key in $Declared.Keys) {
+            $childPath = if ($Path) { "$Path.$key" } else { $key }
+            if (-not $Actual.Contains($key)) {
+                $mismatches += $childPath
+            } else {
+                $mismatches += @(Get-DeclaredMismatches $Declared[$key] $Actual[$key] $childPath)
+            }
+        }
+        return $mismatches
+    }
+
+    if ($Declared -is [System.Collections.IList] -and $Declared -isnot [string]) {
+        if ($Actual -isnot [System.Collections.IList] -or $Actual -is [string]) { return , $Path }
+        if (($Declared | ConvertTo-Json -Depth 50 -Compress) -cne ($Actual | ConvertTo-Json -Depth 50 -Compress)) {
+            return , $Path
+        }
+        return @()
+    }
+
+    if ($Declared -ne $Actual) { return , $Path }
+    return @()
 }
 
 # --- Helper: Resolve ${ENV_VAR} placeholders in a string ---
@@ -376,6 +418,33 @@ if (Test-Path $modulesDir) {
 
 if ($changes.Count -eq 0 -and -not $zoomItChange) {
     Write-Host "No settings to apply."
+    exit 0
+}
+
+if ($Check) {
+    $mismatches = @()
+    foreach ($change in $changes) {
+        if (-not (Test-Path $change.DiskPath)) {
+            $mismatches += "$($change.Label) (missing)"
+            continue
+        }
+        $diskContent = [System.IO.File]::ReadAllText($change.DiskPath, [System.Text.Encoding]::UTF8)
+        $actual = $diskContent | ConvertFrom-Json | ConvertTo-Hashtable
+        $mismatches += @(Get-DeclaredMismatches $change.Data $actual $change.Label)
+    }
+    if ($zoomItChange) {
+        $actual = Read-ZoomItRegistry
+        if ($null -eq $actual) {
+            $mismatches += "$($zoomItChange.Label) (missing)"
+        } else {
+            $mismatches += @(Get-DeclaredMismatches $zoomItChange.Data $actual $zoomItChange.Label)
+        }
+    }
+    if ($mismatches.Count -gt 0) {
+        Write-Error "PowerToys settings drift:`n- $($mismatches -join "`n- ")"
+        exit 1
+    }
+    Write-Host 'PowerToys settings match the declared state.'
     exit 0
 }
 

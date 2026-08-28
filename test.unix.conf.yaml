@@ -20,6 +20,7 @@ checks:
       "~/.config/tmux/plugins/tmux-continuum/continuum.tmux": file
     path: [tmux]
     commands:
+      plugin-state: [DOTBOT_INSTALL_REPO_ROOT="$PWD" ./install/unix/tmux-plugins status, '(?m)^current$']
       version: [tmux -V, tmux]
       configuration:
         - >-

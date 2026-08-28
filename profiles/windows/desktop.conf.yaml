@@ -10,14 +10,16 @@
     - "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
     - ~/.config/Code/User
     - ~/.config/powertoys
+    - ~/.config/cmdpal
     - ~/.local/bin
 
 - link:
     "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\startup.ahk": config/ahk/startup.ahk
 
     ~/.config/powertoys/settings: config/powertoys/settings
-    ~/.local/bin/Sync-CmdPalSettings.ps1: bin/Sync-CmdPalSettings.ps1
+    ~/.config/cmdpal/settings: config/cmdpal/settings
     ~/.local/bin/Sync-PowerToysSettings.ps1: bin/Sync-PowerToysSettings.ps1
+    ~/.local/bin/Sync-CmdPalSettings.ps1: bin/Sync-CmdPalSettings.ps1
 
     ~/.config/Code/User/keybindings.json: config/vscode/keybindings.json
     ~/.config/Code/User/settings.json: config/vscode/settings.json
@@ -33,6 +35,7 @@
 
 - shell:
     - [powershell -NonInteractive -File bin\Sync-PowerToysSettings.ps1, Applying PowerToys settings]
+    - [powershell -NonInteractive -File bin\Sync-CmdPalSettings.ps1, Applying Command Palette settings]
 
 - install:
     - [install/windows/vscode-user-data.ps1, Preparing Visual Studio Code user data]

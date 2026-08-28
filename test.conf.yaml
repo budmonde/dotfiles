@@ -67,6 +67,7 @@ checks:
     commands:
       version: [nvim --version, NVIM]
       configuration: ['nvim --headless "+lua print(vim.o.ttimeoutlen)" "+qa"', '(?m)^50$']
+      plugin-lock: [uv run --no-project python install/shared/nvim-plugins.py status, '(?m)^current$']
 
   # Python runtime
   uv:

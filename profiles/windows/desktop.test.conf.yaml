@@ -10,10 +10,18 @@ checks:
   powertoys:
     links:
       "~/.config/powertoys/settings": config/powertoys/settings
-      "~/.local/bin/Sync-CmdPalSettings.ps1": bin/Sync-CmdPalSettings.ps1
       "~/.local/bin/Sync-PowerToysSettings.ps1": bin/Sync-PowerToysSettings.ps1
     commands:
       installed: ["if (((winget list --id Microsoft.PowerToys 2>$null) | Out-String) -match 'Microsoft.PowerToys') { 'installed' } else { 'missing' }", installed]
+      settings-state: ["powershell -NoProfile -NonInteractive -File \"$HOME/.local/bin/Sync-PowerToysSettings.ps1\" -Check", PowerToys settings match the declared state]
+
+  command-palette:
+    links:
+      "~/.config/cmdpal/settings": config/cmdpal/settings
+      "~/.local/bin/Sync-CmdPalSettings.ps1": bin/Sync-CmdPalSettings.ps1
+    commands:
+      installed: ["if (Get-AppxPackage -Name Microsoft.CommandPalette) { 'installed' } else { 'missing' }", installed]
+      settings-state: ["powershell -NoProfile -NonInteractive -File \"$HOME/.local/bin/Sync-CmdPalSettings.ps1\" -Check", Command Palette settings match the declared state]
 
   vscode:
     links:
