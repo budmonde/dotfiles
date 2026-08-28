@@ -218,16 +218,21 @@ endif
 noremap <C-a> <Nop>
 noremap <C-x> <Nop>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""" Operator-Pending Mappings
+""" Diff Mode Mappings
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+xnoremap <expr> do &diff ? ":\<C-U>'<,'>diffget\<CR>" : "do"
+xnoremap <expr> dp &diff ? ":\<C-U>'<,'>diffput\<CR>" : "dp"
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""" Operator-Pending Mappings (Disabled)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Function parameters
-onoremap p i(
+" onoremap p i(
 " Return statement (function exit point)
-onoremap r /return<CR>
+" onoremap r /return<CR>
 " Next open parentheses
-onoremap inp :<c-u>normal! f(vi(<CR>
+" onoremap inp :<c-u>normal! f(vi(<CR>
 " Last close parentheses
-onoremap ilp :<c-u>normal! F)vi(<CR>
+" onoremap ilp :<c-u>normal! F)vi(<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """ <Leader>d : Display-relative Movement
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
