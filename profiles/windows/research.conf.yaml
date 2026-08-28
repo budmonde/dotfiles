@@ -1,10 +1,10 @@
 # Profile: research — academic and research workflow tools
 # Usage: .\install-profile.ps1 research
 
+- install:
+    - [install/windows/winget/miktex.ps1, Installing MiKTeX]
+    - [install/windows/winget/chrome.ps1, Installing Google Chrome]
+
 - shell:
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId MiKTeX.MiKTeX
-      description: Installing MiKTeX
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Google.Chrome
-      description: Installing Google Chrome
     - command: powershell -NonInteractive -Command "shellver bump machine"
       description: Refreshing Shellver machine generation

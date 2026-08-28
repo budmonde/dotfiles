@@ -1,8 +1,9 @@
 # Profile: gamedev — game development tools
 # Usage: .\install-profile.ps1 gamedev
 
+- install:
+    - [install/windows/winget/unity-hub.ps1, Installing Unity Hub]
+
 - shell:
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Unity.UnityHub
-      description: Installing Unity Hub
     - command: powershell -NonInteractive -Command "shellver bump machine"
       description: Refreshing Shellver machine generation

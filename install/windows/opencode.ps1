@@ -1,46 +1,65 @@
-function Get-OpenCodeApplications {
-    @(Get-Command opencode -All -CommandType Application -ErrorAction SilentlyContinue |
-        Where-Object { $_.Path } |
-        Group-Object Path |
-        ForEach-Object { $_.Group[0] })
-}
+param(
+    [ValidateSet('status', 'apply', 'upgrade')][string]$Operation = 'apply',
+    [string]$RequestedVersion
+)
 
-function Test-PublicOpenCodeInstallAllowed {
-    foreach ($application in @(Get-OpenCodeApplications)) {
-        $global:LASTEXITCODE = 0
-        try {
-            $versionOutput = (& $application.Path --version 2>$null | Out-String).Trim()
-        } catch {
-            Write-Host "Skipping public OpenCode install: version inspection failed for $($application.Path)."
-            return $false
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $env:DOTBOT_INSTALL_REPO_ROOT 'install\lib\windows\Lifecycle.psm1') -Force
+
+function Get-OpenCodeState {
+    $installedVersion = $null
+    foreach ($application in @(Get-Command opencode -All -CommandType Application -ErrorAction SilentlyContinue | Group-Object Path | ForEach-Object { $_.Group[0] })) {
+        $version = (& $application.Path --version 2>$null | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0 -or $version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') {
+            $displayVersion = if ($version) { $version } else { '<no version>' }
+            Write-DotbotInstallerDiagnostic "Preserving non-public OpenCode variant: $($application.Path) ($displayVersion)"
+            return 'unsupported'
         }
-
-        if ($LASTEXITCODE -ne 0 -or $versionOutput -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') {
-            $displayVersion = if ($versionOutput) { $versionOutput } else { '<no version>' }
-            Write-Host "Skipping public OpenCode install: preserving $($application.Path) ($displayVersion)."
-            return $false
+        $installedVersion = $version
+    }
+    if (-not $installedVersion) {
+        return 'absent'
+    }
+    if ($env:DOTBOT_INSTALL_ONLINE -notin @('0', 'false', 'False', 'no', 'No', 'off', 'Off')) {
+        $npm = Get-Command npm -CommandType Application -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+        if ($npm) {
+            $latest = (& $npm.Path view opencode-ai version --json 2>$null | Out-String).Trim().Trim('"')
+            if ($LASTEXITCODE -eq 0 -and $latest -and $latest -ne $installedVersion) {
+                return 'update-available'
+            }
         }
     }
-
-    return $true
+    return 'current'
 }
 
 function Install-PublicOpenCode {
-    if (-not (Test-PublicOpenCodeInstallAllowed)) {
-        return
-    }
+    param([string]$Version)
 
-    $fnm = Get-Command fnm -ErrorAction SilentlyContinue
-    if (-not $fnm) {
-        throw 'fnm not found on PATH'
+    $npm = Get-Command npm -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if (-not $npm) {
+        throw 'npm is unavailable'
     }
-
-    npm install -g opencode-ai
+    $package = if ($Version) { "opencode-ai@$Version" } else { 'opencode-ai' }
+    $output = (& $npm.Path install --global $package --no-audit --no-fund 2>&1 | Out-String).Trim()
+    if ($output) {
+        Write-DotbotInstallerDiagnostic $output
+    }
     if ($LASTEXITCODE -ne 0) {
-        throw "npm failed to install public OpenCode (exit $LASTEXITCODE)"
+        throw "npm failed to install $package"
     }
 }
 
-if ($MyInvocation.InvocationName -ne '.') {
-    Install-PublicOpenCode
+Invoke-DotbotInstaller {
+    $state = Get-OpenCodeState
+    if ($Operation -eq 'status' -or $state -eq 'unsupported' -or ($Operation -eq 'apply' -and $state -ne 'absent')) {
+        return $state
+    }
+    if (-not (Get-Command npm -CommandType Application -ErrorAction SilentlyContinue)) {
+        return 'blocked'
+    }
+    Install-PublicOpenCode -Version $RequestedVersion
+    return (Get-OpenCodeState)
 }

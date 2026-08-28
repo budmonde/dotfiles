@@ -1,10 +1,10 @@
 # Profile: iqa — image quality assessment tools
 # Usage: .\install-profile.ps1 iqa
 
+- install:
+    - [install/windows/winget/vlc.ps1, Installing VLC]
+    - [install/windows/winget/ffmpeg.ps1, Installing FFmpeg]
+
 - shell:
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId VideoLAN.VLC
-      description: Installing VLC
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Gyan.FFmpeg
-      description: Installing FFmpeg
     - command: powershell -NonInteractive -Command "shellver bump machine"
       description: Refreshing Shellver machine generation

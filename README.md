@@ -14,6 +14,11 @@ irm https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.ps1 | iex
 This ensures winget is on PATH, installs git and python via winget, configures git to use Windows OpenSSH, and enables the ssh-agent service.
 Then follow the printed next steps to add SSH keys, clone, and run `install.ps1`.
 
+## Installer Development
+
+Dotbot profiles select and order lifecycle-aware resource installers from `install/`.
+See [`install/README.md`](install/README.md) for the protocol, shared backends, version ownership, custom-script requirements, and verification commands.
+
 ## Environment Tests
 
 Run the common environment suite from the repository root:

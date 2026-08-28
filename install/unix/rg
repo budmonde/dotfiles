@@ -1,90 +1,85 @@
 #!/usr/bin/env bash
-# ripgrep (rg) installation script
-# Downloads the official ripgrep binary into ~/.local/bin (userspace, no sudo).
-#
-# Supported: Linux (amd64 musl, arm64 gnu), macOS (amd64, arm64).
-# Unsupported targets exit 0 with a skip message.
-#
-# The Linux amd64 build is the upstream musl static binary, which avoids
-# glibc-version issues on older cluster login nodes. The Linux arm64 build
-# uses the gnu variant because upstream does not publish an arm64 musl build.
-
 set -euo pipefail
 
-BIN_DIR="$HOME/.local/bin"
-BIN="$BIN_DIR/rg"
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
 
-if command -v rg >/dev/null 2>&1; then
-    echo "ripgrep already installed: $(rg --version | head -1)"
-    exit 0
-fi
+bin_dir="$HOME/.local/bin"
+binary="$bin_dir/rg"
 
-if [ -x "$BIN" ]; then
-    echo "ripgrep already installed at $BIN"
-    "$BIN" --version | head -1
-    exit 0
-fi
+ripgrep_target() {
+    case "$(uname -s):$(uname -m)" in
+        Linux:x86_64) printf 'x86_64-unknown-linux-musl\n' ;;
+        Linux:aarch64|Linux:arm64) printf 'aarch64-unknown-linux-gnu\n' ;;
+        Darwin:x86_64) printf 'x86_64-apple-darwin\n' ;;
+        Darwin:aarch64|Darwin:arm64) printf 'aarch64-apple-darwin\n' ;;
+        *) return 1 ;;
+    esac
+}
 
-os=$(uname -s)
-arch=$(uname -m)
+installer_status() {
+    if ! ripgrep_target >/dev/null; then
+        printf 'unsupported\n'
+        return
+    fi
+    local candidate installed latest
+    candidate="$binary"
+    [ -x "$candidate" ] || candidate="$(command -v rg || true)"
+    if [ -z "$candidate" ]; then
+        printf 'absent\n'
+        return
+    fi
+    installed="$("$candidate" --version 2>/dev/null | head -1 | awk '{ print $2 }')"
+    latest="$(installer_github_latest_version BurntSushi/ripgrep || true)"
+    installer_version_state "$installed" "$latest"
+}
 
-case "$os" in
-    Linux)
-        case "$arch" in
-            x86_64)
-                target="x86_64-unknown-linux-musl"
-                ;;
-            aarch64|arm64)
-                target="aarch64-unknown-linux-gnu"
-                ;;
-            *)
-                echo "Skipping ripgrep install (unsupported Linux arch: $arch)."
-                exit 0
-                ;;
-        esac
-        ;;
-    Darwin)
-        case "$arch" in
-            x86_64)         target="x86_64-apple-darwin" ;;
-            aarch64|arm64)  target="aarch64-apple-darwin" ;;
-            *)
-                echo "Skipping ripgrep install (unsupported Darwin arch: $arch)."
-                exit 0
-                ;;
-        esac
-        ;;
-    *)
-        echo "Skipping ripgrep install (unsupported OS: $os)."
-        exit 0
-        ;;
-esac
+install_ripgrep() {
+    local version="$1"
+    local target
+    target="$(ripgrep_target)" || {
+        installer_note 'ripgrep release installer does not support this host'
+        return 1
+    }
+    if [ -z "$version" ]; then
+        version="$(installer_github_latest_version BurntSushi/ripgrep || true)"
+    fi
+    [ -n "$version" ] || {
+        installer_note 'Could not resolve a ripgrep release version'
+        return 1
+    }
+    version="${version#v}"
 
-# Resolve the latest release tag from the GitHub API; fall back to a pinned
-# version if the API is unreachable (cluster login nodes occasionally have
-# restricted egress).
-PINNED_VERSION="15.1.0"
-if version=$(curl -fsSL "https://api.github.com/repos/BurntSushi/ripgrep/releases/latest" 2>/dev/null \
-    | grep -m1 '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/'); then
-    : "${version:=$PINNED_VERSION}"
-else
-    version="$PINNED_VERSION"
-fi
+    local temporary filename
+    temporary="$(mktemp -d)"
+    trap 'rm -rf "$temporary"' RETURN
+    filename="ripgrep-${version}-${target}.tar.gz"
+    curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/${version}/${filename}" -o "$temporary/$filename"
+    tar -xzf "$temporary/$filename" -C "$temporary"
+    "$temporary"/ripgrep-*/rg --version >&2
+    mkdir -p "$bin_dir"
+    mv "$temporary"/ripgrep-*/rg "$binary.new.$$"
+    chmod +x "$binary.new.$$"
+    mv -f "$binary.new.$$" "$binary"
+    trap - RETURN
+    rm -rf "$temporary"
+}
 
-filename="ripgrep-${version}-${target}.tar.gz"
-url="https://github.com/BurntSushi/ripgrep/releases/download/${version}/${filename}"
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    case "$state" in
+        absent) install_ripgrep ''; installer_status ;;
+        *) printf '%s\n' "$state" ;;
+    esac
+}
 
-tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT
+installer_upgrade() {
+    if ! ripgrep_target >/dev/null; then
+        printf 'unsupported\n'
+        return
+    fi
+    install_ripgrep "$1"
+    installer_status
+}
 
-echo "Downloading ripgrep ${version} (${target})..."
-curl -fsSL "$url" -o "$tmp/$filename"
-
-echo "Extracting..."
-tar -xzf "$tmp/$filename" -C "$tmp"
-
-mkdir -p "$BIN_DIR"
-# Tarball extracts to ripgrep-<version>-<target>/; rg binary lives at top level.
-mv "$tmp"/ripgrep-*/rg "$BIN"
-chmod +x "$BIN"
-
-echo "ripgrep installed: $("$BIN" --version | head -1)"
+installer_main "$@"

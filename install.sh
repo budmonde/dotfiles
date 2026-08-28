@@ -16,12 +16,17 @@ UNIX_CONFIG="install.unix.conf.yaml"
 DOTBOT_DIR="dotbot"
 DOTBOT_BIN="bin/dotbot"
 DOTBOT_FAILURE_OUTPUT_PLUGIN="dotbot-plugins/failure_output.py"
+DOTBOT_INSTALL_DIR="dotbot-plugins/install"
+DOTBOT_INSTALL_PLUGIN="${DOTBOT_INSTALL_DIR}/install.py"
 BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 cd "${BASEDIR}"
-git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
-git submodule update --init --recursive "${DOTBOT_DIR}"
+git submodule sync --quiet --recursive -- "${DOTBOT_DIR}" "${DOTBOT_INSTALL_DIR}"
+git submodule update --init --recursive -- "${DOTBOT_DIR}" "${DOTBOT_INSTALL_DIR}"
 
-"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" --plugin "${BASEDIR}/${DOTBOT_FAILURE_OUTPUT_PLUGIN}" -d "${BASEDIR}" \
+"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" \
+    --plugin "${BASEDIR}/${DOTBOT_FAILURE_OUTPUT_PLUGIN}" \
+    --plugin "${BASEDIR}/${DOTBOT_INSTALL_PLUGIN}" \
+    -d "${BASEDIR}" \
     -c "${COMMON_CONFIG}" "${UNIX_CONFIG}" \
     "${@}"

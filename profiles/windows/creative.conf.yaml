@@ -1,16 +1,13 @@
 # Profile: creative — digital art and photography tools
 # Usage: .\install-profile.ps1 creative
 
+- install:
+    - [install/windows/winget/blender.ps1, Installing Blender]
+    - [install/windows/winget/darktable.ps1, Installing darktable]
+    - [install/windows/winget/figma.ps1, Installing Figma]
+    - [install/windows/winget/gimp.ps1, Installing GIMP]
+    - [install/windows/winget/inkscape.ps1, Installing Inkscape]
+
 - shell:
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId BlenderFoundation.Blender
-      description: Installing Blender
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId darktable.darktable
-      description: Installing Darktable
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Figma.Figma
-      description: Installing Figma
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GIMP.GIMP
-      description: Installing GIMP
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Inkscape.Inkscape
-      description: Installing Inkscape
     - command: powershell -NonInteractive -Command "shellver bump machine"
       description: Refreshing Shellver machine generation

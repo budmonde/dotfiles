@@ -1,8 +1,43 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
-"$HOME/.local/bin/uv" tool install \
-    --force \
-    --refresh-package shellver \
-    "git+https://github.com/budmonde/shellver.git@main"
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
+
+uv="$HOME/.local/bin/uv"
+binary="$HOME/.local/bin/shellver"
+
+installer_status() {
+    [ -x "$binary" ] && printf 'current\n' || printf 'absent\n'
+}
+
+install_shellver() {
+    local revision="${1:-main}"
+    [ -x "$uv" ] || {
+        installer_note "uv is unavailable at $uv"
+        return 1
+    }
+    "$uv" tool install --force --refresh-package shellver \
+        "git+https://github.com/budmonde/shellver.git@$revision" >&2
+    [ -x "$binary" ] || {
+        installer_note "shellver installation did not produce $binary"
+        return 1
+    }
+}
+
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    if [ "$state" = current ]; then
+        printf 'current\n'
+        return
+    fi
+    install_shellver main
+    installer_status
+}
+
+installer_upgrade() {
+    install_shellver "$1"
+    installer_status
+}
+
+installer_main "$@"

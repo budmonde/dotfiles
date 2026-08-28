@@ -1,25 +1,54 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/fnm"
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
 
-if command -v fnm &>/dev/null; then
-    echo "fnm is already installed: $(fnm --version)"
-    exit 0
-fi
+install_dir="${XDG_DATA_HOME:-$HOME/.local/share}/fnm"
+binary="$install_dir/fnm"
 
-if [ -x "$INSTALL_DIR/fnm" ]; then
-    echo "fnm binary exists at $INSTALL_DIR/fnm"
-    echo "Add $INSTALL_DIR to your PATH to use it."
-    exit 0
-fi
+installer_status() {
+    if [ ! -x "$binary" ]; then
+        printf 'absent\n'
+        return
+    fi
+    local installed latest
+    installed="$("$binary" --version 2>/dev/null | awk '{ print $NF }')"
+    latest="$(installer_github_latest_version Schniz/fnm || true)"
+    installer_version_state "$installed" "$latest"
+}
 
-echo "Installing fnm..."
+install_fnm() {
+    local requested_version="$1"
+    if [ -n "$requested_version" ]; then
+        installer_note 'fnm does not support requested-version installation through its supported installer'
+        return 1
+    fi
+    command -v curl >/dev/null 2>&1 || {
+        installer_note 'curl is required to install fnm'
+        return 1
+    }
+    curl -fsSL https://fnm.vercel.app/install |
+        bash -s -- --install-dir "$install_dir" --skip-shell 1>&2
+    [ -x "$binary" ] || {
+        installer_note "fnm installation did not produce $binary"
+        return 1
+    }
+}
 
-# --install-dir: where to put the binary
-# --skip-shell: we manage shell config ourselves in dotfiles
-curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$INSTALL_DIR" --skip-shell
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    if [ "$state" != absent ]; then
+        printf '%s\n' "$state"
+        return
+    fi
+    install_fnm "$1"
+    installer_status
+}
 
-echo ""
-echo "fnm installed to $INSTALL_DIR"
-echo "Restart your shell to use fnm."
+installer_upgrade() {
+    install_fnm "$1"
+    installer_status
+}
+
+installer_main "$@"

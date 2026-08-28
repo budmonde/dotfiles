@@ -6,10 +6,12 @@ $DOTBOT_DIR = "dotbot"
 $DOTBOT_BIN = "bin/dotbot"
 $BASEDIR = $PSScriptRoot
 $DOTBOT_FAILURE_OUTPUT_PLUGIN = Join-Path $BASEDIR "dotbot-plugins\failure_output.py"
+$DOTBOT_INSTALL_DIR = "dotbot-plugins/install"
+$DOTBOT_INSTALL_PLUGIN = Join-Path $BASEDIR "dotbot-plugins\install\install.py"
 
 Set-Location $BASEDIR
-git -C $DOTBOT_DIR submodule sync --quiet --recursive
-git submodule update --init --recursive $DOTBOT_DIR
+git submodule sync --quiet --recursive -- $DOTBOT_DIR $DOTBOT_INSTALL_DIR
+git submodule update --init --recursive -- $DOTBOT_DIR $DOTBOT_INSTALL_DIR
 
 foreach ($PYTHON in ('python', 'python3')) {
     # Python redirects to Microsoft Store in Windows 10 when not installed
@@ -17,7 +19,7 @@ foreach ($PYTHON in ('python', 'python3')) {
             ![string]::IsNullOrEmpty((&$PYTHON -V))
             $ErrorActionPreference = "Stop" }) {
         $DOTBOT_PATH = Join-Path $BASEDIR -ChildPath $DOTBOT_DIR | Join-Path -ChildPath $DOTBOT_BIN
-        &$PYTHON $DOTBOT_PATH --plugin $DOTBOT_FAILURE_OUTPUT_PLUGIN -d $BASEDIR -c $COMMON_CONFIG $WINDOWS_CONFIG $Args
+        &$PYTHON $DOTBOT_PATH --plugin $DOTBOT_FAILURE_OUTPUT_PLUGIN --plugin $DOTBOT_INSTALL_PLUGIN -d $BASEDIR -c $COMMON_CONFIG $WINDOWS_CONFIG $Args
         return
     }
 }

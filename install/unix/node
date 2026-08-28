@@ -1,25 +1,74 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <version-file>" >&2
-    exit 1
-fi
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
 
-node_version_file="$1"
-if [ ! -f "${node_version_file}" ]; then
-    echo "Error: ${node_version_file} does not exist." >&2
-    exit 1
-fi
-
-node_version="$(tr -d '[:space:]' < "${node_version_file}")"
+node_version_file="$DOTBOT_INSTALL_REPO_ROOT/profiles/node-version"
 fnm="${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm"
 
-if [ -z "${node_version}" ]; then
-    echo "Error: ${node_version_file} is empty." >&2
-    exit 1
-fi
+locked_version() {
+    tr -d '[:space:]' < "$node_version_file"
+}
 
-"${fnm}" install "${node_version}"
-"${fnm}" default "${node_version}"
+installer_status() {
+    if [ ! -x "$fnm" ]; then
+        printf 'blocked\n'
+        return
+    fi
+    local version default_version latest
+    version="$(locked_version)"
+    if [ -z "$version" ]; then
+        installer_note "$node_version_file is empty"
+        return 1
+    fi
+    if ! "$fnm" exec --using "$version" -- node --version >/dev/null 2>&1; then
+        printf 'absent\n'
+        return
+    fi
+    default_version="$("$fnm" default 2>/dev/null | tr -d '[:space:]' | sed 's/^v//')"
+    if [ "$default_version" != "${version#v}" ]; then
+        printf 'drifted\n'
+        return
+    fi
+    latest=
+    if installer_online; then
+        latest="$("$fnm" list-remote --latest 2>/dev/null | tail -1 | tr -d '[:space:]' | sed 's/^v//')"
+    fi
+    installer_version_state "${version#v}" "$latest"
+}
+
+converge_node() {
+    local version="$1"
+    "$fnm" install "$version" >&2
+    "$fnm" default "$version" >&2
+    "$fnm" exec --using "$version" -- node --version >&2
+}
+
+installer_apply() {
+    local state version
+    state="$(installer_status)"
+    version="$(locked_version)"
+    case "$state" in
+        current|update-available) printf '%s\n' "$state" ;;
+        blocked) printf 'blocked\n' ;;
+        *) converge_node "$version"; installer_status ;;
+    esac
+}
+
+installer_upgrade() {
+    local version="$1"
+    if [ -z "$version" ]; then
+        version="$("$fnm" list-remote --latest 2>/dev/null | tail -1 | tr -d '[:space:]' | sed 's/^v//')"
+    fi
+    [ -n "$version" ] || {
+        installer_note 'Could not resolve a Node.js upgrade version'
+        return 1
+    }
+    converge_node "$version"
+    local temporary="$node_version_file.$$.tmp"
+    printf '%s\n' "${version#v}" > "$temporary"
+    mv "$temporary" "$node_version_file"
+    installer_status
+}
+
+installer_main "$@"

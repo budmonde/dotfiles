@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
+
+plugin_root="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/plugins"
+tpm="$plugin_root/tpm"
+
+installer_status() {
+    if [ ! -x "$tpm/bin/install_plugins" ]; then
+        printf 'blocked\n'
+    elif [ -d "$plugin_root/tmux-resurrect" ] && [ -d "$plugin_root/tmux-continuum" ]; then
+        printf 'current\n'
+    else
+        printf 'absent\n'
+    fi
+}
+
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    if [ "$state" = current ] || [ "$state" = blocked ]; then
+        printf '%s\n' "$state"
+        return
+    fi
+    "$tpm/bin/install_plugins" >&2
+    installer_status
+}
+
+installer_upgrade() {
+    if [ -n "$1" ]; then
+        installer_note 'TPM plugins do not accept a requested version'
+        return 1
+    fi
+    if [ ! -x "$tpm/bin/update_plugins" ]; then
+        printf 'blocked\n'
+        return
+    fi
+    "$tpm/bin/update_plugins" all >&2
+    installer_status
+}
+
+installer_main "$@"

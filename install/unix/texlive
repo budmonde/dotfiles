@@ -1,74 +1,75 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# === Only run on Linux (non-cluster) ===
-if [[ "$(uname -s)" != "Linux" ]]; then
-    echo "Skipping TeX Live install (not Linux)."
-    exit 0
-fi
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
 
-if [[ -n "${SLURM_CONF:-}" ]]; then
-    echo "Skipping TeX Live install (cluster detected)."
-    exit 0
-fi
+install_dir="${XDG_DATA_HOME:-$HOME/.local/share}/texlive"
 
-# === Configuration ===
-INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/texlive"
-WORKDIR="/tmp"
-URL="https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz"
-TARBALL="$WORKDIR/install-tl-unx.tar.gz"
+texlive_supported() {
+    [ "$(uname -s)" = Linux ] && [ -z "${SLURM_CONF:-}" ]
+}
 
-# === Check if TeX Live is already installed ===
-if [ -d "$INSTALL_DIR/bin" ]; then
-    PLATFORM=$(ls "$INSTALL_DIR/bin" | head -1)
-    TEXLIVE_BIN="$INSTALL_DIR/bin/$PLATFORM"
-    echo "TeX Live already installed in $INSTALL_DIR."
-    echo "Add the following to your PATH to use it:"
-    echo "    export PATH=\"$TEXLIVE_BIN:\$PATH\""
-    exit 0
-fi
+texlive_binary_dir() {
+    [ -d "$install_dir/bin" ] || return 1
+    find "$install_dir/bin" -mindepth 1 -maxdepth 1 -type d -print -quit
+}
 
-# === Download installer ===
-cd "$WORKDIR"
-echo "Downloading TeX Live installer..."
-curl -L -o "$TARBALL" "$URL"
+installer_status() {
+    if ! texlive_supported; then
+        printf 'unsupported\n'
+    elif texlive_binary_dir >/dev/null; then
+        printf 'current\n'
+    else
+        printf 'absent\n'
+    fi
+}
 
-# === Find top-level directory in tarball ===
-TAR_OUTPUT=$(tar -tzf install-tl-unx.tar.gz 2>/dev/null)
-INSTALLER_DIR=$(echo "$TAR_OUTPUT" | head -1 | cut -f1 -d"/")
+install_texlive() {
+    local temporary archive installer_dir
+    temporary="$(mktemp -d)"
+    trap 'rm -rf "$temporary"' RETURN
+    archive="$temporary/install-tl-unx.tar.gz"
+    curl -fsSL https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz -o "$archive"
+    installer_dir="$(tar -tzf "$archive" | head -1 | cut -d/ -f1)"
+    [ -n "$installer_dir" ] || {
+        installer_note 'Could not determine the TeX Live installer directory'
+        return 1
+    }
+    tar -xzf "$archive" -C "$temporary"
+    perl "$temporary/$installer_dir/install-tl" --no-interaction --texdir="$install_dir" >&2
+    texlive_binary_dir >&2
+    trap - RETURN
+    rm -rf "$temporary"
+}
 
-if [ -z "$INSTALLER_DIR" ]; then
-    echo "Error: could not determine installer directory from tarball."
-    exit 1
-fi
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    if [ "$state" = absent ]; then
+        install_texlive
+        installer_status
+    else
+        printf '%s\n' "$state"
+    fi
+}
 
-# === Extract installer ===
-echo "Extracting installer..."
-zcat < install-tl-unx.tar.gz | tar xf -
+installer_upgrade() {
+    if [ -n "$1" ]; then
+        installer_note 'TeX Live does not support requested-version upgrades'
+        return 1
+    fi
+    if ! texlive_supported; then
+        printf 'unsupported\n'
+        return
+    fi
+    local binary_dir
+    binary_dir="$(texlive_binary_dir || true)"
+    if [ -z "$binary_dir" ]; then
+        install_texlive
+    else
+        "$binary_dir/tlmgr" update --self --all >&2
+    fi
+    installer_status
+}
 
-cd "$INSTALLER_DIR"
-
-# === Run installation ===
-echo "Installing TeX Live into $INSTALL_DIR (this may take several hours)..."
-perl ./install-tl --no-interaction --texdir="$INSTALL_DIR"
-
-# === Detect platform and print PATH ===
-PLATFORM=$(ls "$INSTALL_DIR/bin" | head -1)
-TEXLIVE_BIN="$INSTALL_DIR/bin/$PLATFORM"
-
-if [ ! -d "$TEXLIVE_BIN" ]; then
-    echo "Error: installation failed, bin directory not found."
-    exit 1
-fi
-
-# === Cleanup ===
-cd "$WORKDIR"
-rm -rf "$TARBALL" "$INSTALLER_DIR"
-
-echo ""
-echo "=========================================================="
-echo "TeX Live installation complete."
-echo "Add the following to your PATH to use TeX Live:"
-echo ""
-echo "    export PATH=\"$TEXLIVE_BIN:\$PATH\""
-echo "=========================================================="
+installer_main "$@"

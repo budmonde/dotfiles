@@ -1,16 +1,13 @@
 # Profile: dev — development build tools
 # Usage: .\install-profile.ps1 dev
 
+- install:
+    - [install/windows/winget/visual-studio.ps1, Installing Visual Studio]
+    - [install/windows/winget/cmake.ps1, Installing CMake]
+    - [install/windows/winget/make.ps1, Installing Make]
+    - [install/windows/winget/go.ps1, Installing Go]
+    - [install/windows/winget/nsight-compute.ps1, Installing NVIDIA Nsight Compute]
+
 - shell:
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.VisualStudio.2022.Community
-      description: Installing Visual Studio Community 2022
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Kitware.CMake
-      description: Installing CMake
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GnuWin32.Make
-      description: Installing GnuWin32 Make
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GoLang.Go
-      description: Installing Go toolchain
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Nvidia.Nsight.Compute
-      description: Installing NVIDIA Nsight Compute
     - command: powershell -NonInteractive -Command "shellver bump machine"
       description: Refreshing Shellver machine generation

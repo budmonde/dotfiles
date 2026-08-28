@@ -1,8 +1,9 @@
 # Profile: gaming
 # Usage: .\install-profile.ps1 gaming
 
+- install:
+    - [install/windows/winget/steam.ps1, Installing Steam]
+
 - shell:
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Valve.Steam
-      description: Installing Steam
     - command: powershell -NonInteractive -Command "shellver bump machine"
       description: Refreshing Shellver machine generation

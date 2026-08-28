@@ -65,3 +65,6 @@
 [submodule "envtest"]
 	path = envtest
 	url = https://github.com/budmonde/envtest.git
+[submodule "dotbot-plugins/install"]
+	path = dotbot-plugins/install
+	url = https://github.com/budmonde/dotbot-install.git

@@ -24,24 +24,15 @@
         path: bin/push-notify
         if: '[ -n "$WSL_DISTRO_NAME" ]'
 
+- install:
+    - [install/unix/uv, Installing uv]
+    - [install/unix/shellver, Installing Shellver]
+    - [install/unix/fzf, Installing fzf]
+    - [install/unix/tmux-plugins, Installing tmux plugins]
+    - [install/unix/rg, Installing ripgrep]
+    - [install/unix/rclone, Installing rclone]
+    - [install/unix/nvim, Installing Neovim]
+    - [install/unix/gh, Installing GitHub CLI]
+
 - shell:
-    - [./install/unix/shellver, Installing Shellver]
-
-    # Shell
-    - [./install/unix/fzf, Installing fzf]
-    - [~/.config/tmux/plugins/tpm/bin/install_plugins, Installing tmux plugins]
-
-    # CLI tools
-    - [./install/unix/rg, Installing ripgrep]
-    - [./install/unix/rclone, Installing rclone]
-
-    # Editors
-    - [./install/unix/nvim, Installing neovim]
-
-    # Python runtime
-    - [./install/unix/uv, Installing uv]
-
-    # Misc
-    - [./install/unix/gh, Installing GitHub CLI]
-
     - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

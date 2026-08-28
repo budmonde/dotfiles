@@ -1,14 +1,12 @@
 # Profile: collab — online collaboration tools
 # Usage: .\install-profile.ps1 collab
 
+- install:
+    - [install/windows/winget/discord.ps1, Installing Discord]
+    - [install/windows/winget/slack.ps1, Installing Slack]
+    - [install/windows/winget/google-drive.ps1, Installing Google Drive]
+    - [install/windows/winget/zoom.ps1, Installing Zoom]
+
 - shell:
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Discord.Discord
-      description: Installing Discord
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId SlackTechnologies.Slack
-      description: Installing Slack
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Google.GoogleDrive
-      description: Installing Google Drive
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Zoom.Zoom
-      description: Installing Zoom
     - command: powershell -NonInteractive -Command "shellver bump machine"
       description: Refreshing Shellver machine generation

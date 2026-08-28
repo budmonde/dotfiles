@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
+
+managed_binary="$HOME/.opencode/bin/opencode"
+
 opencode_application_paths() {
     local remaining="${PATH:-}"
     local directory candidate seen= last_entry
-
     while :; do
         if [[ "$remaining" == *:* ]]; then
             directory="${remaining%%:*}"
@@ -15,50 +18,82 @@ opencode_application_paths() {
             remaining=
             last_entry=1
         fi
-
         [ -n "$directory" ] || directory=.
         candidate="$directory/opencode"
         if [ -x "$candidate" ]; then
             case ":$seen:" in
                 *":$candidate:"*) ;;
-                *)
-                    printf '%s\n' "$candidate"
-                    seen="${seen:+$seen:}$candidate"
-                    ;;
+                *) printf '%s\n' "$candidate"; seen="${seen:+$seen:}$candidate" ;;
             esac
         fi
-
         [ "$last_entry" -eq 0 ] || break
     done
+    if [ -x "$managed_binary" ]; then
+        case ":$seen:" in
+            *":$managed_binary:"*) ;;
+            *) printf '%s\n' "$managed_binary" ;;
+        esac
+    fi
 }
 
-public_opencode_install_allowed() {
-    local candidate version
-
+installer_status() {
+    local candidate version installed= latest
     while IFS= read -r candidate; do
         [ -n "$candidate" ] || continue
         if ! version="$("$candidate" --version 2>/dev/null)"; then
-            printf 'Skipping public OpenCode install: version inspection failed for %s.\n' "$candidate"
-            return 1
+            installer_note "Preserving OpenCode application with unreadable version: $candidate"
+            printf 'unsupported\n'
+            return
         fi
         if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            printf 'Skipping public OpenCode install: preserving %s (%s).\n' \
-                "$candidate" "${version:-<no version>}"
-            return 1
+            installer_note "Preserving non-public OpenCode variant: $candidate ($version)"
+            printf 'unsupported\n'
+            return
         fi
+        installed="$version"
     done < <(opencode_application_paths)
 
-    return 0
+    if [ -z "$installed" ]; then
+        printf 'absent\n'
+        return
+    fi
+    latest="$(installer_github_latest_version anomalyco/opencode || true)"
+    installer_version_state "$installed" "$latest"
 }
 
 install_public_opencode() {
-    if ! public_opencode_install_allowed; then
-        return
+    local requested_version="$1"
+    local arguments=(--no-modify-path)
+    if [ -n "$requested_version" ]; then
+        arguments+=(--version "${requested_version#v}")
     fi
-
-    curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path
+    curl -fsSL https://opencode.ai/install | bash -s -- "${arguments[@]}" 1>&2
+    [ -x "$managed_binary" ] || {
+        installer_note "OpenCode installation did not produce $managed_binary"
+        return 1
+    }
 }
 
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    install_public_opencode
-fi
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    if [ "$state" != absent ]; then
+        printf '%s\n' "$state"
+        return
+    fi
+    install_public_opencode ''
+    installer_status
+}
+
+installer_upgrade() {
+    local state
+    state="$(installer_status)"
+    if [ "$state" = unsupported ]; then
+        printf 'unsupported\n'
+        return
+    fi
+    install_public_opencode "$1"
+    installer_status
+}
+
+installer_main "$@"

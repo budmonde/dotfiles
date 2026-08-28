@@ -1,62 +1,104 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nvim-install"
-BIN_DIR="$HOME/.local/bin"
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
 
-# Check if nvim is already installed via this method
-if [ -x "$INSTALL_DIR/bin/nvim" ]; then
-    echo "Neovim already installed at $INSTALL_DIR"
-    "$INSTALL_DIR/bin/nvim" --version | head -1
-    exit 0
-fi
+install_dir="${XDG_DATA_HOME:-$HOME/.local/share}/nvim-install"
+bin_dir="$HOME/.local/bin"
+binary="$install_dir/bin/nvim"
 
-# Check if nvim exists elsewhere (system install)
-if command -v nvim &>/dev/null; then
-    echo "Neovim already available: $(command -v nvim)"
-    nvim --version | head -1
-    exit 0
-fi
+nvim_target() {
+    [ "$(uname -s)" = Linux ] || return 1
+    case "$(uname -m)" in
+        x86_64) printf 'x86_64\n' ;;
+        aarch64|arm64) printf 'arm64\n' ;;
+        *) return 1 ;;
+    esac
+}
 
-# Detect architecture
-ARCH="$(uname -m)"
-case "$ARCH" in
-    x86_64)  ARCH="x86_64" ;;
-    aarch64) ARCH="arm64" ;;
-    arm64)   ARCH="arm64" ;;
-    *)
-        echo "Unsupported architecture: $ARCH"
-        exit 1
-        ;;
-esac
+installer_status() {
+    if ! nvim_target >/dev/null; then
+        printf 'unsupported\n'
+        return
+    fi
+    local candidate installed latest
+    candidate="$binary"
+    [ -x "$candidate" ] || candidate="$(command -v nvim || true)"
+    if [ -z "$candidate" ]; then
+        printf 'absent\n'
+        return
+    fi
+    installed="$("$candidate" --version 2>/dev/null | head -1 | awk '{ print $2 }' | sed 's/^v//')"
+    latest="$(installer_github_latest_version neovim/neovim || true)"
+    installer_version_state "$installed" "$latest"
+}
 
-# Only support Linux for now
-OS="$(uname -s)"
-if [ "$OS" != "Linux" ]; then
-    echo "This installer only supports Linux. Use Homebrew on macOS."
-    exit 0
-fi
+install_nvim() {
+    local version="$1"
+    local arch
+    arch="$(nvim_target)" || {
+        installer_note 'Neovim release installer supports Linux x64 and arm64 only'
+        return 1
+    }
+    local filename="nvim-linux-${arch}.tar.gz"
+    local url="https://github.com/neovim/neovim/releases/latest/download/$filename"
+    if [ -n "$version" ]; then
+        url="https://github.com/neovim/neovim/releases/download/v${version#v}/$filename"
+    fi
 
-FILENAME="nvim-linux-${ARCH}.tar.gz"
-URL="https://github.com/neovim/neovim/releases/latest/download/$FILENAME"
+    mkdir -p "$(dirname "$install_dir")"
+    local temporary staging backup=
+    temporary="$(mktemp -d)"
+    staging="$(mktemp -d "${install_dir}.install.XXXXXX")"
+    cleanup_nvim() {
+        rm -rf "$temporary"
+        [ ! -d "$staging" ] || rm -rf "$staging"
+        if [ -n "$backup" ] && [ ! -e "$install_dir" ] && [ -e "$backup" ]; then
+            mv "$backup" "$install_dir"
+        fi
+    }
+    trap cleanup_nvim RETURN
 
-echo "Downloading Neovim ($ARCH)..."
-TMPDIR=$(mktemp -d)
-curl -fsSL "$URL" -o "$TMPDIR/$FILENAME"
+    curl -fsSL "$url" -o "$temporary/$filename"
+    tar -xzf "$temporary/$filename" -C "$temporary"
+    mv "$temporary"/nvim-linux-*/* "$staging/"
+    "$staging/bin/nvim" --version >&2
 
-echo "Extracting to $INSTALL_DIR..."
-mkdir -p "$INSTALL_DIR"
-tar -xzf "$TMPDIR/$FILENAME" -C "$TMPDIR"
-# The tarball extracts to nvim-linux-x86_64/ or similar
-mv "$TMPDIR"/nvim-linux-*/* "$INSTALL_DIR/"
+    if [ -d "$install_dir" ]; then
+        backup="${install_dir}.previous.$$"
+        mv "$install_dir" "$backup"
+    elif [ -e "$install_dir" ]; then
+        installer_note "Refusing to replace non-directory Neovim installation: $install_dir"
+        return 1
+    fi
+    mv "$staging" "$install_dir"
+    staging=
+    mkdir -p "$bin_dir"
+    ln -sfn "$binary" "$bin_dir/nvim"
+    if [ -n "$backup" ]; then
+        rm -rf "$backup"
+        backup=
+    fi
+    trap - RETURN
+    rm -rf "$temporary"
+}
 
-rm -rf "$TMPDIR"
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    case "$state" in
+        absent) install_nvim ''; installer_status ;;
+        *) printf '%s\n' "$state" ;;
+    esac
+}
 
-# Create symlink in ~/.local/bin
-mkdir -p "$BIN_DIR"
-ln -sf "$INSTALL_DIR/bin/nvim" "$BIN_DIR/nvim"
+installer_upgrade() {
+    if ! nvim_target >/dev/null; then
+        printf 'unsupported\n'
+        return
+    fi
+    install_nvim "$1"
+    installer_status
+}
 
-echo ""
-echo "Neovim installed to $INSTALL_DIR"
-echo "Symlinked to $BIN_DIR/nvim"
-"$INSTALL_DIR/bin/nvim" --version | head -1
+installer_main "$@"

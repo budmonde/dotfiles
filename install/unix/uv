@@ -1,5 +1,52 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
-curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR="$HOME/.local/bin" UV_NO_MODIFY_PATH=1 sh
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
+
+binary="$HOME/.local/bin/uv"
+
+installer_status() {
+    if [ ! -x "$binary" ]; then
+        printf 'absent\n'
+        return
+    fi
+    local installed latest
+    installed="$("$binary" --version 2>/dev/null | awk '{ print $2 }')"
+    latest="$(installer_github_latest_version astral-sh/uv || true)"
+    installer_version_state "$installed" "$latest"
+}
+
+install_uv() {
+    local requested_version="$1"
+    local url='https://astral.sh/uv/install.sh'
+    if [ -n "$requested_version" ]; then
+        url="https://astral.sh/uv/${requested_version#v}/install.sh"
+    fi
+    command -v curl >/dev/null 2>&1 || {
+        installer_note 'curl is required to install uv'
+        return 1
+    }
+    curl -LsSf "$url" | UV_INSTALL_DIR="$HOME/.local/bin" UV_NO_MODIFY_PATH=1 sh 1>&2
+    [ -x "$binary" ] || {
+        installer_note "uv installation did not produce $binary"
+        return 1
+    }
+}
+
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    if [ "$state" != absent ]; then
+        printf '%s\n' "$state"
+        return
+    fi
+    install_uv "$1"
+    installer_status
+}
+
+installer_upgrade() {
+    install_uv "$1"
+    installer_status
+}
+
+installer_main "$@"

@@ -10,9 +10,11 @@
 # Soft-skip on absence so the profile remains usable on hosts without
 # the CUDA repo configured.
 
+- install:
+    - [install/unix/apt/go, Installing Go]
+    - [install/unix/apt/cmake, Installing CMake]
+    - [install/unix/apt/build-essential, Installing build-essential]
+    - [install/unix/apt/nsight-compute, Installing NVIDIA Nsight Compute]
+
 - shell:
-    - ['command -v apt-get >/dev/null 2>&1 || { echo "Skipping dev profile (apt-get not found)."; exit 0; }; sudo apt-get update && sudo apt-get install -y golang-go', Installing Go toolchain]
-    - ['command -v apt-get >/dev/null 2>&1 || exit 0; sudo apt-get install -y cmake', Installing CMake]
-    - ['command -v apt-get >/dev/null 2>&1 || exit 0; sudo apt-get install -y build-essential', Installing build-essential]
-    - ['command -v apt-get >/dev/null 2>&1 || exit 0; if apt-cache show nsight-compute >/dev/null 2>&1; then sudo apt-get install -y nsight-compute; else echo "Skipping nsight-compute (not in apt cache; configure NVIDIA CUDA repo to enable)."; fi', Installing NVIDIA Nsight Compute]
     - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]

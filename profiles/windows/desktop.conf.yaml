@@ -20,21 +20,22 @@
     ~/.config/Code/User/keybindings.json: config/vscode/keybindings.json
     ~/.config/Code/User/settings.json: config/vscode/settings.json
 
+- install:
+    - [install/windows/winget/autohotkey.ps1, Installing AutoHotkey]
+
 - shell:
-    # AHK
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId AutoHotkey.AutoHotkey, Installing AutoHotkey]
     - [powershell -NonInteractive -Command "Start-Process '%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\startup.ahk' -ArgumentList '/restart'", Restarting AHK startup script]
 
-    # PowerToys
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerToys, Installing PowerToys]
+- install:
+    - [install/windows/winget/powertoys.ps1, Installing PowerToys]
+
+- shell:
     - [powershell -NonInteractive -File bin\Sync-PowerToysSettings.ps1, Applying PowerToys settings]
 
-    # VS Code
-    - [powershell -NonInteractive -File install\windows\vscode-user-data.ps1, Configuring VS Code XDG user data]
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.VisualStudioCode, Installing VS Code]
+- install:
+    - [install/windows/vscode-user-data.ps1, Preparing Visual Studio Code user data]
+    - [install/windows/winget/vscode.ps1, Installing Visual Studio Code]
+    - [install/windows/winget/firefox.ps1, Installing Firefox]
 
-    # Firefox
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Mozilla.Firefox, Installing Firefox]
-    # TODO: add echo statement instructing the user to configure settings manually
-
+- shell:
     - [powershell -NonInteractive -Command "shellver bump machine", Refreshing Shellver machine generation]

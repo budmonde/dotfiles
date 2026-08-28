@@ -1,57 +1,92 @@
 #!/usr/bin/env bash
-# rclone installation script
-# Downloads the official rclone binary into ~/.local/bin (userspace, no sudo).
-#
-# Supported: Linux (amd64, arm64, armv7), macOS (amd64, arm64).
-# Unsupported targets exit 0 with a skip message.
-#
-# rclone is a single static Go binary, so a portable userspace install is
-# sufficient for copy/sync/lsd/etc. The `rclone mount` subcommand additionally
-# requires FUSE (Linux) or WinFsp (Windows) and is not addressed here.
-
 set -euo pipefail
 
-BIN_DIR="$HOME/.local/bin"
-BIN="$BIN_DIR/rclone"
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
 
-if command -v rclone >/dev/null 2>&1; then
-    echo "rclone already installed: $(rclone version | head -1)"
-    exit 0
-fi
+bin_dir="$HOME/.local/bin"
+binary="$bin_dir/rclone"
 
-os=$(uname -s | tr '[:upper:]' '[:lower:]')
-case "$os" in
-    linux)  ;;
-    darwin) os=osx ;;
-    *)
-        echo "Skipping rclone install (unsupported OS: $os)."
-        exit 0
-        ;;
-esac
+rclone_target() {
+    local os arch
+    os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+    case "$os" in
+        linux) ;;
+        darwin) os=osx ;;
+        *) return 1 ;;
+    esac
+    case "$(uname -m)" in
+        x86_64) arch=amd64 ;;
+        aarch64|arm64) arch=arm64 ;;
+        armv7l) arch=arm-v7 ;;
+        *) return 1 ;;
+    esac
+    printf '%s %s\n' "$os" "$arch"
+}
 
-arch=$(uname -m)
-case "$arch" in
-    x86_64)         arch=amd64 ;;
-    aarch64|arm64)  arch=arm64 ;;
-    armv7l)         arch=arm-v7 ;;
-    *)
-        echo "Skipping rclone install (unsupported arch: $arch)."
-        exit 0
-        ;;
-esac
+installer_status() {
+    if ! rclone_target >/dev/null; then
+        printf 'unsupported\n'
+        return
+    fi
+    local candidate installed latest
+    candidate="$binary"
+    [ -x "$candidate" ] || candidate="$(command -v rclone || true)"
+    if [ -z "$candidate" ]; then
+        printf 'absent\n'
+        return
+    fi
+    installed="$("$candidate" version 2>/dev/null | head -1 | awk '{ print $2 }' | sed 's/^v//')"
+    latest="$(installer_github_latest_version rclone/rclone || true)"
+    installer_version_state "$installed" "$latest"
+}
 
-url="https://downloads.rclone.org/rclone-current-${os}-${arch}.zip"
-tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT
+install_rclone() {
+    local version="$1"
+    local os arch
+    read -r os arch < <(rclone_target) || {
+        installer_note 'rclone release installer does not support this host'
+        return 1
+    }
+    if [ -z "$version" ]; then
+        version="$(installer_github_latest_version rclone/rclone || true)"
+    fi
+    [ -n "$version" ] || {
+        installer_note 'Could not resolve an rclone release version'
+        return 1
+    }
+    version="${version#v}"
 
-echo "Downloading rclone (${os}-${arch})..."
-curl -fsSL "$url" -o "$tmp/rclone.zip"
+    local temporary filename
+    temporary="$(mktemp -d)"
+    trap 'rm -rf "$temporary"' RETURN
+    filename="rclone-v${version}-${os}-${arch}.zip"
+    curl -fsSL "https://github.com/rclone/rclone/releases/download/v${version}/${filename}" -o "$temporary/rclone.zip"
+    unzip -q "$temporary/rclone.zip" -d "$temporary"
+    "$temporary"/rclone-*/rclone version >&2
+    mkdir -p "$bin_dir"
+    mv "$temporary"/rclone-*/rclone "$binary.new.$$"
+    chmod +x "$binary.new.$$"
+    mv -f "$binary.new.$$" "$binary"
+    trap - RETURN
+    rm -rf "$temporary"
+}
 
-echo "Extracting..."
-unzip -q "$tmp/rclone.zip" -d "$tmp"
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    case "$state" in
+        absent) install_rclone ''; installer_status ;;
+        *) printf '%s\n' "$state" ;;
+    esac
+}
 
-mkdir -p "$BIN_DIR"
-mv "$tmp"/rclone-*/rclone "$BIN"
-chmod +x "$BIN"
+installer_upgrade() {
+    if ! rclone_target >/dev/null; then
+        printf 'unsupported\n'
+        return
+    fi
+    install_rclone "$1"
+    installer_status
+}
 
-echo "rclone installed: $($BIN version | head -1)"
+installer_main "$@"

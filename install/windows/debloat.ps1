@@ -1,112 +1,140 @@
-$ErrorActionPreference = "Stop"
-
-# UWP apps to remove. These may be reinstalled by Windows Update or Intune;
-# re-run this script periodically to clean them out.
-$BloatApps = @(
-    "Microsoft.BingSearch"
-    "Microsoft.Copilot"
-    "Microsoft.Edge.GameAssist"
-    "Microsoft.GetHelp"
-    "Microsoft.MicrosoftJournal"
-    "Microsoft.MicrosoftStickyNotes"
-    "Microsoft.Whiteboard"
-    "Microsoft.Windows.DevHome"
-    "Microsoft.WindowsCamera"
-    "MicrosoftCorporationII.MicrosoftFamily"
-    "MicrosoftCorporationII.QuickAssist"
-    "Microsoft.MicrosoftOfficeHub"        # Microsoft 365 Copilot hub
-    "Microsoft.Todos"
-    "Microsoft.WidgetsPlatformRuntime"
-    "MicrosoftWindows.Client.WebExperience" # Windows Web Experience Pack (Widgets)
-    "AppUp.IntelTechnologyMDE"          # Intel Unison (phone mirroring)
-    "AppUp.IntelManagementandSecurityStatus"
-    "aimgr"                             # Local AI Manager for Microsoft 365
-    "Microsoft.Xbox.TCUI"
-    "Microsoft.XboxGamingOverlay"
-    "Microsoft.XboxIdentityProvider"
-    "Microsoft.XboxSpeechToTextOverlay"
+param(
+    [ValidateSet('status', 'apply', 'upgrade')][string]$Operation = 'apply',
+    [string]$RequestedVersion
 )
 
-$removed = 0
-$skipped = 0
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $env:DOTBOT_INSTALL_REPO_ROOT 'install\lib\windows\Lifecycle.psm1') -Force
 
-foreach ($app in $BloatApps) {
-    $packages = Get-AppxPackage -Name "*$app*" -ErrorAction SilentlyContinue
-    if ($packages) {
-        foreach ($pkg in $packages) {
-            Write-Host "Removing: $($pkg.Name)" -ForegroundColor Yellow
+$bloatApps = @(
+    'Microsoft.BingSearch',
+    'Microsoft.Copilot',
+    'Microsoft.Edge.GameAssist',
+    'Microsoft.GetHelp',
+    'Microsoft.MicrosoftJournal',
+    'Microsoft.MicrosoftStickyNotes',
+    'Microsoft.Whiteboard',
+    'Microsoft.Windows.DevHome',
+    'Microsoft.WindowsCamera',
+    'MicrosoftCorporationII.MicrosoftFamily',
+    'MicrosoftCorporationII.QuickAssist',
+    'Microsoft.MicrosoftOfficeHub',
+    'Microsoft.Todos',
+    'Microsoft.WidgetsPlatformRuntime',
+    'MicrosoftWindows.Client.WebExperience',
+    'AppUp.IntelTechnologyMDE',
+    'AppUp.IntelManagementandSecurityStatus',
+    'aimgr',
+    'Microsoft.Xbox.TCUI',
+    'Microsoft.XboxGamingOverlay',
+    'Microsoft.XboxIdentityProvider',
+    'Microsoft.XboxSpeechToTextOverlay'
+)
+$runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+$emptyArtifacts = @(
+    (Join-Path $env:USERPROFILE 'OneDrive'),
+    (Join-Path $env:USERPROFILE '.ms-ad')
+)
+
+function Test-EmptyDirectory {
+    param([string]$Path)
+
+    return (Test-Path -LiteralPath $Path -PathType Container) -and -not @(Get-ChildItem -LiteralPath $Path -Force -ErrorAction SilentlyContinue)
+}
+
+function Test-ClassicTeamsInstalled {
+    $winget = Get-Command winget -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if (-not $winget) {
+        return $false
+    }
+    $output = (& $winget.Path list --id Microsoft.Teams.Classic --exact --details --disable-interactivity 2>$null | Out-String)
+    return $output -match '\[Microsoft\.Teams\.Classic\]'
+}
+
+function Get-DebloatState {
+    foreach ($app in $bloatApps) {
+        if (Get-AppxPackage -Name "*$app*" -ErrorAction SilentlyContinue) {
+            return 'drifted'
+        }
+    }
+    $properties = Get-ItemProperty $runKey -ErrorAction SilentlyContinue
+    if ($properties) {
+        if (@($properties.PSObject.Properties | Where-Object { $_.Name -like 'MicrosoftEdgeAutoLaunch_*' }).Count -gt 0) {
+            return 'drifted'
+        }
+        if ($properties.PSObject.Properties.Name -contains 'Steam') {
+            return 'drifted'
+        }
+    }
+    if (Test-ClassicTeamsInstalled) {
+        return 'drifted'
+    }
+    foreach ($path in $emptyArtifacts) {
+        if (Test-EmptyDirectory $path) {
+            return 'drifted'
+        }
+    }
+    return 'current'
+}
+
+function Remove-Bloat {
+    $failures = @()
+    foreach ($app in $bloatApps) {
+        foreach ($package in @(Get-AppxPackage -Name "*$app*" -ErrorAction SilentlyContinue)) {
             try {
-                $pkg | Remove-AppxPackage -ErrorAction Stop
-                $removed++
+                $package | Remove-AppxPackage -ErrorAction Stop
+                Write-DotbotInstallerDiagnostic "Removed Appx package: $($package.Name)"
             } catch {
-                Write-Host "  Failed: $($_.Exception.Message)" -ForegroundColor Red
-                $skipped++
+                $failures += $_.Exception.Message
             }
         }
     }
-}
 
-# Startup entries to disable
-$startupRemovals = @{
-    "MicrosoftEdgeAutoLaunch_*" = "Edge auto-launch"
-}
+    $properties = Get-ItemProperty $runKey -ErrorAction SilentlyContinue
+    if ($properties) {
+        foreach ($property in @($properties.PSObject.Properties | Where-Object { $_.Name -like 'MicrosoftEdgeAutoLaunch_*' })) {
+            Remove-ItemProperty -Path $runKey -Name $property.Name
+            Write-DotbotInstallerDiagnostic "Removed startup entry: $($property.Name)"
+        }
+        if ($properties.PSObject.Properties.Name -contains 'Steam') {
+            Remove-ItemProperty -Path $runKey -Name Steam
+            Write-DotbotInstallerDiagnostic 'Removed startup entry: Steam'
+        }
+    }
 
-foreach ($pattern in $startupRemovals.Keys) {
-    $props = Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue
-    $matching = $props.PSObject.Properties | Where-Object { $_.Name -like $pattern }
-    foreach ($prop in $matching) {
-        Write-Host "Removing startup: $($startupRemovals[$pattern]) ($($prop.Name))" -ForegroundColor Yellow
-        Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name $prop.Name
-        $removed++
+    if (Test-ClassicTeamsInstalled) {
+        $winget = (Get-Command winget -CommandType Application -ErrorAction Stop |
+            Select-Object -First 1).Path
+        $output = (& $winget uninstall --id Microsoft.Teams.Classic --exact --silent --disable-interactivity 2>&1 | Out-String).Trim()
+        if ($output) {
+            Write-DotbotInstallerDiagnostic $output
+        }
+        if ($LASTEXITCODE -ne 0) {
+            $failures += "winget failed to remove Microsoft.Teams.Classic with exit code $LASTEXITCODE"
+        }
+    }
+
+    foreach ($path in $emptyArtifacts) {
+        if (Test-EmptyDirectory $path) {
+            Remove-Item -LiteralPath $path -Force
+            Write-DotbotInstallerDiagnostic "Removed empty directory: $path"
+        }
+    }
+    if ($failures.Count -gt 0) {
+        throw ($failures -join '; ')
     }
 }
 
-# Remove Steam from startup (registry)
-$steamStartup = Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Steam" -ErrorAction SilentlyContinue
-if ($steamStartup) {
-    Write-Host "Removing startup: Steam" -ForegroundColor Yellow
-    Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Steam"
-    $removed++
-}
-
-# Uninstall classic Teams (winget)
-$classicTeams = winget list --id Microsoft.Teams.Classic --accept-source-agreements 2>$null
-if ($classicTeams -match "Microsoft.Teams.Classic") {
-    Write-Host "Removing: Teams Machine-Wide Installer (classic)" -ForegroundColor Yellow
-    winget uninstall --id Microsoft.Teams.Classic --silent 2>$null
-    $removed++
-}
-
-# Clean up personal OneDrive folder (only if empty and account already unlinked).
-# To unlink the personal account first:
-#   OneDrive tray icon > Settings > Account > personal account > Unlink this PC
-$personalOneDrive = Join-Path $env:USERPROFILE "OneDrive"
-if (Test-Path $personalOneDrive) {
-    $items = Get-ChildItem $personalOneDrive -Force -ErrorAction SilentlyContinue
-    if (-not $items) {
-        Write-Host "Removing empty personal OneDrive folder" -ForegroundColor Yellow
-        Remove-Item $personalOneDrive -Force
-        $removed++
-    } else {
-        Write-Host "Skipping personal OneDrive folder (not empty - unlink account first)" -ForegroundColor DarkYellow
+Invoke-DotbotInstaller {
+    if ($RequestedVersion) {
+        throw 'Windows cleanup does not accept a requested version'
     }
-}
-
-$acrobatArtifact = Join-Path $env:USERPROFILE ".ms-ad"
-if (Test-Path -LiteralPath $acrobatArtifact -PathType Container) {
-    $items = Get-ChildItem -LiteralPath $acrobatArtifact -Force
-    if (-not $items) {
-        Write-Host "Removing empty Adobe Acrobat .ms-ad folder" -ForegroundColor Yellow
-        Remove-Item -LiteralPath $acrobatArtifact -Force
-        $removed++
-    } else {
-        Write-Host "Skipping Adobe Acrobat .ms-ad folder (not empty)" -ForegroundColor DarkYellow
+    $state = Get-DebloatState
+    if ($Operation -eq 'status' -or $state -eq 'current') {
+        return $state
     }
-}
-
-Write-Host ""
-Write-Host "Done. Removed: $removed, Failed: $skipped" -ForegroundColor Green
-
-if ($removed -eq 0 -and $skipped -eq 0) {
-    Write-Host "System is clean - no bloatware found." -ForegroundColor Cyan
+    Remove-Bloat
+    return (Get-DebloatState)
 }

@@ -1,61 +1,87 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
+
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
 
 data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
 install_dir="$data_home/fzf"
+binary="$install_dir/bin/fzf"
 
-for command in curl tar; do
-    command -v "$command" >/dev/null || {
-        printf 'Missing required command: %s\n' "$command" >&2
-        exit 1
-    }
-done
-
-release_url="$(curl --fail --silent --show-error --location --output /dev/null --write-out '%{url_effective}' \
-    'https://github.com/junegunn/fzf/releases/latest')"
-release_tag="${release_url##*/}"
-
-if [[ ! $release_tag =~ ^v[0-9] ]]; then
-    printf 'Could not resolve an fzf release tag from %s\n' "$release_url" >&2
-    exit 1
-fi
-
-mkdir -p "$data_home"
-temporary_dir="$(mktemp -d "$data_home/fzf.install.XXXXXX")"
-backup_dir=
-
-cleanup() {
-    if [[ -n $temporary_dir && -d $temporary_dir ]]; then
-        rm -rf "$temporary_dir"
+installer_status() {
+    if [ ! -x "$binary" ]; then
+        printf 'absent\n'
+        return
     fi
-
-    if [[ -n $backup_dir && ! -e $install_dir && -e $backup_dir ]]; then
-        mv "$backup_dir" "$install_dir"
-    fi
+    local installed latest
+    installed="$("$binary" --version 2>/dev/null | awk '{ print $1 }')"
+    latest="$(installer_github_latest_version junegunn/fzf || true)"
+    installer_version_state "$installed" "$latest"
 }
 
-trap cleanup EXIT
+install_fzf() {
+    local version="$1"
+    if [ -z "$version" ]; then
+        version="$(installer_github_latest_version junegunn/fzf || true)"
+    fi
+    [ -n "$version" ] || {
+        installer_note 'Could not resolve an fzf release version'
+        return 1
+    }
+    version="${version#v}"
+    for command in curl tar; do
+        command -v "$command" >/dev/null 2>&1 || {
+            installer_note "Missing required command: $command"
+            return 1
+        }
+    done
 
-printf 'Installing fzf %s into %s\n' "$release_tag" "$install_dir"
-curl --fail --silent --show-error --location "https://github.com/junegunn/fzf/archive/refs/tags/$release_tag.tar.gz" |
-    tar -xz --strip-components=1 -C "$temporary_dir"
-"$temporary_dir/install" --bin
+    mkdir -p "$data_home"
+    local staging backup=
+    staging="$(mktemp -d "$data_home/fzf.install.XXXXXX")"
+    cleanup_fzf() {
+        [ ! -d "$staging" ] || rm -rf "$staging"
+        if [ -n "$backup" ] && [ ! -e "$install_dir" ] && [ -e "$backup" ]; then
+            mv "$backup" "$install_dir"
+        fi
+    }
+    trap cleanup_fzf RETURN
 
-if [[ -e $install_dir && ! -d $install_dir ]]; then
-    printf 'Refusing to replace non-directory fzf installation: %s\n' "$install_dir" >&2
-    exit 1
-fi
+    curl -fsSL "https://github.com/junegunn/fzf/archive/refs/tags/v$version.tar.gz" |
+        tar -xz --strip-components=1 -C "$staging"
+    "$staging/install" --bin >&2
+    "$staging/bin/fzf" --version >&2
 
-if [[ -d $install_dir ]]; then
-    backup_dir="$data_home/fzf.previous.$$"
-    mv "$install_dir" "$backup_dir"
-fi
+    if [ -e "$install_dir" ] && [ ! -d "$install_dir" ]; then
+        installer_note "Refusing to replace non-directory fzf installation: $install_dir"
+        return 1
+    fi
+    if [ -d "$install_dir" ]; then
+        backup="$data_home/fzf.previous.$$"
+        mv "$install_dir" "$backup"
+    fi
+    mv "$staging" "$install_dir"
+    staging=
+    if [ -n "$backup" ]; then
+        rm -rf "$backup"
+        backup=
+    fi
+    trap - RETURN
+}
 
-mv "$temporary_dir" "$install_dir"
-temporary_dir=
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    if [ "$state" != absent ]; then
+        printf '%s\n' "$state"
+        return
+    fi
+    install_fzf ''
+    installer_status
+}
 
-if [[ -n $backup_dir ]]; then
-    rm -rf "$backup_dir"
-    backup_dir=
-fi
+installer_upgrade() {
+    install_fzf "$1"
+    installer_status
+}
+
+installer_main "$@"

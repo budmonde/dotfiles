@@ -1,71 +1,96 @@
-# Font installation script (Windows)
-# Fetches font archives from GitHub and installs them to the user font directory.
+param(
+    [ValidateSet('status', 'apply', 'upgrade')][string]$Operation = 'apply',
+    [string]$RequestedVersion
+)
 
-$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+Import-Module (Join-Path $env:DOTBOT_INSTALL_REPO_ROOT 'install\lib\windows\Lifecycle.psm1') -Force
 
 $fonts = @(
     @{
-        Repo    = 'microsoft/cascadia-code'
+        Repo = 'microsoft/cascadia-code'
         Pattern = 'CascadiaCode-*.zip'
-        Filter  = '*NF*.ttf'
+        Filter = '*NF*.ttf'
     },
     @{
-        Repo    = 'alerque/libertinus'
+        Repo = 'alerque/libertinus'
         Pattern = 'Libertinus-*.zip'
-        Filter  = '*.otf'
+        Filter = '*.otf'
     }
 )
+$fontDir = Join-Path $env:LOCALAPPDATA 'Microsoft\Windows\Fonts'
+$registryKey = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
 
-$fontDir = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
-if (-not (Test-Path $fontDir)) { New-Item -ItemType Directory -Path $fontDir -Force | Out-Null }
+function Test-FontFamilyInstalled {
+    param([hashtable]$Font)
 
-$regKey = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
+    $extension = [System.IO.Path]::GetExtension($Font.Filter)
+    return @(
+        Get-ChildItem $fontDir -Filter "*$extension" -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -like $Font.Filter }
+    ).Count -gt 0
+}
 
-foreach ($font in $fonts) {
-    # Derive file extension from the Filter pattern (e.g. '*.otf' -> '.otf').
-    $ext = [System.IO.Path]::GetExtension($font.Filter)
-    $regSuffix = if ($ext -eq '.otf') { 'OpenType' } else { 'TrueType' }
+function Get-FontState {
+    $installed = @($fonts | Where-Object { Test-FontFamilyInstalled $_ }).Count
+    if ($installed -eq $fonts.Count) {
+        return 'current'
+    }
+    return $(if ($installed -eq 0) { 'absent' } else { 'drifted' })
+}
 
-    # Skip download if matching fonts are already installed.
-    $existing = Get-ChildItem $fontDir -Filter "*$ext" -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -like $font.Filter }
-    if ($existing) {
-        Write-Host "Fonts from $($font.Repo) already installed"
-        continue
+function Install-FontFamily {
+    param([hashtable]$Font)
+
+    if (Test-FontFamilyInstalled $Font) {
+        return
+    }
+    $release = Invoke-RestMethod "https://api.github.com/repos/$($Font.Repo)/releases/latest"
+    $assets = @($release.assets | Where-Object { $_.name -like $Font.Pattern })
+    if ($assets.Count -ne 1) {
+        throw "Expected one matching font asset for $($Font.Repo), found $($assets.Count)"
     }
 
-    $release = Invoke-RestMethod "https://api.github.com/repos/$($font.Repo)/releases/latest"
-    $asset = $release.assets | Where-Object { $_.name -like $font.Pattern } | Select-Object -First 1
-    if (-not $asset) {
-        Write-Warning "No matching asset for $($font.Repo)"
-        continue
-    }
-
-    $zip = Join-Path $env:TEMP $asset.name
-    $extractDir = Join-Path $env:TEMP ($asset.name -replace '\.zip$', '')
-
-    Write-Host "Downloading $($asset.name)..."
-    (New-Object System.Net.WebClient).DownloadFile($asset.browser_download_url, $zip)
-    Expand-Archive -Path $zip -DestinationPath $extractDir -Force
-
-    $installed = 0
-    Get-ChildItem $extractDir -Recurse -Filter "*$ext" |
-        Where-Object { $_.Name -like $font.Filter } |
-        ForEach-Object {
-            $dest = Join-Path $fontDir $_.Name
-            if (-not (Test-Path $dest)) {
-                Copy-Item $_.FullName $dest
-                $fontName = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
-                Set-ItemProperty -Path $regKey -Name "$fontName ($regSuffix)" -Value $dest
-                $installed++
+    $temporary = Join-Path $env:TEMP "dotbot-fonts-$PID-$([Guid]::NewGuid().ToString('N'))"
+    $archive = "$temporary.zip"
+    try {
+        New-Item -ItemType Directory -Path $temporary | Out-Null
+        Invoke-WebRequest -Uri $assets[0].browser_download_url -OutFile $archive
+        Expand-Archive -LiteralPath $archive -DestinationPath $temporary -Force
+        $extension = [System.IO.Path]::GetExtension($Font.Filter)
+        $registrySuffix = if ($extension -eq '.otf') { 'OpenType' } else { 'TrueType' }
+        foreach ($file in @(
+            Get-ChildItem $temporary -Recurse -Filter "*$extension" |
+                Where-Object { $_.Name -like $Font.Filter }
+        )) {
+            $destination = Join-Path $fontDir $file.Name
+            if (-not (Test-Path -LiteralPath $destination)) {
+                Copy-Item -LiteralPath $file.FullName -Destination $destination
+                $fontName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+                Set-ItemProperty -Path $registryKey -Name "$fontName ($registrySuffix)" -Value $destination
+                Write-DotbotInstallerDiagnostic "Installed font: $($file.Name)"
             }
         }
-
-    Remove-Item $zip -ErrorAction SilentlyContinue
-    Remove-Item $extractDir -Recurse -ErrorAction SilentlyContinue
-
-    if ($installed -gt 0) {
-        Write-Host "Installed $installed fonts from $($font.Repo)"
+    } finally {
+        Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $temporary -Recurse -Force -ErrorAction SilentlyContinue
     }
+}
+
+Invoke-DotbotInstaller {
+    if ($RequestedVersion) {
+        throw 'Font bundles do not accept a requested version'
+    }
+    $state = Get-FontState
+    if ($Operation -eq 'status' -or ($Operation -eq 'apply' -and $state -eq 'current')) {
+        return $state
+    }
+    New-Item -ItemType Directory -Force -Path $fontDir | Out-Null
+    New-Item -ItemType Directory -Force -Path $registryKey | Out-Null
+    foreach ($font in $fonts) {
+        Install-FontFamily -Font $font
+    }
+    return (Get-FontState)
 }

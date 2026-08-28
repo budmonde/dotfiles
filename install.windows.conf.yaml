@@ -32,38 +32,29 @@
         force: true
     ~/.local/bin/optimize-wsl-vhd.bat: bin/optimize-wsl-vhd.bat
 
-- shell:
-    - [powershell -NonInteractive -File install\windows\shellver.ps1, Installing Shellver]
+- install:
+    - [install/windows/winget/uv.ps1, Installing uv]
+    - [install/windows/shellver.ps1, Installing Shellver]
+    - [install/windows/profile-loader.ps1, Installing the PowerShell profile loader]
+    - [install/windows/winget/powershell.ps1, Installing PowerShell 7]
 
-    # Powershell
-    - [powershell -NoProfile -File install\windows\profile-loader.ps1, Writing OneDrive-safe PowerShell profile loaders]
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Microsoft.PowerShell, Installing PowerShell 7]
+- shell:
     - command: >-
         powershell -NoProfile -Command
         "& pwsh -NoProfile -Command \"if ((Get-ExecutionPolicy -Scope CurrentUser) -eq 'Restricted') { Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }\""
       description: Setting PowerShell 7 execution policy
-    - [powershell -NonInteractive -File install\windows\fzf.ps1, Installing fzf]
 
-    # PowerShell modules (bootstraps PackageManagement if needed).
-    # Invoked via pwsh so modules land under Documents\PowerShell\Modules
-    # rather than Documents\WindowsPowerShell\Modules.
-    - [pwsh -NonInteractive -File install\windows\psreadline.ps1, Upgrading PSReadLine]
-    - [pwsh -NonInteractive -File install\windows\psfzf.ps1, Installing PSFzf]
-    - [pwsh -NonInteractive -File install\windows\completion-predictor.ps1, Installing CompletionPredictor]
+- install:
+    - [install/windows/fzf.ps1, Installing fzf]
+    - [install/windows/psreadline.ps1, Installing PSReadLine]
+    - [install/windows/psfzf.ps1, Installing PSFzf]
+    - [install/windows/completion-predictor.ps1, Installing CompletionPredictor]
+    - [install/windows/winget/ripgrep.ps1, Installing ripgrep]
+    - [install/windows/winget/rclone.ps1, Installing rclone]
+    - [install/windows/winget/neovim.ps1, Installing Neovim]
+    - [install/windows/winget/github-cli.ps1, Installing GitHub CLI]
+    - [install/windows/fonts.ps1, Installing configured fonts]
+    - [install/windows/debloat.ps1, Applying Windows debloat configuration]
 
-    # CLI tools
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId BurntSushi.ripgrep.MSVC, Installing ripgrep]
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Rclone.Rclone, Installing rclone]
-
-    # Editors
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Neovim.Neovim, Installing Neovim]
-
-    # Python runtime
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId astral-sh.uv, Installing uv]
-
-    # Misc
-    - [powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId GitHub.cli, Installing GitHub CLI]
-    - [powershell -NonInteractive -File install\windows\fonts.ps1, Installing fonts]
-    - [powershell -NonInteractive -File install\windows\debloat.ps1, Removing bloatware]
-
+- shell:
     - [powershell -NonInteractive -Command "shellver bump machine", Refreshing Shellver machine generation]

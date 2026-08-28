@@ -2,10 +2,10 @@
 # Usage: .\install-profile.ps1 node
 # Start a new shell after the first install before running npm-consuming profiles.
 
+- install:
+    - [install/windows/winget/fnm.ps1, Installing fnm]
+    - [install/windows/node.ps1, Installing Node.js]
+
 - shell:
-    - command: powershell -NonInteractive -File install\windows\winget-install.ps1 -PackageId Schniz.fnm
-      description: Installing fnm
-    - command: powershell -NonInteractive -File install\windows\node.ps1 -VersionFile profiles\node-version
-      description: Installing pinned Node.js version
     - command: powershell -NonInteractive -Command "shellver bump machine"
       description: Refreshing Shellver machine generation

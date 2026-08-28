@@ -15,6 +15,8 @@ $DOTBOT_DIR = "dotbot"
 $DOTBOT_BIN = "bin/dotbot"
 $BASEDIR = $PSScriptRoot
 $DOTBOT_FAILURE_OUTPUT_PLUGIN = Join-Path $BASEDIR "dotbot-plugins\failure_output.py"
+$DOTBOT_INSTALL_DIR = "dotbot-plugins/install"
+$DOTBOT_INSTALL_PLUGIN = Join-Path $BASEDIR "dotbot-plugins\install\install.py"
 
 $ProfilesDir = Join-Path $BASEDIR "profiles\windows"
 $ValidProfiles = @(Get-ChildItem -LiteralPath $ProfilesDir -Filter "*.conf.yaml" -File |
@@ -65,15 +67,15 @@ foreach ($profile in $Profiles) {
 }
 
 Set-Location $BASEDIR
-git -C $DOTBOT_DIR submodule sync --quiet --recursive
-git submodule update --init --recursive $DOTBOT_DIR
+git submodule sync --quiet --recursive -- $DOTBOT_DIR $DOTBOT_INSTALL_DIR
+git submodule update --init --recursive -- $DOTBOT_DIR $DOTBOT_INSTALL_DIR
 
 foreach ($PYTHON in ('python', 'python3')) {
     if (& { $ErrorActionPreference = "SilentlyContinue"
             ![string]::IsNullOrEmpty((&$PYTHON -V))
             $ErrorActionPreference = "Stop" }) {
         $DOTBOT_PATH = Join-Path $BASEDIR -ChildPath $DOTBOT_DIR | Join-Path -ChildPath $DOTBOT_BIN
-        &$PYTHON $DOTBOT_PATH --plugin $DOTBOT_FAILURE_OUTPUT_PLUGIN -d $BASEDIR -c @Configs @DotbotArgs
+        &$PYTHON $DOTBOT_PATH --plugin $DOTBOT_FAILURE_OUTPUT_PLUGIN --plugin $DOTBOT_INSTALL_PLUGIN -d $BASEDIR -c @Configs @DotbotArgs
         return
     }
 }

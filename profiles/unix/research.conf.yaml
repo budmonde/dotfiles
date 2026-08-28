@@ -5,6 +5,8 @@
 # profile installs MiKTeX instead (a different distribution chosen for
 # Windows-native packaging); both deliver the same `latex`/`xelatex` capability.
 
+- install:
+    - [install/unix/texlive, Installing TeX Live]
+
 - shell:
-    - [./install/unix/texlive, Installing texlive]
     - ['. "$HOME/.shellenv"; shellver bump machine', Refreshing Shellver machine generation]
