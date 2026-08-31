@@ -3,24 +3,19 @@ set -euo pipefail
 
 source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
 
-node_version_file="$DOTBOT_INSTALL_REPO_ROOT/profiles/node-version"
 fnm="${XDG_DATA_HOME:-$HOME/.local/share}/fnm/fnm"
 
-locked_version() {
-    tr -d '[:space:]' < "$node_version_file"
-}
-
 installer_status() {
+    local version="${1#v}"
+    if [ -z "$version" ]; then
+        installer_note 'The Node.js recipe must declare an exact desired version'
+        return 1
+    fi
     if [ ! -x "$fnm" ]; then
         printf 'blocked\n'
         return
     fi
-    local version default_version latest
-    version="$(locked_version)"
-    if [ -z "$version" ]; then
-        installer_note "$node_version_file is empty"
-        return 1
-    fi
+    local default_version latest
     if ! "$fnm" exec --using "$version" -- node --version >/dev/null 2>&1; then
         printf 'absent\n'
         return
@@ -45,30 +40,18 @@ converge_node() {
 }
 
 installer_apply() {
-    local state version
-    state="$(installer_status)"
-    version="$(locked_version)"
+    local version="${1#v}"
+    local state
+    state="$(installer_status "$version")"
     case "$state" in
         current|update-available) printf '%s\n' "$state" ;;
         blocked) printf 'blocked\n' ;;
-        *) converge_node "$version"; installer_status ;;
+        *) converge_node "$version"; installer_status "$version" ;;
     esac
 }
 
 installer_upgrade() {
-    local version="$1"
-    if [ -z "$version" ]; then
-        version="$("$fnm" list-remote --latest 2>/dev/null | tail -1 | tr -d '[:space:]' | sed 's/^v//')"
-    fi
-    [ -n "$version" ] || {
-        installer_note 'Could not resolve a Node.js upgrade version'
-        return 1
-    }
-    converge_node "$version"
-    local temporary="$node_version_file.$$.tmp"
-    printf '%s\n' "${version#v}" > "$temporary"
-    mv "$temporary" "$node_version_file"
-    installer_status
+    installer_apply "$1"
 }
 
 installer_main "$@"

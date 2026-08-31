@@ -1,5 +1,5 @@
-# Profile: gamedev — game development tools
-# Usage: .\install-profile.ps1 gamedev
+# Recipe: 65-gamedev — game development tools
+# Usage: .\install.ps1 --recipe gamedev
 
 - install:
     - [install/windows/winget/unity-hub.ps1, Installing Unity Hub]

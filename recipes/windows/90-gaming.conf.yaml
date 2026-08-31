@@ -1,5 +1,5 @@
-# Profile: gaming
-# Usage: .\install-profile.ps1 gaming
+# Recipe: 90-gaming
+# Usage: .\install.ps1 --recipe gaming
 
 - install:
     - [install/windows/winget/steam.ps1, Installing Steam]

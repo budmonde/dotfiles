@@ -1,5 +1,5 @@
-# Profile: desktop — desktop applications and customization
-# Usage: .\install-profile.ps1 desktop
+# Recipe: 50-desktop — desktop applications and customization
+# Usage: .\install.ps1 --recipe desktop
 
 - defaults:
     link:

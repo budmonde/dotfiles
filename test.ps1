@@ -1,17 +1,16 @@
-[CmdletBinding()]
-param(
-    [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$TestArguments
-)
+$ErrorActionPreference = "Stop"
 
-$ErrorActionPreference = 'Stop'
+$BASEDIR = $PSScriptRoot
+$ORCHESTRATOR = Join-Path $BASEDIR "orchestrate.py"
+$DOTFILES_LOCAL_BIN = Join-Path $HOME ".local\bin"
+$env:Path = "$DOTFILES_LOCAL_BIN;$env:Path"
 
-$runner = Join-Path $PSScriptRoot 'envtest\envtest.py'
-$commonConfig = Join-Path $PSScriptRoot 'test.conf.yaml'
-$platformConfig = Join-Path $PSScriptRoot 'test.windows.conf.yaml'
-
-& git -C $PSScriptRoot submodule update --init --recursive envtest
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-& uv run $runner --root $PSScriptRoot --config $commonConfig --config $platformConfig @TestArguments
-exit $LASTEXITCODE
+foreach ($PYTHON in ('python', 'python3')) {
+    if (& { $ErrorActionPreference = "SilentlyContinue"
+            ![string]::IsNullOrEmpty((&$PYTHON -V))
+            $ErrorActionPreference = "Stop" }) {
+        &$PYTHON $ORCHESTRATOR test @Args
+        exit $LASTEXITCODE
+    }
+}
+Write-Error "Error: Cannot find Python. Please install Python 3.8+ from https://python.org"

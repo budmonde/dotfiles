@@ -82,6 +82,7 @@ function Restart-DotbotInstallerInPowerShellCore {
 function Get-WinGetPackageState {
     param(
         [Parameter(Mandatory)][string]$PackageId,
+        [string]$RequestedVersion,
         [switch]$CheckUpdates
     )
 
@@ -105,6 +106,16 @@ function Get-WinGetPackageState {
         return 'absent'
     }
 
+    if ($RequestedVersion) {
+        $requested = Invoke-DotbotCapturedCommand -FilePath $winget.Path -ArgumentList @(
+            'list', '--id', $PackageId, '--exact', '--version', $RequestedVersion,
+            '--details', '--disable-interactivity'
+        )
+        if ($requested.Output -notmatch $packagePattern) {
+            return 'drifted'
+        }
+    }
+
     if (-not $CheckUpdates -or -not (Test-DotbotInstallerOnline)) {
         return 'current'
     }
@@ -125,8 +136,10 @@ function Invoke-WinGetPackage {
         [string]$RequestedVersion
     )
 
-    $state = Get-WinGetPackageState -PackageId $PackageId -CheckUpdates
-    if ($Operation -eq 'status' -or ($Operation -eq 'apply' -and $state -ne 'absent')) {
+    $state = Get-WinGetPackageState -PackageId $PackageId -RequestedVersion $RequestedVersion -CheckUpdates
+    if ($Operation -eq 'status' -or
+        ($Operation -eq 'apply' -and $state -in @('current', 'update-available')) -or
+        ($Operation -eq 'upgrade' -and $RequestedVersion -and $state -in @('current', 'update-available'))) {
         return $state
     }
     if ($state -eq 'blocked') {
@@ -151,8 +164,8 @@ function Invoke-WinGetPackage {
         throw "winget $verb failed for $PackageId with exit code $($result.ExitCode)"
     }
 
-    $verified = Get-WinGetPackageState -PackageId $PackageId -CheckUpdates
-    if ($verified -eq 'absent' -or $verified -eq 'blocked') {
+    $verified = Get-WinGetPackageState -PackageId $PackageId -RequestedVersion $RequestedVersion -CheckUpdates
+    if ($verified -in @('absent', 'blocked', 'drifted')) {
         throw "winget did not verify $PackageId after $verb"
     }
     return $verified
@@ -196,10 +209,18 @@ function Invoke-PowerShellGalleryModule {
     $installed = Get-Module $Name -ListAvailable |
         Sort-Object Version -Descending |
         Select-Object -First 1
-    if ($Operation -eq 'status') {
-        return $(if ($installed) { 'current' } else { 'absent' })
+    $state = if (-not $installed) {
+        'absent'
+    } elseif ($RequestedVersion -and $installed.Version -ne [Version]$RequestedVersion) {
+        'drifted'
+    } else {
+        'current'
     }
-    if ($Operation -eq 'apply' -and $installed) {
+    if ($Operation -eq 'status') {
+        return $state
+    }
+    if (($Operation -eq 'apply' -and $state -eq 'current') -or
+        ($Operation -eq 'upgrade' -and $RequestedVersion -and $state -eq 'current')) {
         return 'current'
     }
 

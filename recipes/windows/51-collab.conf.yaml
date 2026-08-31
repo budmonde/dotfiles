@@ -1,5 +1,5 @@
-# Profile: collab — online collaboration tools
-# Usage: .\install-profile.ps1 collab
+# Recipe: 51-collab — online collaboration tools
+# Usage: .\install.ps1 --recipe collab
 
 - install:
     - [install/windows/winget/discord.ps1, Installing Discord]

@@ -1,0 +1,7 @@
+# Recipe: 20-node — managed Node.js runtime
+# Usage: .\install.ps1 --recipe node
+# Start a new shell after the first install before running npm-consuming recipes.
+
+- install:
+    - [install/windows/winget/fnm.ps1, Installing fnm]
+    - [install/windows/node.ps1, Installing Node.js, "24.19.0"]

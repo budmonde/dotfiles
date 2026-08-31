@@ -16,7 +16,7 @@ Then follow the printed next steps to add SSH keys, clone, and run `install.ps1`
 
 ## Installer Development
 
-Dotbot profiles select and order lifecycle-aware resource installers from `install/`.
+Dotbot recipes select and order lifecycle-aware resource installers from `install/`.
 See [`install/README.md`](install/README.md) for the protocol, shared backends, version ownership, custom-script requirements, and verification commands.
 
 ## Environment Tests
@@ -51,28 +51,33 @@ On Windows, use the equivalent PowerShell entry point:
 .\test.ps1 --check git
 ```
 
-Test a profile with the same name used by its installer:
+Test an explicit recipe selection with the same selectors used by installation:
 
 ```text
-./test-profile agentic
+./test.sh --recipe agentic
 ```
 
 ```powershell
-.\test-profile.ps1 agentic
+.\test.ps1 --recipe agentic
 ```
 
-Profile commands pass only the selected profile's shared and platform test files to envtest.
+Without `--recipe`,
+the test launcher reads `.install-recipes` and runs the shared and platform test files for every configured recipe.
+IDs,
+tags,
+canonical names,
+and numeric ranges resolve through the same logic as installation.
 The default output shows one color-coded status line for every group, expands failures to the failed primitive names, and ends with a summary.
 Pass `--verbose` to add detailed diagnostics, durations, and unexpected tracebacks.
 Status labels use terminal colors automatically; set `NO_COLOR` to disable them.
 
 The generic test engine is pinned as the `envtest/` submodule.
-The root launchers own platform and profile orchestration and pass the selected YAML files to that engine explicitly.
-`test.conf.yaml`, `test.unix.conf.yaml`, and `test.windows.conf.yaml` hold the common and platform contracts.
-Profile contracts live next to their corresponding profile configuration as `<profile>.test.conf.yaml`.
-`test.conf.yaml` contains the platform-neutral command and configuration checks shared by the supported runtime installers.
-Platform and profile contracts contain only assertions whose runtime behavior or setup differs by platform or profile.
-Use a shared profile contract when its runtime assertions are identical on every platform; add a platform profile contract only when they differ.
+The root `orchestrate.py` control plane owns recipe selection for both installation and testing.
+Its test adapter passes the selected YAML files to envtest explicitly.
+Base contracts live at `recipes/00-base.test.conf.yaml` and the corresponding platform path.
+Other contracts live beside their recipe fragments as `<canonical-recipe>.test.conf.yaml`.
+Shared contracts contain platform-neutral checks.
+Platform recipe contracts contain only assertions whose runtime behavior or setup differs by platform.
 Pass `--config <path>` after the standard layers to add a machine-specific overlay.
 Run `./test.sh --check ssh` to verify GitHub SSH authentication.
 The SSH command is non-interactive and never accepts or writes host keys.

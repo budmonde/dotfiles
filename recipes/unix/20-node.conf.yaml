@@ -1,0 +1,7 @@
+# Recipe: 20-node — managed Node.js runtime
+# Usage: ./install.sh --recipe node
+# Start a new shell after the first install before running npm-consuming recipes.
+
+- install:
+    - [install/unix/fnm, Installing fnm]
+    - [install/unix/node, Installing Node.js, "24.19.0"]

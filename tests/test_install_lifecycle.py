@@ -3,6 +3,7 @@ import importlib.util
 import io
 import re
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -14,6 +15,8 @@ LIFECYCLE_PATH = REPO_ROOT / "install/lib/python/lifecycle.py"
 SPEC = importlib.util.spec_from_file_location("install_lifecycle", LIFECYCLE_PATH)
 LIFECYCLE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(LIFECYCLE)
+sys.path.insert(0, str(REPO_ROOT))
+import orchestrate as ORCHESTRATE
 
 
 def completed(arguments):
@@ -29,14 +32,16 @@ class MainTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertEqual(stdout.getvalue(), "current\n")
 
-    def test_main_rejects_requested_version_for_apply(self):
+    def test_main_passes_desired_version_for_apply(self):
         handler = mock.Mock(return_value="current")
-        stderr = io.StringIO()
-        with contextlib.redirect_stderr(stderr):
+        stdout = io.StringIO()
+
+        with contextlib.redirect_stdout(stdout):
             result = LIFECYCLE.main(handler, ["apply", "1.2.3"])
 
-        self.assertEqual(result, 2)
-        self.assertFalse(handler.called)
+        self.assertEqual(result, 0)
+        self.assertEqual(stdout.getvalue(), "current\n")
+        handler.assert_called_once_with("apply", "1.2.3")
 
     def test_main_rejects_an_invalid_state(self):
         stderr = io.StringIO()
@@ -110,16 +115,145 @@ class NpmGlobalTests(unittest.TestCase):
         self.assertEqual(state, "update-available")
         capture.assert_not_called()
 
+    def test_apply_converges_an_exact_version_drift(self):
+        installed_versions = iter(["1.0.0", "2.0.0"])
+        with mock.patch.object(LIFECYCLE.shutil, "which", return_value="npm"), mock.patch.object(
+            LIFECYCLE, "_npm_installed_version", side_effect=installed_versions
+        ), mock.patch.object(
+            LIFECYCLE, "_npm_latest_version", return_value="3.0.0"
+        ), mock.patch.object(LIFECYCLE, "capture", return_value=completed([])) as capture:
+            state = LIFECYCLE.npm_global("example-package", "apply", "2.0.0")
+
+        self.assertEqual(state, "update-available")
+        capture.assert_called_once()
+        self.assertIn("example-package@2.0.0", capture.call_args.args[0])
+
+
+class RecipeTests(unittest.TestCase):
+    def test_discovers_canonical_platform_recipes(self):
+        windows = [recipe.name for recipe in ORCHESTRATE.discover_recipes(REPO_ROOT, "windows")]
+        unix = [recipe.name for recipe in ORCHESTRATE.discover_recipes(REPO_ROOT, "unix")]
+
+        self.assertEqual(
+            windows,
+            [
+                "00-base",
+                "10-dev",
+                "20-node",
+                "30-agentic",
+                "40-research",
+                "41-iqa",
+                "50-desktop",
+                "51-collab",
+                "52-creative",
+                "65-gamedev",
+                "90-gaming",
+                "95-wsl",
+            ],
+        )
+        self.assertEqual(
+            unix,
+            ["00-base", "10-dev", "20-node", "30-agentic", "40-research", "41-iqa"],
+        )
+
+    def test_resolves_name_id_tag_and_range_selectors(self):
+        recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, "windows")
+        expected = ["10-dev", "20-node", "30-agentic"]
+
+        for selectors in (
+            ["10-dev", "20-node", "30-agentic"],
+            ["10", "20", "30"],
+            ["dev", "node", "agentic"],
+            ["10...30"],
+        ):
+            self.assertEqual(
+                [recipe.name for recipe in ORCHESTRATE.resolve_recipes(recipes, selectors)],
+                expected,
+            )
+
+    def test_rejects_duplicate_and_non_monotonic_selections(self):
+        recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, "windows")
+        with self.assertRaises(ORCHESTRATE.RecipeError):
+            ORCHESTRATE.resolve_recipes(recipes, ["dev", "dev"])
+        with self.assertRaises(ORCHESTRATE.RecipeError):
+            ORCHESTRATE.resolve_recipes(recipes, ["node", "dev"])
+
+    def test_assembles_shared_before_platform_shared_after(self):
+        recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, "windows")
+        selected = ORCHESTRATE.resolve_recipes(recipes, ["base", "node", "agentic"])
+
+        self.assertEqual(
+            ORCHESTRATE.install_configs(REPO_ROOT, selected),
+            [
+                "recipes/00-base.before.conf.yaml",
+                "recipes/windows/00-base.conf.yaml",
+                "recipes/00-base.after.conf.yaml",
+                "recipes/20-node.before.conf.yaml",
+                "recipes/windows/20-node.conf.yaml",
+                "recipes/20-node.after.conf.yaml",
+                "recipes/30-agentic.before.conf.yaml",
+                "recipes/windows/30-agentic.conf.yaml",
+                "recipes/30-agentic.after.conf.yaml",
+            ],
+        )
+
+    def test_example_machine_plan_is_canonical_and_monotonic(self):
+        recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, "windows")
+        selected = ORCHESTRATE.read_machine_plan(
+            REPO_ROOT / ".install-recipes.example", recipes
+        )
+
+        self.assertEqual(selected[0].name, "00-base")
+        self.assertEqual(selected[-1].name, "90-gaming")
+
+    def test_recipe_parser_preserves_unconsumed_arguments(self):
+        cases = (
+            (
+                ["--recipe", "dev", "node", "--only", "install", "--dry-run", "--upgrade"],
+                ["dev", "node"],
+                ["--only", "install", "--dry-run", "--upgrade"],
+            ),
+            (
+                ["--recipe", "node", "agentic", "--list-checks"],
+                ["node", "agentic"],
+                ["--list-checks"],
+            ),
+        )
+        for arguments, expected_selectors, expected_remaining in cases:
+            selectors, remaining = ORCHESTRATE.parse_recipe_arguments(arguments)
+            self.assertEqual(selectors, expected_selectors)
+            self.assertEqual(remaining, expected_remaining)
+
+    def test_assembles_shared_and_platform_test_configs(self):
+        recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, "windows")
+        selected = ORCHESTRATE.resolve_recipes(recipes, ["base", "node", "agentic"])
+
+        self.assertEqual(
+            ORCHESTRATE.test_configs(REPO_ROOT, selected),
+            [
+                "recipes/00-base.test.conf.yaml",
+                "recipes/windows/00-base.test.conf.yaml",
+                "recipes/20-node.test.conf.yaml",
+                "recipes/windows/20-node.test.conf.yaml",
+                "recipes/30-agentic.test.conf.yaml",
+                "recipes/windows/30-agentic.test.conf.yaml",
+            ],
+        )
+
+    def test_every_platform_recipe_has_a_test_config(self):
+        for platform in ("unix", "windows"):
+            recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, platform)
+            configs = ORCHESTRATE.test_configs(REPO_ROOT, recipes)
+            for recipe in recipes:
+                self.assertTrue(
+                    any("/{}.test.conf.yaml".format(recipe.name) in config for config in configs),
+                    recipe.name,
+                )
+
 
 class ManifestTests(unittest.TestCase):
     def manifests(self):
-        return [
-            REPO_ROOT / "install.before.conf.yaml",
-            REPO_ROOT / "install.unix.conf.yaml",
-            REPO_ROOT / "install.windows.conf.yaml",
-            REPO_ROOT / "install.after.conf.yaml",
-            *sorted((REPO_ROOT / "profiles").rglob("*.conf.yaml")),
-        ]
+        return sorted((REPO_ROOT / "recipes").rglob("*.conf.yaml"))
 
     def references(self):
         references = []
@@ -129,19 +263,18 @@ class ManifestTests(unittest.TestCase):
                 if stripped.startswith("- install:"):
                     self.assertEqual(stripped, "- install:", (manifest, stripped))
                 elif stripped.startswith("- install/"):
-                    self.fail(
-                        "{} must use [installer path, description] entries: {}".format(
-                            manifest, stripped
-                        )
-                    )
+                    self.fail("{} must use installer list entries: {}".format(manifest, stripped))
                 elif stripped.startswith("- [install/"):
-                    match = re.fullmatch(r"- \[(install/[^,\]]+), (\S(?:.*\S)?)\]", stripped)
+                    match = re.fullmatch(
+                        r'- \[(install/[^,\]]+), ([^,\]]+?)(?:, "([^"]+)")?\]',
+                        stripped,
+                    )
                     self.assertIsNotNone(match, (manifest, stripped))
-                    references.append((manifest, match.group(1)))
+                    references.append((manifest, match.group(1), match.group(3) or ""))
         return references
 
     def test_every_directive_resolves_inside_the_repository(self):
-        for manifest, reference in self.references():
+        for manifest, reference, _ in self.references():
             path = (REPO_ROOT / reference).resolve()
             try:
                 path.relative_to(REPO_ROOT.resolve())
@@ -150,11 +283,11 @@ class ManifestTests(unittest.TestCase):
             self.assertTrue(path.is_file(), (manifest, reference))
 
     def test_platform_manifests_only_use_compatible_installers(self):
-        for manifest, reference in self.references():
+        for manifest, reference, _ in self.references():
             relative_manifest = manifest.relative_to(REPO_ROOT).as_posix()
-            if relative_manifest == "install.unix.conf.yaml" or relative_manifest.startswith("profiles/unix/"):
+            if relative_manifest.startswith("recipes/unix/"):
                 self.assertTrue(reference.startswith(("install/unix/", "install/shared/")))
-            if relative_manifest == "install.windows.conf.yaml" or relative_manifest.startswith("profiles/windows/"):
+            if relative_manifest.startswith("recipes/windows/"):
                 self.assertTrue(reference.startswith(("install/windows/", "install/shared/")))
 
     def test_every_resource_installer_is_referenced(self):
@@ -166,83 +299,91 @@ class ManifestTests(unittest.TestCase):
                 (REPO_ROOT / "install/windows", "*.ps1"),
             )
             for path in root.rglob(pattern)
-            if path.is_file()
+            if path.is_file() and "install/lib/" not in path.as_posix()
         }
-        references = {reference for _, reference in self.references()}
+        references = {reference for _, reference, _ in self.references()}
         self.assertEqual(resource_installers - references, set())
+
+    def test_node_recipe_owns_one_cross_platform_exact_version(self):
+        versions = {
+            version
+            for manifest, reference, version in self.references()
+            if reference in {"install/unix/node", "install/windows/node.ps1"}
+        }
+        self.assertEqual(versions, {"24.19.0"})
+        self.assertFalse((REPO_ROOT / "profiles/node-version").exists())
 
 
 class ManifestOrderingTests(unittest.TestCase):
     def test_every_link_manifest_declares_its_cleanup_surface(self):
-        manifests = [
-            *REPO_ROOT.glob("install*.conf.yaml"),
-            *(REPO_ROOT / "profiles").rglob("*.conf.yaml"),
-        ]
-        for manifest in manifests:
+        for manifest in (REPO_ROOT / "recipes").rglob("*.conf.yaml"):
             content = manifest.read_text(encoding="utf-8")
             if "\n- link:\n" in "\n" + content:
                 self.assertIn("\n- clean:\n", "\n" + content, str(manifest))
 
-    def test_root_defaults_are_shared_and_platform_cleanup_is_local(self):
-        before = (REPO_ROOT / "install.before.conf.yaml").read_text(encoding="utf-8")
+    def test_base_defaults_are_shared_and_platform_cleanup_is_local(self):
+        before = (REPO_ROOT / "recipes/00-base.before.conf.yaml").read_text(encoding="utf-8")
         self.assertIn("- defaults:", before)
-        for manifest in ("install.unix.conf.yaml", "install.windows.conf.yaml"):
-            content = (REPO_ROOT / manifest).read_text(encoding="utf-8")
-            self.assertNotIn("- defaults:", content, manifest)
-            self.assertIn("- clean:", content, manifest)
-
-    def test_root_launchers_apply_before_platform_after(self):
-        expected = {
-            "install.sh": '-c "${BEFORE_CONFIG}" "${UNIX_CONFIG}" "${AFTER_CONFIG}"',
-            "install.ps1": "-c $BEFORE_CONFIG $WINDOWS_CONFIG $AFTER_CONFIG",
-        }
-        for launcher, invocation in expected.items():
-            content = (REPO_ROOT / launcher).read_text(encoding="utf-8")
-            self.assertIn(invocation, content, launcher)
-
-    def test_profile_launchers_apply_before_platform_after(self):
-        expectations = {
-            "install-profile": (
-                'CONFIGS+=("${before_conf}")',
-                'CONFIGS+=("${conf}")',
-                'CONFIGS+=("${after_conf}")',
-            ),
-            "install-profile.ps1": (
-                "$Configs += $beforeConf",
-                "$Configs += $conf",
-                "$Configs += $afterConf",
-            ),
-        }
-        for launcher, fragments in expectations.items():
-            content = (REPO_ROOT / launcher).read_text(encoding="utf-8")
-            positions = [content.index(fragment) for fragment in fragments]
-            self.assertEqual(positions, sorted(positions), launcher)
+        for platform in ("unix", "windows"):
+            manifest = REPO_ROOT / "recipes" / platform / "00-base.conf.yaml"
+            content = manifest.read_text(encoding="utf-8")
+            self.assertNotIn("- defaults:", content, str(manifest))
+            self.assertIn("- clean:", content, str(manifest))
 
     def test_neovim_restore_is_shared_post_platform_work(self):
         action = "install/shared/nvim-plugins.py"
-        after = (REPO_ROOT / "install.after.conf.yaml").read_text(encoding="utf-8")
+        after = (REPO_ROOT / "recipes/00-base.after.conf.yaml").read_text(encoding="utf-8")
         self.assertIn(action, after)
-        for manifest in ("install.unix.conf.yaml", "install.windows.conf.yaml"):
-            content = (REPO_ROOT / manifest).read_text(encoding="utf-8")
-            self.assertNotIn(action, content, manifest)
+        for platform in ("unix", "windows"):
+            content = (REPO_ROOT / "recipes" / platform / "00-base.conf.yaml").read_text(
+                encoding="utf-8"
+            )
+            self.assertNotIn(action, content)
 
     def test_agentic_shared_setup_is_pre_platform_work(self):
         installer = "install/shared/git-auditor.py"
-        before = (REPO_ROOT / "profiles" / "agentic.before.conf.yaml").read_text(
+        before = (REPO_ROOT / "recipes/30-agentic.before.conf.yaml").read_text(
             encoding="utf-8"
         )
         self.assertIn(installer, before)
         for platform in ("unix", "windows"):
-            manifest = REPO_ROOT / "profiles" / platform / "agentic.conf.yaml"
+            manifest = REPO_ROOT / "recipes" / platform / "30-agentic.conf.yaml"
             self.assertNotIn(installer, manifest.read_text(encoding="utf-8"))
 
-    def test_cross_platform_profile_finalizers_are_shared(self):
-        for profile in ("agentic", "dev", "iqa", "node", "research"):
-            after = REPO_ROOT / "profiles" / "{}.after.conf.yaml".format(profile)
+    def test_cross_platform_recipe_finalizers_are_shared(self):
+        for recipe in ("10-dev", "20-node", "30-agentic", "40-research", "41-iqa"):
+            after = REPO_ROOT / "recipes" / "{}.after.conf.yaml".format(recipe)
             self.assertIn("shellver bump machine", after.read_text(encoding="utf-8"))
             for platform in ("unix", "windows"):
-                manifest = REPO_ROOT / "profiles" / platform / "{}.conf.yaml".format(profile)
+                manifest = REPO_ROOT / "recipes" / platform / "{}.conf.yaml".format(recipe)
                 self.assertNotIn("shellver bump machine", manifest.read_text(encoding="utf-8"))
+
+    def test_unified_launchers_delegate_to_the_orchestrator(self):
+        install_sh = (REPO_ROOT / "install.sh").read_text(encoding="utf-8")
+        install_ps1 = (REPO_ROOT / "install.ps1").read_text(encoding="utf-8")
+        test_sh = (REPO_ROOT / "test.sh").read_text(encoding="utf-8")
+        test_ps1 = (REPO_ROOT / "test.ps1").read_text(encoding="utf-8")
+
+        self.assertIn('${BASEDIR}/orchestrate.py" install', install_sh)
+        self.assertIn("$ORCHESTRATOR install @Args", install_ps1)
+        self.assertIn('${BASEDIR}/orchestrate.py" test', test_sh)
+        self.assertIn("$ORCHESTRATOR test @Args", test_ps1)
+        self.assertFalse((REPO_ROOT / "install/orchestrate.py").exists())
+        self.assertFalse((REPO_ROOT / "install/recipes.py").exists())
+        self.assertFalse((REPO_ROOT / "test/orchestrate.py").exists())
+        self.assertFalse((REPO_ROOT / "install-profile").exists())
+        self.assertFalse((REPO_ROOT / "install-profile.ps1").exists())
+        self.assertFalse((REPO_ROOT / "test-profile").exists())
+        self.assertFalse((REPO_ROOT / "test-profile.ps1").exists())
+
+    def test_windows_bootstrap_seeds_only_the_base_recipe(self):
+        bootstrap = (REPO_ROOT / "bootstrap.ps1").read_text(encoding="utf-8")
+
+        self.assertIn(
+            '[System.IO.File]::WriteAllText($recipePlanPath, "00-base`n", $utf8WithoutBom)',
+            bootstrap,
+        )
+        self.assertNotIn("Copy-Item .install-recipes.example .install-recipes", bootstrap)
 
 
 if __name__ == "__main__":

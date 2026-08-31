@@ -11,24 +11,14 @@ case "$(uname -s)" in
         ;;
 esac
 
-BEFORE_CONFIG="install.before.conf.yaml"
-UNIX_CONFIG="install.unix.conf.yaml"
-AFTER_CONFIG="install.after.conf.yaml"
-DOTBOT_DIR="dotbot"
-DOTBOT_BIN="bin/dotbot"
-DOTBOT_FAILURE_OUTPUT_PLUGIN="dotbot-plugins/failure_output.py"
-DOTBOT_INSTALL_DIR="dotbot-plugins/install"
-DOTBOT_INSTALL_PLUGIN="${DOTBOT_INSTALL_DIR}/install.py"
 BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export PATH="${HOME}/.local/bin:${PATH}"
 
-cd "${BASEDIR}"
-git submodule sync --quiet --recursive -- "${DOTBOT_DIR}" "${DOTBOT_INSTALL_DIR}"
-git submodule update --init --recursive -- "${DOTBOT_DIR}" "${DOTBOT_INSTALL_DIR}"
+for python in python3 python; do
+    if command -v "${python}" >/dev/null 2>&1; then
+        exec "${python}" "${BASEDIR}/orchestrate.py" install "${@}"
+    fi
+done
 
-"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" \
-    --plugin "${BASEDIR}/${DOTBOT_FAILURE_OUTPUT_PLUGIN}" \
-    --plugin "${BASEDIR}/${DOTBOT_INSTALL_PLUGIN}" \
-    -d "${BASEDIR}" \
-    -c "${BEFORE_CONFIG}" "${UNIX_CONFIG}" "${AFTER_CONFIG}" \
-    "${@}"
+echo "Error: Cannot find Python. Please install Python 3.8+ from https://python.org" >&2
+exit 1

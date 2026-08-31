@@ -1,5 +1,5 @@
-# Profile: iqa — image quality assessment tools
-# Usage: ./install-profile iqa
+# Recipe: 41-iqa — image quality assessment tools
+# Usage: ./install.sh --recipe iqa
 #
 # Installs VLC and FFmpeg via apt-get on Debian/Ubuntu. Operators on
 # non-apt distros or macOS install these out-of-band (brew, dnf, etc.).

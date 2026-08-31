@@ -1,8 +1,8 @@
-# Profile: agentic — agentic-coding CLI tooling
-# Usage: ./install-profile agentic
+# Recipe: 30-agentic — agentic-coding CLI tooling
+# Usage: ./install.sh --recipe agentic
 #
 # On WSL, also masks systemd-timesyncd as an opencode-specific workaround.
-# Requires the common `node` profile to be installed before starting this shell.
+# Requires the common `node` recipe to be installed before starting this shell.
 
 - shell:
     - ['for h in commit-msg post-commit reference-transaction; do ln -sfn "$HOME/.agents/plugins/git-auditor/hooks/$h" ".githooks/$h"; done', Registering agentic Git-auditor hooks with the common repository]

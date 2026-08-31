@@ -38,11 +38,6 @@ installer_main() {
 
     local operation="$1"
     local requested_version="${2:-}"
-    if [ -n "$requested_version" ] && [ "$operation" != upgrade ]; then
-        installer_note 'A requested version is valid only with upgrade'
-        return 2
-    fi
-
     local function_name="installer_$operation"
     if ! declare -F "$function_name" >/dev/null; then
         installer_note "Unsupported installer operation: $operation"
@@ -66,6 +61,7 @@ installer_main() {
 
 installer_apt_state() {
     local package="$1"
+    local requested_version="${2:-}"
     if ! command -v apt-get >/dev/null 2>&1 || ! command -v dpkg-query >/dev/null 2>&1; then
         printf 'unsupported\n'
         return
@@ -84,6 +80,10 @@ installer_apt_state() {
     fi
 
     installed_version="${installed_version##* }"
+    if [ -n "$requested_version" ] && [ "$installed_version" != "$requested_version" ]; then
+        printf 'drifted\n'
+        return
+    fi
     local candidate
     candidate="$(apt-cache policy "$package" 2>/dev/null | awk '/Candidate:/ { print $2; exit }')"
     if [ -n "$candidate" ] && [ "$candidate" != '(none)' ] && \
@@ -127,18 +127,18 @@ installer_apt_package() {
     shift
 
     installer_status() {
-        installer_apt_state "$package"
+        installer_apt_state "$package" "$1"
     }
 
     installer_apply() {
         local requested_version="$1"
         local state
-        state="$(installer_apt_state "$package")"
+        state="$(installer_apt_state "$package" "$requested_version")"
         case "$state" in
             current|update-available|unsupported) printf '%s\n' "$state" ;;
-            absent)
+            absent|drifted)
                 installer_apt_mutate "$package" "$requested_version" 0
-                installer_apt_state "$package"
+                installer_apt_state "$package" "$requested_version"
                 ;;
             *) printf '%s\n' "$state" ;;
         esac
@@ -147,13 +147,13 @@ installer_apt_package() {
     installer_upgrade() {
         local requested_version="$1"
         local state
-        state="$(installer_apt_state "$package")"
+        state="$(installer_apt_state "$package" "$requested_version")"
         if [ "$state" = unsupported ]; then
             printf 'unsupported\n'
             return
         fi
         installer_apt_mutate "$package" "$requested_version" "$([ "$state" = absent ] && printf 0 || printf 1)"
-        installer_apt_state "$package"
+        installer_apt_state "$package" "$requested_version"
     }
 
     installer_main "$@"

@@ -11,7 +11,7 @@ The vocabulary is open-ended.
 Tag by the capability being added, removed, fixed, or documented rather than by the manifest or profile that carries the change.
 For example, adding `fzf` through a Dotbot profile uses `[FZF]`.
 
-Use `[DOTBOT]` when the behavior or structure of Dotbot profiles, manifests, or deployment mechanics itself changes.
+Use `[DOTBOT]` when the behavior or structure of Dotbot recipes, manifests, or deployment mechanics itself changes.
 Use `[TEST]` when the test suite itself is the changed tool, such as its harness or generic test utilities.
 Test coverage for a particular tool uses that tool's tag instead.
 

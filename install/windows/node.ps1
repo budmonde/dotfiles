@@ -7,8 +7,6 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $env:DOTBOT_INSTALL_REPO_ROOT 'install\lib\windows\Lifecycle.psm1') -Force
 
-$versionFile = Join-Path $env:DOTBOT_INSTALL_REPO_ROOT 'profiles\node-version'
-
 function Get-FnmPath {
     $command = Get-Command fnm -CommandType Application -ErrorAction SilentlyContinue |
         Select-Object -First 1
@@ -20,10 +18,6 @@ function Get-FnmPath {
         return $wingetPath
     }
     return $null
-}
-
-function Get-LockedNodeVersion {
-    return (Get-Content -Raw -LiteralPath $versionFile).Trim().TrimStart('v')
 }
 
 function Invoke-Fnm {
@@ -40,13 +34,11 @@ function Invoke-Fnm {
 }
 
 function Get-NodeState {
+    param([Parameter(Mandatory)][string]$Version)
+
     $fnm = Get-FnmPath
     if (-not $fnm) {
         return 'blocked'
-    }
-    $version = Get-LockedNodeVersion
-    if (-not $version) {
-        throw "$versionFile is empty"
     }
     $installed = (& $fnm exec --using $version -- node --version 2>$null | Out-String).Trim().TrimStart('v')
     if ($LASTEXITCODE -ne 0 -or $installed -ne $version) {
@@ -81,30 +73,18 @@ function Set-NodeVersion {
 }
 
 Invoke-DotbotInstaller {
-    $state = Get-NodeState
-    if ($Operation -eq 'status' -or ($Operation -eq 'apply' -and $state -in @('current', 'update-available'))) {
+    $target = ([string]$RequestedVersion).Trim().TrimStart('v')
+    if (-not $target) {
+        throw 'The Node.js recipe must declare an exact desired version'
+    }
+    $state = Get-NodeState -Version $target
+    if ($Operation -eq 'status' -or $state -in @('current', 'update-available')) {
         return $state
     }
     if ($state -eq 'blocked') {
         return $state
     }
 
-    if ($Operation -eq 'upgrade') {
-        $target = $RequestedVersion
-        if (-not $target) {
-            $fnm = Get-FnmPath
-            $target = (& $fnm list-remote --latest 2>$null | Out-String).Trim().TrimStart('v')
-        }
-        if (-not $target) {
-            throw 'Could not resolve a Node.js upgrade version'
-        }
-        $target = $target.TrimStart('v')
-        Set-NodeVersion -Version $target
-        $temporary = "$versionFile.$PID.tmp"
-        [System.IO.File]::WriteAllText($temporary, "$target`n", (New-Object System.Text.UTF8Encoding($false)))
-        Move-Item -LiteralPath $temporary -Destination $versionFile -Force
-    } else {
-        Set-NodeVersion -Version (Get-LockedNodeVersion)
-    }
-    return (Get-NodeState)
+    Set-NodeVersion -Version $target
+    return (Get-NodeState -Version $target)
 }

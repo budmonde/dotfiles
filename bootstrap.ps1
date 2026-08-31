@@ -54,6 +54,14 @@ $clonePath = Read-Host "Clone path [$defaultPath]"
 if ([string]::IsNullOrWhiteSpace($clonePath)) { $clonePath = $defaultPath }
 
 git clone https://github.com/budmonde/dotfiles.git $clonePath
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to clone common dotfiles into $clonePath"
+}
+
+$recipePlanPath = Join-Path $clonePath '.install-recipes'
+$utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($recipePlanPath, "00-base`n", $utf8WithoutBom)
+Write-Host "Created base recipe plan at $recipePlanPath"
 
 # --- Switch remote to SSH ------------------------------------------------
 # The clone above uses HTTPS (no auth needed for public repos). Once the

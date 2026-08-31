@@ -170,12 +170,12 @@ adapt the chunk boundaries to the project's own seam inventory):
 - **Chunk: mechanical guards**.
   Touches `architecture.md#mechanical-guards-inventory`
   and `<common>/git/hooks/{commit-msg,post-commit,pre-commit}`.
-- **Chunk: install flow and extras profiles**.
+- **Chunk: install flow and recipes**.
   Touches `architecture.md#install-flow`,
-  `architecture.md#extras-profiles` if present,
-  `<common>/install.before.conf.yaml`,
-  `<common>/install.after.conf.yaml`,
-  and any per-platform install configs.
+  `architecture.md#recipes` if present,
+  `<common>/recipes/*.before.conf.yaml`,
+  `<common>/recipes/*.after.conf.yaml`,
+  and the per-platform recipe configs.
 - **Chunk: renames since last audit**.
   One chunk per renamed file or substrate (renames are a high-signal drift class).
 - **Chunk: phantom-artifact sweep**.

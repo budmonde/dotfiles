@@ -1,5 +1,5 @@
 # Unix-specific configuration (Linux, macOS, WSL)
-# Run via: ./install.sh (between install.before.conf.yaml and install.after.conf.yaml)
+# Platform fragment for recipe 00-base.
 
 - clean:
     - '~'

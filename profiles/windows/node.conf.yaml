@@ -1,7 +1,0 @@
-# Profile: node — managed Node.js runtime
-# Usage: .\install-profile.ps1 node
-# Start a new shell after the first install before running npm-consuming profiles.
-
-- install:
-    - [install/windows/winget/fnm.ps1, Installing fnm]
-    - [install/windows/node.ps1, Installing Node.js]

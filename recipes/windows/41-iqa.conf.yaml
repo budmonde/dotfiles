@@ -1,5 +1,5 @@
-# Profile: iqa — image quality assessment tools
-# Usage: .\install-profile.ps1 iqa
+# Recipe: 41-iqa — image quality assessment tools
+# Usage: .\install.ps1 --recipe iqa
 
 - install:
     - [install/windows/winget/vlc.ps1, Installing VLC]

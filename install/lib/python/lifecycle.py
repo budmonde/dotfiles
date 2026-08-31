@@ -62,10 +62,12 @@ def npm_global(package: str, operation: str, requested_version: str = "") -> str
         return "blocked"
 
     installed_version = _npm_installed_version(npm, package)
-    state = _npm_state(npm, package, installed_version)
+    state = _npm_state(npm, package, installed_version, requested_version)
     if operation == "status":
         return state
-    if operation == "apply" and installed_version is not None:
+    if state in {"current", "update-available"} and (
+        operation == "apply" or requested_version
+    ):
         return state
 
     target = package
@@ -83,7 +85,7 @@ def npm_global(package: str, operation: str, requested_version: str = "") -> str
         raise InstallerError(
             "npm installed {} {}, expected {}".format(package, installed_version, requested_version)
         )
-    return _npm_state(npm, package, installed_version)
+    return _npm_state(npm, package, installed_version, requested_version)
 
 
 def npm_project(project: Path, operation: str, requested_version: str = "") -> str:
@@ -119,10 +121,6 @@ def main(handler: Callable[[str, str], str], arguments: Optional[List[str]] = No
     if operation not in {"status", "apply", "upgrade"}:
         diagnostic("Unsupported installer operation: {}".format(operation))
         return 2
-    if requested_version and operation != "upgrade":
-        diagnostic("A requested version is valid only with upgrade")
-        return 2
-
     try:
         state = handler(operation, requested_version)
     except (InstallerError, OSError, ValueError) as error:
@@ -163,9 +161,16 @@ def _npm_latest_version(npm: str, package: str) -> Optional[str]:
     return value if isinstance(value, str) and value else None
 
 
-def _npm_state(npm: str, package: str, installed_version: Optional[str]) -> str:
+def _npm_state(
+    npm: str,
+    package: str,
+    installed_version: Optional[str],
+    requested_version: str = "",
+) -> str:
     if installed_version is None:
         return "absent"
+    if requested_version and installed_version != requested_version:
+        return "drifted"
     latest = _npm_latest_version(npm, package)
     if latest and latest != installed_version:
         return "update-available"

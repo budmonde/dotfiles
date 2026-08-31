@@ -1,6 +1,6 @@
-# Profile: agentic — agentic-coding CLI tooling
-# Usage: .\install-profile.ps1 agentic
-# Requires the common `node` profile to be installed before starting this shell.
+# Recipe: 30-agentic — agentic-coding CLI tooling
+# Usage: .\install.ps1 --recipe agentic
+# Requires the common `node` recipe to be installed before starting this shell.
 
 - shell:
     - command: powershell -NoProfile -Command "foreach ($h in 'commit-msg','post-commit','reference-transaction') { New-Item -ItemType SymbolicLink -Force -Path \".githooks/$h\" -Target \"$HOME/.agents/plugins/git-auditor/hooks/$h\" | Out-Null }"

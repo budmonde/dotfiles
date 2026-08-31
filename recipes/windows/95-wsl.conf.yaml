@@ -1,5 +1,5 @@
-# Profile: wsl — install WSL
-# Usage: .\install-profile.ps1 wsl
+# Recipe: 95-wsl — install WSL
+# Usage: .\install.ps1 --recipe wsl
 # Note: WSL install requires admin privileges and may trigger a reboot.
 
 - install:

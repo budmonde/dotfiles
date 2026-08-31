@@ -1,5 +1,5 @@
-# Profile: research — academic and research workflow tools
-# Usage: .\install-profile.ps1 research
+# Recipe: 40-research — academic and research workflow tools
+# Usage: .\install.ps1 --recipe research
 
 - install:
     - [install/windows/winget/miktex.ps1, Installing MiKTeX]

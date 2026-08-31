@@ -1,4 +1,4 @@
-# Run via: .\install.ps1 (between install.before.conf.yaml and install.after.conf.yaml)
+# Platform fragment for recipe 00-base.
 # Requires: admin shell (for symlinks), winget, python
 #
 # The profile-loader helper resolves MyDocuments at runtime and writes regular
