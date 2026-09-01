@@ -348,6 +348,25 @@ class ManifestTests(unittest.TestCase):
         self.assertIn(entry, collab)
         self.assertNotIn(entry, research)
 
+    def test_exact_recipe_version_authority_stays_in_manifests(self):
+        for manifest, reference, requested_version in self.references():
+            if not requested_version:
+                continue
+            content = (REPO_ROOT / reference).read_text(encoding="utf-8")
+            installer_versions = re.findall(
+                r"(?<![0-9A-Za-z])v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?(?![0-9A-Za-z])",
+                content,
+            )
+            self.assertEqual(
+                installer_versions,
+                [],
+                "{} contains version literals {} but {} owns target {}".format(
+                    reference,
+                    installer_versions,
+                    manifest.relative_to(REPO_ROOT),
+                    requested_version,
+                ),
+            )
 
 class ManifestOrderingTests(unittest.TestCase):
     def test_platform_base_tests_start_with_bootstrap_requirements(self):
