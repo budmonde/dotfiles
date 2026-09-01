@@ -255,9 +255,12 @@ def run_install(repo_root: Path, configs: Sequence[str], arguments: Sequence[str
 
 def run_test(repo_root: Path, configs: Sequence[str], arguments: Sequence[str]) -> int:
     initialize_envtest(repo_root)
+    environment = os.environ.copy()
+    environment["DOTFILES_ENVTEST_PATH"] = environment.get("PATH", "")
     invocation = [
         "uv",
         "run",
+        str(repo_root / "tests" / "envtest_adapter.py"),
         str(repo_root / "envtest" / "envtest.py"),
         "--root",
         str(repo_root),
@@ -265,7 +268,12 @@ def run_test(repo_root: Path, configs: Sequence[str], arguments: Sequence[str]) 
     for config in configs:
         invocation.extend(("--config", str(repo_root / config)))
     invocation.extend(arguments)
-    return subprocess.run(invocation, cwd=str(repo_root), check=False).returncode
+    return subprocess.run(
+        invocation,
+        cwd=str(repo_root),
+        check=False,
+        env=environment,
+    ).returncode
 
 
 def propagate_returncode(returncode: int) -> int:

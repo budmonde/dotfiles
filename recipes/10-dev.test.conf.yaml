@@ -1,7 +1,13 @@
-schema_version: 2
+schema_version: 3
 
 checks:
   go:
-    path: [go]
+    paths: [go, gofmt]
     commands:
       version: [go version]
+
+  cmake:
+    paths: [cmake, ctest, cpack]
+
+  make:
+    paths: [make]

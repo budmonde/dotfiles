@@ -1,12 +1,22 @@
-schema_version: 2
+schema_version: 3
 
 checks:
+  python:
+    paths: [python3]
+    commands:
+      version: [python3 --version, '^Python 3\.(?:[89]|[1-9][0-9])\.']
+
+  fzf:
+    paths:
+      fzf-tmux:
+        locations: ["${XDG_DATA_HOME:-$HOME/.local/share}/fzf/bin"]
+
   zsh:
     links:
       "~/.zshenv": config/zshenv
       "~/.zshrc": config/zshrc
       "~/.config/zsh": config/zsh
-    path: [zsh]
+    paths: [zsh]
     commands:
       version: [zsh --version, zsh]
       configuration: ["zsh -ic 'print -r -- \"$KEYTIMEOUT\"'", '(?m)^1$']
@@ -18,7 +28,7 @@ checks:
       "~/.config/tmux/plugins/tpm/tpm": file
       "~/.config/tmux/plugins/tmux-resurrect/resurrect.tmux": file
       "~/.config/tmux/plugins/tmux-continuum/continuum.tmux": file
-    path: [tmux]
+    paths: [tmux]
     commands:
       plugin-state: [DOTBOT_INSTALL_REPO_ROOT="$PWD" ./install/unix/tmux-plugins status, '(?m)^current$']
       version: [tmux -V, tmux]
@@ -33,6 +43,8 @@ checks:
     if: 'test -n "$WSL_DISTRO_NAME"'
     links:
       "~/.local/bin/push-notify": bin/push-notify
-    path: [push-notify, ~/.local/bin]
+    paths:
+      push-notify:
+        locations: [~/.local/bin]
     commands:
       notification: ['push-notify --silent "dotfiles environment test" "push-notify validation"']

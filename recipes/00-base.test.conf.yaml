@@ -1,4 +1,4 @@
-schema_version: 2
+schema_version: 3
 
 checks:
   dotfiles-common:
@@ -18,23 +18,27 @@ checks:
       "~/.config/readline": config/readline
 
   fzf:
-    path: [fzf, "${XDG_DATA_HOME:-$HOME/.local/share}/fzf/bin"]
+    paths:
+      fzf:
+        locations: ["${XDG_DATA_HOME:-$HOME/.local/share}/fzf/bin"]
     commands:
       version: [fzf --version]
 
   # CLI tools
   ripgrep:
-    path:
-      command: rg
-      locations:
-        - "~/.local/bin"
-        - "%LOCALAPPDATA%/Microsoft/WinGet/Links"
-        - "${XDG_DATA_HOME:-$HOME/.local/share}/fnm/node-versions"
+    paths:
+      rg:
+        locations:
+          - "~/.local/bin"
+          - "%LOCALAPPDATA%/Microsoft/WinGet/Links"
+          - "${XDG_DATA_HOME:-$HOME/.local/share}/fnm/node-versions"
     commands:
       version: [rg --version, ripgrep]
 
   rclone:
-    path: [rclone, ["~/.local/bin", "%LOCALAPPDATA%/Microsoft/WinGet/Links"]]
+    paths:
+      rclone:
+        locations: ["~/.local/bin", "%LOCALAPPDATA%/Microsoft/WinGet/Links"]
     commands:
       version: [rclone version, rclone]
 
@@ -42,14 +46,14 @@ checks:
   ssh:
     links:
       "~/.ssh/config": config/ssh/config
-    path: [ssh]
+    paths: [ssh]
     commands:
       configuration: [ssh -G github.com, '(?m)^user git$', '(?m)^identitiesonly yes$']
 
   git:
     links:
       "~/.config/git": config/git
-    path: [git]
+    paths: [git]
     commands:
       version: [git --version, git version]
       configuration: [git config --show-origin --get user.email, '(?i)config[\\/]git[\\/]config"?\s+budmonde@gmail\.com']
@@ -63,7 +67,9 @@ checks:
   neovim:
     links:
       "~/.config/nvim": config/nvim
-    path: [nvim, ["~/.local/bin", "%ProgramFiles%/Neovim"]]
+    paths:
+      nvim:
+        locations: ["~/.local/bin", "%ProgramFiles%/Neovim"]
     commands:
       version: [nvim --version, NVIM]
       configuration: ['nvim --headless "+lua print(vim.o.ttimeoutlen)" "+qa"', '(?m)^50$']
@@ -74,7 +80,11 @@ checks:
     links:
       "~/.config/python": config/python
       "~/.pdbrc": config/python/pdbrc
-    path: [uv, ["~/.local/bin", "%LOCALAPPDATA%/Microsoft/WinGet/Packages"]]
+    paths:
+      uv:
+        locations: ["~/.local/bin", "%LOCALAPPDATA%/Microsoft/WinGet/Packages"]
+      uvx:
+        locations: ["~/.local/bin", "%LOCALAPPDATA%/Microsoft/WinGet/Packages"]
     commands:
       version: [uv --version, uv]
       python-startup:
@@ -95,7 +105,9 @@ checks:
   github-cli:
     links:
       "~/.config/gh": config/gh
-    path: [gh, ["~/.local/bin", "%ProgramFiles%/GitHub CLI"]]
+    paths:
+      gh:
+        locations: ["~/.local/bin", "%ProgramFiles%/GitHub CLI"]
     commands:
       version: [gh --version, gh version]
       authentication: [gh auth status, 'Logged in to github\.com']
@@ -103,7 +115,9 @@ checks:
   shellver:
     links:
       "~/.config/shellver/common": shellver
-    path: [shellver, "~/.local/bin"]
+    paths:
+      shellver:
+        locations: ["~/.local/bin"]
     commands:
       help: [shellver --help]
       common-status: [shellver status common, 'status:\s+current']
@@ -112,14 +126,18 @@ checks:
   git-filter-repo:
     links:
       "~/.local/bin/git-filter-repo": bin/git-filter-repo
-    path: [git-filter-repo, "~/.local/bin"]
+    paths:
+      git-filter-repo:
+        locations: ["~/.local/bin"]
     commands:
       help: [git-filter-repo --help, 'Rewrite \(or analyze\) repository history']
 
   imgen:
     links:
       "~/.local/bin/imgen": bin/imgen
-    path: [imgen, "~/.local/bin"]
+    paths:
+      imgen:
+        locations: ["~/.local/bin"]
     commands:
       help: [imgen --help, "usage: imgen"]
       credentials: [imgen --dry-run -o env-status-check.png "configuration validation", 'Authorization: Bearer <redacted>']
@@ -127,4 +145,6 @@ checks:
   set-title:
     links:
       "~/.local/bin/set-title": bin/set-title
-    path: [set-title, "~/.local/bin"]
+    paths:
+      set-title:
+        locations: ["~/.local/bin"]

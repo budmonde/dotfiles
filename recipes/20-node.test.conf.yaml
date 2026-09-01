@@ -1,19 +1,21 @@
-schema_version: 2
+schema_version: 3
 
 checks:
   fnm:
-    path: [fnm]
+    paths: [fnm]
     commands:
       version: [fnm --version]
 
   node:
-    path: [node]
+    paths: [node, corepack]
     commands:
-      version: [node --version]
+      node-version: [node --version]
+      corepack-version: [corepack --version]
 
   npm:
     links:
       "~/.config/npm": config/npm
-    path: [npm]
+    paths: [npm, npx]
     commands:
-      version: [npm --version]
+      npm-version: [npm --version]
+      npx-version: [npx --version]

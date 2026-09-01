@@ -1,4 +1,4 @@
-schema_version: 2
+schema_version: 3
 
 checks:
   cmake:
@@ -10,5 +10,6 @@ checks:
       version: [make --version]
 
   gcc:
+    paths: [gcc, g++]
     commands:
       version: [gcc --version]

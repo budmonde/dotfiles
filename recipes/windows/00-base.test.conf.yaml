@@ -1,6 +1,18 @@
-schema_version: 2
+schema_version: 3
 
 checks:
+  winget:
+    paths:
+      winget:
+        locations: ["%LOCALAPPDATA%/Microsoft/WindowsApps"]
+    commands:
+      version: [winget --version, '^v?[0-9]+\.']
+
+  python:
+    paths: [python]
+    commands:
+      version: [python --version, '^Python 3\.14\.']
+
   terminal:
     links:
       "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json": config/terminal/settings.json
@@ -8,10 +20,10 @@ checks:
   powershell:
     links:
       "~/.profile.ps1": config/profile.ps1
-    path:
-      command: pwsh
-      locations: ["%ProgramFiles%/WindowsApps"]
-      candidates: 2
+    paths:
+      pwsh:
+        locations: ["%ProgramFiles%/WindowsApps"]
+        candidate_count: 2
     commands:
       version: ["$PSVersionTable.PSVersion.Major", "7"]
       execution-policy: ["if ((Get-ExecutionPolicy -Scope CurrentUser) -ne 'Restricted') { 'configured' } else { 'restricted' }", configured]
@@ -38,6 +50,16 @@ checks:
       "~/.local/bin/push-notify.ps1": bin/push-notify.ps1
       "~/.local/bin/push-notify.cmd": bin/push-notify.cmd
       "~/.local/bin/optimize-wsl-vhd.bat": bin/optimize-wsl-vhd.bat
+
+  push-notify:
+    paths:
+      push-notify:
+        locations: ["~/.local/bin"]
+
+  optimize-wsl-vhd:
+    paths:
+      optimize-wsl-vhd:
+        locations: ["~/.local/bin"]
 
   fonts:
     commands:

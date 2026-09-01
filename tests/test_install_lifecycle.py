@@ -1,6 +1,7 @@
 import contextlib
 import importlib.util
 import io
+import os
 import re
 import subprocess
 import sys
@@ -250,6 +251,28 @@ class RecipeTests(unittest.TestCase):
                     recipe.name,
                 )
 
+    def test_test_adapter_preserves_the_callers_path(self):
+        result = subprocess.CompletedProcess([], 0)
+        with mock.patch.object(ORCHESTRATE, "initialize_envtest"), mock.patch.object(
+            ORCHESTRATE.subprocess, "run", return_value=result
+        ) as run:
+            returncode = ORCHESTRATE.run_test(
+                REPO_ROOT,
+                ["recipes/00-base.test.conf.yaml"],
+                ["--list-checks"],
+            )
+
+        self.assertEqual(returncode, 0)
+        invocation = run.call_args.args[0]
+        self.assertEqual(
+            invocation[2],
+            str(REPO_ROOT / "tests" / "envtest_adapter.py"),
+        )
+        self.assertEqual(
+            run.call_args.kwargs["env"]["DOTFILES_ENVTEST_PATH"],
+            os.environ.get("PATH", ""),
+        )
+
 
 class ManifestTests(unittest.TestCase):
     def manifests(self):
@@ -315,6 +338,23 @@ class ManifestTests(unittest.TestCase):
 
 
 class ManifestOrderingTests(unittest.TestCase):
+    def test_platform_base_tests_start_with_bootstrap_requirements(self):
+        unix = (REPO_ROOT / "recipes/unix/00-base.test.conf.yaml").read_text(
+            encoding="utf-8"
+        )
+        self.assertLess(unix.index("  python:"), unix.index("  fzf:"))
+
+        windows = (REPO_ROOT / "recipes/windows/00-base.test.conf.yaml").read_text(
+            encoding="utf-8"
+        )
+        positions = [
+            windows.index("  winget:"),
+            windows.index("  python:"),
+            windows.index("  terminal:"),
+        ]
+
+        self.assertEqual(positions, sorted(positions))
+
     def test_every_link_manifest_declares_its_cleanup_surface(self):
         for manifest in (REPO_ROOT / "recipes").rglob("*.conf.yaml"):
             content = manifest.read_text(encoding="utf-8")

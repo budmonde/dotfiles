@@ -1,4 +1,4 @@
-schema_version: 2
+schema_version: 3
 
 checks:
   agents:
@@ -16,6 +16,7 @@ checks:
   codex:
     links:
       "~/.config/codex/AGENTS.md": config/agents/AGENTS.md
+    paths: [codex]
     commands:
       version: [codex --version]
       home:
@@ -29,6 +30,7 @@ checks:
       authentication: [codex login status, 'Logged in using']
 
   opencode:
+    paths: [opencode]
     commands:
       version: [opencode --version]
 
@@ -36,6 +38,7 @@ checks:
     links:
       "~/.config/claude/settings.json": config/claude/settings.json
       "~/.config/claude/keybindings.json": config/claude/keybindings.json
+    paths: [claude]
     commands:
       version: [claude --version]
       authentication: [claude auth status, '"loggedIn":\s*true']

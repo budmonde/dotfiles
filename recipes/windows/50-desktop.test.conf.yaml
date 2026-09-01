@@ -1,4 +1,4 @@
-schema_version: 2
+schema_version: 3
 
 checks:
   autohotkey:
@@ -27,6 +27,7 @@ checks:
     links:
       "~/.config/Code/User/keybindings.json": config/vscode/keybindings.json
       "~/.config/Code/User/settings.json": config/vscode/settings.json
+    paths: [code]
     commands:
       installed: ["if (((winget list --id Microsoft.VisualStudioCode 2>$null) | Out-String) -match 'Microsoft.VisualStudioCode') { 'installed' } else { 'missing' }", installed]
 
