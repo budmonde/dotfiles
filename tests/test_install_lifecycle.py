@@ -336,6 +336,18 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(versions, {"24.19.0"})
         self.assertFalse((REPO_ROOT / "profiles/node-version").exists())
 
+    def test_google_drive_installer_belongs_to_collab_recipe(self):
+        collab = (
+            REPO_ROOT / "recipes/windows/51-collab.conf.yaml"
+        ).read_text(encoding="utf-8")
+        research = (
+            REPO_ROOT / "recipes/windows/40-research.conf.yaml"
+        ).read_text(encoding="utf-8")
+
+        entry = "install/windows/winget/google-drive.ps1"
+        self.assertIn(entry, collab)
+        self.assertNotIn(entry, research)
+
 
 class ManifestOrderingTests(unittest.TestCase):
     def test_platform_base_tests_start_with_bootstrap_requirements(self):
