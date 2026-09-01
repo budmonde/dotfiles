@@ -3,6 +3,8 @@ schema_version: 3
 checks:
   fnm:
     commands:
+      environment-count: ["@(fnm list).Count", '^[1-9][0-9]*\s*$']
+      installed-versions: [fnm list]
       fnm-directory:
         - >-
           $expected = Join-Path $env:XDG_DATA_HOME "fnm";

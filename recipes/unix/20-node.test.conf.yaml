@@ -3,6 +3,8 @@ schema_version: 3
 checks:
   fnm:
     commands:
+      environment-count: ["fnm list | grep -c .", '^[1-9][0-9]*\s*$']
+      installed-versions: [fnm list]
       fnm-directory: ['fnm env --json | grep -F "\"FNM_DIR\":\"${XDG_DATA_HOME:-$HOME/.local/share}/fnm\""']
 
   node:

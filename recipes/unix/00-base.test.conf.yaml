@@ -5,6 +5,8 @@ checks:
     paths: [python3]
     commands:
       version: [python3 --version, '^Python 3\.(?:[89]|[1-9][0-9])\.']
+      environment-count: ["uv python list --only-installed | grep -c .", '^[1-9][0-9]*\s*$']
+      installed-versions: [uv python list --only-installed]
 
   fzf:
     paths:

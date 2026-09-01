@@ -12,6 +12,8 @@ checks:
     paths: [python]
     commands:
       version: [python --version, '^Python 3\.14\.']
+      environment-count: ["@(uv python list --only-installed).Count", '^[1-9][0-9]*\s*$']
+      installed-versions: [uv python list --only-installed]
 
   terminal:
     links:
