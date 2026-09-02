@@ -1,0 +1,4 @@
+# Shared research tooling for Unix and Windows.
+
+- install:
+    - [install/shared/huggingface-cli.py, Installing Hugging Face CLI]

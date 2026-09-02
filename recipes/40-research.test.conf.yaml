@@ -1,5 +1,9 @@
 schema_version: 3
 
 checks:
+  hugging-face-cli:
+    paths: [hf]
+    commands:
+      version: [hf version]
   latex:
     paths: [latex, xelatex]
