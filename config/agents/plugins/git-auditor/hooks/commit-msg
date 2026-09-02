@@ -62,7 +62,7 @@ function localPolicyCheck(messageText) {
     const subject = subjectOf(messageText);
     if (subject && !/^\[[^\]]+\] /.test(subject)) {
         process.stderr.write(
-            `${HOOK_TAG} local-policy warning: subject missing [TAG] prefix per wiki/workflow.md commit convention.\n`,
+            `${HOOK_TAG} local-policy warning: subject missing [TAG] prefix per COMMIT_POLICY.md.\n`,
         );
     }
 }
@@ -153,7 +153,7 @@ async function sanitizeMessageFile() {
     if (sanitized.changed) {
         fs.writeFileSync(MSG_FILE, sanitized.text);
         process.stdout.write(
-            `${HOOK_TAG} sanitized non-ASCII characters in commit message (see wiki/workflow.md ASCII rule).\n`,
+            `${HOOK_TAG} sanitized non-ASCII characters in commit message (see COMMIT_POLICY.md).\n`,
         );
     }
     return sanitized.text;
