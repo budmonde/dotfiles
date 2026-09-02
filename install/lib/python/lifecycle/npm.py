@@ -1,59 +1,10 @@
 import hashlib
 import json
-import os
 import shutil
-import subprocess
-import sys
 from pathlib import Path
-from typing import Callable, List, Optional, Sequence
+from typing import Optional
 
-
-STATES = {
-    "absent",
-    "blocked",
-    "current",
-    "drifted",
-    "unsupported",
-    "update-available",
-}
-
-
-class InstallerError(RuntimeError):
-    pass
-
-
-def diagnostic(message: str) -> None:
-    print(message, file=sys.stderr)
-
-
-def online_allowed() -> bool:
-    return os.environ.get("DOTBOT_INSTALL_ONLINE", "1").strip().lower() not in {
-        "0",
-        "false",
-        "no",
-        "off",
-    }
-
-
-def capture(arguments: Sequence[str], cwd: Optional[Path] = None) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        list(arguments),
-        cwd=str(cwd) if cwd else None,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
-
-
-def report(result: subprocess.CompletedProcess) -> None:
-    for output in (result.stdout, result.stderr):
-        for line in output.splitlines():
-            if line.strip():
-                diagnostic(line)
+from .core import InstallerError, capture, diagnostic, online_allowed, report
 
 
 def npm_global(package: str, operation: str, requested_version: str = "") -> str:
@@ -83,7 +34,9 @@ def npm_global(package: str, operation: str, requested_version: str = "") -> str
         raise InstallerError("npm did not report {} after installation".format(package))
     if requested_version and installed_version != requested_version:
         raise InstallerError(
-            "npm installed {} {}, expected {}".format(package, installed_version, requested_version)
+            "npm installed {} {}, expected {}".format(
+                package, installed_version, requested_version
+            )
         )
     return _npm_state(npm, package, installed_version, requested_version)
 
@@ -101,7 +54,9 @@ def npm_project(project: Path, operation: str, requested_version: str = "") -> s
     if operation == "status" or state == "current":
         return state
 
-    result = capture([npm, "install", "--silent", "--no-audit", "--no-fund"], cwd=project)
+    result = capture(
+        [npm, "install", "--silent", "--no-audit", "--no-fund"], cwd=project
+    )
     report(result)
     if result.returncode != 0:
         raise InstallerError("npm install failed in {}".format(project))
@@ -109,28 +64,6 @@ def npm_project(project: Path, operation: str, requested_version: str = "") -> s
     if _npm_project_state(npm, project) != "current":
         raise InstallerError("npm dependencies remain inconsistent in {}".format(project))
     return "current"
-
-
-def main(handler: Callable[[str, str], str], arguments: Optional[List[str]] = None) -> int:
-    values = list(sys.argv[1:] if arguments is None else arguments)
-    if not values or len(values) > 2:
-        diagnostic("Expected: <status|apply|upgrade> [requested-version]")
-        return 2
-    operation = values[0]
-    requested_version = values[1] if len(values) == 2 else ""
-    if operation not in {"status", "apply", "upgrade"}:
-        diagnostic("Unsupported installer operation: {}".format(operation))
-        return 2
-    try:
-        state = handler(operation, requested_version)
-    except (InstallerError, OSError, ValueError) as error:
-        diagnostic(str(error))
-        return 1
-    if state not in STATES:
-        diagnostic("Installer returned an invalid state: {}".format(state))
-        return 1
-    print(state)
-    return 0
 
 
 def _npm_installed_version(npm: str, package: str) -> Optional[str]:
@@ -201,7 +134,9 @@ def _npm_project_stamp_matches(project: Path) -> bool:
     stamp = _npm_project_stamp(project)
     if not stamp.is_file():
         return False
-    return stamp.read_text(encoding="utf-8").strip() == _npm_project_manifest_digest(project)
+    return stamp.read_text(encoding="utf-8").strip() == _npm_project_manifest_digest(
+        project
+    )
 
 
 def _write_npm_project_stamp(project: Path) -> None:

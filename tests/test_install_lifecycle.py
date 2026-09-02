@@ -1,5 +1,4 @@
 import contextlib
-import importlib.util
 import io
 import os
 import re
@@ -12,10 +11,12 @@ from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-LIFECYCLE_PATH = REPO_ROOT / "install/lib/python/lifecycle.py"
-SPEC = importlib.util.spec_from_file_location("install_lifecycle", LIFECYCLE_PATH)
-LIFECYCLE = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(LIFECYCLE)
+sys.path.insert(0, str(REPO_ROOT / "install/lib/python"))
+import lifecycle as LIFECYCLE
+from lifecycle import core as CORE
+from lifecycle import npm as NPM
+from lifecycle import uv as UV
+
 sys.path.insert(0, str(REPO_ROOT))
 import orchestrate as ORCHESTRATE
 
@@ -24,11 +25,17 @@ def completed(arguments):
     return subprocess.CompletedProcess(arguments, 0, stdout="", stderr="")
 
 
+class FacadeTests(unittest.TestCase):
+    def test_public_backend_imports_remain_available(self):
+        for name in ("main", "npm_global", "npm_project", "uv_tool"):
+            self.assertTrue(callable(getattr(LIFECYCLE, name)))
+
+
 class MainTests(unittest.TestCase):
     def test_main_prints_one_valid_state(self):
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
-            result = LIFECYCLE.main(lambda operation, version: "current", ["status"])
+            result = CORE.main(lambda operation, version: "current", ["status"])
 
         self.assertEqual(result, 0)
         self.assertEqual(stdout.getvalue(), "current\n")
@@ -38,7 +45,7 @@ class MainTests(unittest.TestCase):
         stdout = io.StringIO()
 
         with contextlib.redirect_stdout(stdout):
-            result = LIFECYCLE.main(handler, ["apply", "1.2.3"])
+            result = CORE.main(handler, ["apply", "1.2.3"])
 
         self.assertEqual(result, 0)
         self.assertEqual(stdout.getvalue(), "current\n")
@@ -47,7 +54,7 @@ class MainTests(unittest.TestCase):
     def test_main_rejects_an_invalid_state(self):
         stderr = io.StringIO()
         with contextlib.redirect_stderr(stderr):
-            result = LIFECYCLE.main(lambda operation, version: "installed", ["status"])
+            result = CORE.main(lambda operation, version: "installed", ["status"])
 
         self.assertEqual(result, 1)
 
@@ -64,12 +71,14 @@ class NpmProjectTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def test_state_detects_lockfile_drift(self):
-        with mock.patch.object(LIFECYCLE, "capture", side_effect=lambda arguments, cwd=None: completed(arguments)):
-            self.assertEqual(LIFECYCLE._npm_project_state("npm", self.project), "drifted")
-            LIFECYCLE._write_npm_project_stamp(self.project)
-            self.assertEqual(LIFECYCLE._npm_project_state("npm", self.project), "current")
+        with mock.patch.object(
+            NPM, "capture", side_effect=lambda arguments, cwd=None: completed(arguments)
+        ):
+            self.assertEqual(NPM._npm_project_state("npm", self.project), "drifted")
+            NPM._write_npm_project_stamp(self.project)
+            self.assertEqual(NPM._npm_project_state("npm", self.project), "current")
             (self.project / "package-lock.json").write_text('{"lockfileVersion": 2}\n', encoding="utf-8")
-            self.assertEqual(LIFECYCLE._npm_project_state("npm", self.project), "drifted")
+            self.assertEqual(NPM._npm_project_state("npm", self.project), "drifted")
 
     def test_apply_converges_and_stamps_the_manifest(self):
         calls = []
@@ -78,27 +87,27 @@ class NpmProjectTests(unittest.TestCase):
             calls.append(list(arguments))
             return completed(arguments)
 
-        with mock.patch.object(LIFECYCLE.shutil, "which", return_value="npm"), mock.patch.object(
-            LIFECYCLE, "capture", side_effect=capture
+        with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
+            NPM, "capture", side_effect=capture
         ):
-            state = LIFECYCLE.npm_project(self.project, "apply")
+            state = NPM.npm_project(self.project, "apply")
 
         self.assertEqual(state, "current")
         self.assertTrue(any(arguments[1] == "install" for arguments in calls))
-        self.assertTrue(LIFECYCLE._npm_project_stamp_matches(self.project))
+        self.assertTrue(NPM._npm_project_stamp_matches(self.project))
 
     def test_apply_skips_a_current_project(self):
-        LIFECYCLE._write_npm_project_stamp(self.project)
+        NPM._write_npm_project_stamp(self.project)
         calls = []
 
         def capture(arguments, cwd=None):
             calls.append(list(arguments))
             return completed(arguments)
 
-        with mock.patch.object(LIFECYCLE.shutil, "which", return_value="npm"), mock.patch.object(
-            LIFECYCLE, "capture", side_effect=capture
+        with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
+            NPM, "capture", side_effect=capture
         ):
-            state = LIFECYCLE.npm_project(self.project, "apply")
+            state = NPM.npm_project(self.project, "apply")
 
         self.assertEqual(state, "current")
         self.assertFalse(any(arguments[1] == "install" for arguments in calls))
@@ -106,28 +115,69 @@ class NpmProjectTests(unittest.TestCase):
 
 class NpmGlobalTests(unittest.TestCase):
     def test_apply_reports_an_update_without_installing_it(self):
-        with mock.patch.object(LIFECYCLE.shutil, "which", return_value="npm"), mock.patch.object(
-            LIFECYCLE, "_npm_installed_version", return_value="1.0.0"
+        with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
+            NPM, "_npm_installed_version", return_value="1.0.0"
         ), mock.patch.object(
-            LIFECYCLE, "_npm_state", return_value="update-available"
-        ), mock.patch.object(LIFECYCLE, "capture") as capture:
-            state = LIFECYCLE.npm_global("example-package", "apply")
+            NPM, "_npm_state", return_value="update-available"
+        ), mock.patch.object(NPM, "capture") as capture:
+            state = NPM.npm_global("example-package", "apply")
 
         self.assertEqual(state, "update-available")
         capture.assert_not_called()
 
     def test_apply_converges_an_exact_version_drift(self):
         installed_versions = iter(["1.0.0", "2.0.0"])
-        with mock.patch.object(LIFECYCLE.shutil, "which", return_value="npm"), mock.patch.object(
-            LIFECYCLE, "_npm_installed_version", side_effect=installed_versions
+        with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
+            NPM, "_npm_installed_version", side_effect=installed_versions
         ), mock.patch.object(
-            LIFECYCLE, "_npm_latest_version", return_value="3.0.0"
-        ), mock.patch.object(LIFECYCLE, "capture", return_value=completed([])) as capture:
-            state = LIFECYCLE.npm_global("example-package", "apply", "2.0.0")
+            NPM, "_npm_latest_version", return_value="3.0.0"
+        ), mock.patch.object(NPM, "capture", return_value=completed([])) as capture:
+            state = NPM.npm_global("example-package", "apply", "2.0.0")
 
         self.assertEqual(state, "update-available")
         capture.assert_called_once()
         self.assertIn("example-package@2.0.0", capture.call_args.args[0])
+
+
+class UvToolTests(unittest.TestCase):
+    def test_apply_preserves_an_unmanaged_command(self):
+        with mock.patch.object(
+            UV.shutil, "which", side_effect=lambda name: name
+        ), mock.patch.object(
+            UV,
+            "_uv_tool_installed_version",
+            return_value=None,
+        ), mock.patch.object(UV, "capture") as capture:
+            state = UV.uv_tool("example", "example", "apply")
+
+        self.assertEqual(state, "unsupported")
+        capture.assert_not_called()
+
+    def test_apply_installs_an_absent_tool(self):
+        with mock.patch.object(
+            UV.shutil,
+            "which",
+            side_effect=lambda name: "uv" if name == "uv" else None,
+        ), mock.patch.object(
+            UV,
+            "_uv_tool_installed_version",
+            return_value=None,
+        ), mock.patch.object(
+            UV,
+            "_uv_tool_state",
+            side_effect=["absent", "current"],
+        ), mock.patch.object(
+            UV,
+            "capture",
+            return_value=completed([]),
+        ) as capture:
+            state = UV.uv_tool("example", "example", "apply")
+
+        self.assertEqual(state, "current")
+        self.assertIn(
+            ["uv", "tool", "install", "example"],
+            [call.args[0] for call in capture.call_args_list],
+        )
 
 
 class RecipeTests(unittest.TestCase):
