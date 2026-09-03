@@ -5,5 +5,5 @@ param(
 
 Import-Module (Join-Path $env:DOTBOT_INSTALL_REPO_ROOT 'install\lib\windows\Lifecycle.psm1') -Force
 Invoke-DotbotInstaller {
-    Invoke-WinGetPackage -PackageId 'GnuWin32.Make' -Operation $Operation -RequestedVersion $RequestedVersion
+    Invoke-WinGetPackage -PackageId 'ezwinports.make' -Operation $Operation -RequestedVersion $RequestedVersion
 }

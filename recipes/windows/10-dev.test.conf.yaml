@@ -26,7 +26,7 @@ checks:
 
   make:
     commands:
-      installed: ["if (((winget list --id GnuWin32.Make 2>$null) | Out-String) -match 'GnuWin32.Make') { 'installed' } else { 'missing' }", installed]
+      installed: ["if (((winget list --id ezwinports.make 2>$null) | Out-String) -match 'ezwinports.make') { 'installed' } else { 'missing' }", installed]
 
   nsight-compute:
     commands:
