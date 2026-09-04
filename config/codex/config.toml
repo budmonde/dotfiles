@@ -1,2 +1,3 @@
 model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
+project_doc_fallback_filenames = ["wiki/index.md"]
