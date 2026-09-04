@@ -43,4 +43,4 @@
     - [install/windows/winget/firefox.ps1, Installing Firefox]
 
 - shell:
-    - [powershell -NonInteractive -Command "shellver bump machine", Refreshing Shellver machine generation]
+    - [shellver bump machine, Refreshing Shellver machine generation]

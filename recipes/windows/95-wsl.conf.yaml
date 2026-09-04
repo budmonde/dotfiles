@@ -6,5 +6,5 @@
     - [install/windows/wsl.ps1, Installing Windows Subsystem for Linux]
 
 - shell:
-    - command: powershell -NonInteractive -Command "shellver bump machine"
+    - command: shellver bump machine
       description: Refreshing Shellver machine generation

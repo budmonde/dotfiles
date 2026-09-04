@@ -9,5 +9,5 @@
     - [install/windows/winget/inkscape.ps1, Installing Inkscape]
 
 - shell:
-    - command: powershell -NonInteractive -Command "shellver bump machine"
+    - command: shellver bump machine
       description: Refreshing Shellver machine generation

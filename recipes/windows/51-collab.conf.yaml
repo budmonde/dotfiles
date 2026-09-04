@@ -8,5 +8,5 @@
     - [install/windows/winget/zoom.ps1, Installing Zoom]
 
 - shell:
-    - command: powershell -NonInteractive -Command "shellver bump machine"
+    - command: shellver bump machine
       description: Refreshing Shellver machine generation

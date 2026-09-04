@@ -5,5 +5,5 @@
     - [install/windows/winget/unity-hub.ps1, Installing Unity Hub]
 
 - shell:
-    - command: powershell -NonInteractive -Command "shellver bump machine"
+    - command: shellver bump machine
       description: Refreshing Shellver machine generation

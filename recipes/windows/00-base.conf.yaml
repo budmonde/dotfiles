@@ -36,8 +36,8 @@
 
 - shell:
     - command: >-
-        powershell -NoProfile -Command
-        "& pwsh -NoProfile -Command \"if ((Get-ExecutionPolicy -Scope CurrentUser) -eq 'Restricted') { Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }\""
+        pwsh -NoProfile -NonInteractive -Command
+        "if ((Get-ExecutionPolicy -Scope CurrentUser) -eq 'Restricted') { Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }"
       description: Setting PowerShell 7 execution policy
 
 - install:
