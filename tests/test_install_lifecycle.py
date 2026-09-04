@@ -1,4 +1,5 @@
 import contextlib
+import importlib.util
 import io
 import os
 import re
@@ -19,6 +20,20 @@ from lifecycle import uv as UV
 
 sys.path.insert(0, str(REPO_ROOT))
 import orchestrate as ORCHESTRATE
+
+
+def load_installer(module_name, filename):
+    spec = importlib.util.spec_from_file_location(
+        module_name, REPO_ROOT / "install/shared" / filename
+    )
+    module = importlib.util.module_from_spec(spec)
+    with mock.patch.dict(os.environ, {"DOTBOT_INSTALL_REPO_ROOT": str(REPO_ROOT)}):
+        spec.loader.exec_module(module)
+    return module
+
+
+GITHUB_AUTH = load_installer("github_auth_installer", "github-auth.py")
+GITHUB_SSH_KEY = load_installer("github_ssh_key_installer", "github-ssh-key.py")
 
 
 def completed(arguments):
@@ -180,6 +195,273 @@ class UvToolTests(unittest.TestCase):
         )
 
 
+class GithubAuthInstallerTests(unittest.TestCase):
+    def test_authorization_opens_the_device_page_without_prompting(self):
+        process = mock.Mock()
+        process.stdout = iter(
+            [
+                "One-time code copied to clipboard\n",
+                "Open this URL to continue: https://github.com/login/device\n",
+            ]
+        )
+        process.wait.return_value = 0
+        with mock.patch.object(
+            GITHUB_AUTH.subprocess, "Popen", return_value=process
+        ) as popen, mock.patch.object(
+            GITHUB_AUTH.webbrowser, "open", return_value=True
+        ) as open_browser:
+            authorized = GITHUB_AUTH._run_authorization(["gh", "auth", "refresh"])
+
+        self.assertTrue(authorized)
+        open_browser.assert_called_once_with(
+            "https://github.com/login/device", new=2
+        )
+        self.assertEqual(popen.call_args.kwargs["stdin"], subprocess.DEVNULL)
+
+    def test_authorization_fails_promptly_when_the_browser_cannot_open(self):
+        process = mock.Mock()
+        process.stdout = iter(
+            ["Open this URL: https://github.com/login/device\n"]
+        )
+        process.wait.return_value = 1
+        with mock.patch.object(
+            GITHUB_AUTH.subprocess, "Popen", return_value=process
+        ), mock.patch.object(GITHUB_AUTH.webbrowser, "open", return_value=False):
+            authorized = GITHUB_AUTH._run_authorization(["gh", "auth", "refresh"])
+
+        self.assertFalse(authorized)
+        process.terminate.assert_called_once_with()
+
+    def test_status_is_read_only_when_key_access_is_available(self):
+        status = subprocess.CompletedProcess(
+            [],
+            0,
+            stdout=(
+                '{"hosts":{"github.com":[{"active":true,"state":"success",'
+                '"tokenSource":"keyring"}]}}'
+            ),
+            stderr="",
+        )
+        with mock.patch.object(
+            GITHUB_AUTH.shutil, "which", return_value="gh"
+        ), mock.patch.object(
+            GITHUB_AUTH, "capture", side_effect=[status, completed([])]
+        ), mock.patch.object(GITHUB_AUTH, "_run_authorization") as authorize:
+            state = GITHUB_AUTH.github_auth("status", "")
+
+        self.assertEqual(state, "current")
+        authorize.assert_not_called()
+
+    def test_apply_refreshes_an_account_missing_key_scope(self):
+        with mock.patch.object(
+            GITHUB_AUTH,
+            "_authentication_state",
+            side_effect=[
+                ("drifted", True),
+                ("current", True),
+            ],
+        ), mock.patch.object(
+            GITHUB_AUTH, "_run_authorization", return_value=True
+        ) as authorize:
+            state = GITHUB_AUTH.github_auth("apply", "")
+
+        self.assertEqual(state, "current")
+        arguments = authorize.call_args.args[0]
+        self.assertEqual(arguments[:3], ["gh", "auth", "refresh"])
+        self.assertIn("admin:public_key", arguments)
+
+    def test_apply_logs_in_when_authentication_is_absent(self):
+        with mock.patch.object(
+            GITHUB_AUTH,
+            "_authentication_state",
+            side_effect=[("absent", False), ("current", True)],
+        ), mock.patch.object(
+            GITHUB_AUTH, "_run_authorization", return_value=True
+        ) as authorize:
+            state = GITHUB_AUTH.github_auth("apply", "")
+
+        self.assertEqual(state, "current")
+        arguments = authorize.call_args.args[0]
+        self.assertEqual(arguments[:3], ["gh", "auth", "login"])
+        self.assertIn("--clipboard", arguments)
+        self.assertIn("admin:public_key", arguments)
+
+    def test_status_reports_failed_authentication_as_absent(self):
+        status = subprocess.CompletedProcess([], 1, stdout="", stderr="not logged in")
+        with mock.patch.object(
+            GITHUB_AUTH.shutil, "which", return_value="gh"
+        ), mock.patch.object(GITHUB_AUTH, "capture", return_value=status):
+            state = GITHUB_AUTH.github_auth("status", "")
+
+        self.assertEqual(state, "absent")
+
+
+class GithubSshKeyInstallerTests(unittest.TestCase):
+    def test_status_is_read_only_when_the_managed_key_is_current(self):
+        with mock.patch.object(
+            GITHUB_SSH_KEY.shutil, "which", return_value="command"
+        ), mock.patch.object(
+            GITHUB_SSH_KEY,
+            "_key_paths",
+            return_value=(Path("private"), Path("public")),
+        ), mock.patch.object(
+            GITHUB_SSH_KEY,
+            "_observe",
+            return_value=("current", ("ssh-ed25519", "AAAA"), []),
+        ), mock.patch.object(GITHUB_SSH_KEY, "_generate_key") as generate, mock.patch.object(
+            GITHUB_SSH_KEY, "_upload_key"
+        ) as upload, mock.patch.object(
+            GITHUB_SSH_KEY, "_delete_stale_keys"
+        ) as delete, mock.patch.dict(
+            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+        ):
+            state = GITHUB_SSH_KEY.github_ssh_key("status", "")
+
+        self.assertEqual(state, "current")
+        generate.assert_not_called()
+        upload.assert_not_called()
+        delete.assert_not_called()
+
+    def test_apply_generates_registers_and_verifies_an_absent_key(self):
+        identity = ("ssh-ed25519", "AAAA")
+        registered = [
+            {
+                "id": 1,
+                "title": "dotfiles:workstation",
+                "key": "ssh-ed25519 AAAA",
+            }
+        ]
+        with mock.patch.object(
+            GITHUB_SSH_KEY.shutil, "which", return_value="command"
+        ), mock.patch.object(
+            GITHUB_SSH_KEY,
+            "_key_paths",
+            return_value=(Path("private"), Path("public")),
+        ), mock.patch.object(
+            GITHUB_SSH_KEY,
+            "_observe",
+            side_effect=[("absent", None, []), ("current", identity, registered)],
+        ), mock.patch.object(
+            GITHUB_SSH_KEY,
+            "_local_key",
+            return_value=("current", identity),
+        ), mock.patch.object(
+            GITHUB_SSH_KEY, "_remote_keys", return_value=[]
+        ), mock.patch.object(
+            GITHUB_SSH_KEY, "_generate_key", return_value=True
+        ) as generate, mock.patch.object(
+            GITHUB_SSH_KEY, "_upload_key", return_value=True
+        ) as upload, mock.patch.object(
+            GITHUB_SSH_KEY, "_verify_key", return_value=True
+        ) as verify, mock.patch.object(
+            GITHUB_SSH_KEY, "_delete_stale_keys"
+        ) as delete, mock.patch.dict(
+            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+        ):
+            state = GITHUB_SSH_KEY.github_ssh_key("apply", "")
+
+        self.assertEqual(state, "current")
+        generate.assert_called_once()
+        upload.assert_called_once()
+        verify.assert_called_once()
+        delete.assert_not_called()
+
+    def test_apply_preserves_a_partial_local_key_pair(self):
+        with mock.patch.object(
+            GITHUB_SSH_KEY.shutil, "which", return_value="command"
+        ), mock.patch.object(
+            GITHUB_SSH_KEY,
+            "_key_paths",
+            return_value=(Path("private"), Path("public")),
+        ), mock.patch.object(
+            GITHUB_SSH_KEY, "_observe", return_value=("drifted", None, [])
+        ), mock.patch.object(
+            GITHUB_SSH_KEY, "_generate_key"
+        ) as generate, mock.patch.dict(
+            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+        ):
+            state = GITHUB_SSH_KEY.github_ssh_key("apply", "")
+
+        self.assertEqual(state, "drifted")
+        generate.assert_not_called()
+
+    def test_apply_preserves_stale_same_title_keys(self):
+        identity = ("ssh-ed25519", "AAAA")
+        inventory = [
+            {"id": 1, "title": "dotfiles:workstation", "key": "ssh-ed25519 AAAA"},
+            {"id": 2, "title": "dotfiles:workstation", "key": "ssh-ed25519 BBBB"},
+        ]
+        with mock.patch.object(
+            GITHUB_SSH_KEY.shutil, "which", return_value="command"
+        ), mock.patch.object(
+            GITHUB_SSH_KEY,
+            "_key_paths",
+            return_value=(Path("private"), Path("public")),
+        ), mock.patch.object(
+            GITHUB_SSH_KEY,
+            "_observe",
+            return_value=("current", identity, inventory),
+        ), mock.patch.object(
+            GITHUB_SSH_KEY, "_verify_key"
+        ) as verify, mock.patch.object(
+            GITHUB_SSH_KEY, "_delete_stale_keys"
+        ) as delete, mock.patch.dict(
+            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+        ):
+            state = GITHUB_SSH_KEY.github_ssh_key("apply", "")
+
+        self.assertEqual(state, "current")
+        verify.assert_not_called()
+        delete.assert_not_called()
+
+    def test_upgrade_does_not_delete_stale_keys_before_verification(self):
+        identity = ("ssh-ed25519", "AAAA")
+        inventory = [
+            {"id": 1, "title": "dotfiles:workstation", "key": "ssh-ed25519 AAAA"},
+            {"id": 2, "title": "dotfiles:workstation", "key": "ssh-ed25519 BBBB"},
+        ]
+        with mock.patch.object(
+            GITHUB_SSH_KEY.shutil, "which", return_value="command"
+        ), mock.patch.object(
+            GITHUB_SSH_KEY,
+            "_key_paths",
+            return_value=(Path("private"), Path("public")),
+        ), mock.patch.object(
+            GITHUB_SSH_KEY,
+            "_observe",
+            return_value=("current", identity, inventory),
+        ), mock.patch.object(
+            GITHUB_SSH_KEY, "_verify_key", return_value=False
+        ), mock.patch.object(
+            GITHUB_SSH_KEY, "_delete_stale_keys"
+        ) as delete, mock.patch.dict(
+            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+        ):
+            state = GITHUB_SSH_KEY.github_ssh_key("upgrade", "")
+
+        self.assertEqual(state, "blocked")
+        delete.assert_not_called()
+
+    def test_upgrade_cleanup_deletes_only_stale_managed_title_keys(self):
+        identity = ("ssh-ed25519", "AAAA")
+        inventory = [
+            {"id": 1, "title": "dotfiles:workstation", "key": "ssh-ed25519 AAAA"},
+            {"id": 2, "title": "dotfiles:workstation", "key": "ssh-ed25519 BBBB"},
+            {"id": 3, "title": "personal", "key": "ssh-ed25519 CCCC"},
+        ]
+        with mock.patch.object(
+            GITHUB_SSH_KEY, "capture", return_value=completed([])
+        ) as capture:
+            deleted = GITHUB_SSH_KEY._delete_stale_keys(
+                inventory, identity, "dotfiles:workstation"
+            )
+
+        self.assertTrue(deleted)
+        capture.assert_called_once_with(
+            ["gh", "api", "--method", "DELETE", "/user/keys/2"]
+        )
+
+
 class RecipeTests(unittest.TestCase):
     def test_discovers_canonical_platform_recipes(self):
         windows = [recipe.name for recipe in ORCHESTRATE.discover_recipes(REPO_ROOT, "windows")]
@@ -189,6 +471,7 @@ class RecipeTests(unittest.TestCase):
             windows,
             [
                 "00-base",
+                "05-github",
                 "10-dev",
                 "20-node",
                 "30-agentic",
@@ -204,7 +487,15 @@ class RecipeTests(unittest.TestCase):
         )
         self.assertEqual(
             unix,
-            ["00-base", "10-dev", "20-node", "30-agentic", "40-research", "41-iqa"],
+            [
+                "00-base",
+                "05-github",
+                "10-dev",
+                "20-node",
+                "30-agentic",
+                "40-research",
+                "41-iqa",
+            ],
         )
 
     def test_resolves_name_id_tag_and_range_selectors(self):

@@ -1,0 +1,3 @@
+- install:
+    - [install/shared/github-auth.py, Authenticating GitHub CLI (device code is in the clipboard; paste it in the browser)]
+    - [install/shared/github-ssh-key.py, Configuring the GitHub SSH key]

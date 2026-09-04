@@ -1,0 +1,12 @@
+schema_version: 3
+
+checks:
+  github-authentication:
+    files:
+      "~/.ssh/git/github_ed25519": file
+      "~/.ssh/git/github_ed25519.pub": file
+    commands:
+      cli: [gh auth status --active --hostname github.com, 'Logged in to github\.com']
+      ssh:
+        - ssh -T -o BatchMode=yes -o ConnectTimeout=10 -o ConnectionAttempts=1 -o PermitLocalCommand=no github.com 2>&1; exit 0
+        - successfully authenticated

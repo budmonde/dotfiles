@@ -59,9 +59,6 @@ checks:
       configuration: [git config --show-origin --get user.email, '(?i)config[\\/]git[\\/]config"?\s+budmonde@gmail\.com']
       submodules: ["git submodule status --recursive", "!(?m)^-"]
       hooks-path: ["git config --get core.hooksPath", '\.githooks']
-      authentication:
-        - ssh -T -o BatchMode=yes -o ConnectTimeout=10 -o ConnectionAttempts=1 -o PermitLocalCommand=no github.com 2>&1; exit 0
-        - successfully authenticated
 
   # Editors
   neovim:
@@ -110,7 +107,6 @@ checks:
         locations: ["~/.local/bin", "%ProgramFiles%/GitHub CLI"]
     commands:
       version: [gh --version, gh version]
-      authentication: [gh auth status, 'Logged in to github\.com']
 
   shellver:
     links:

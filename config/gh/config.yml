@@ -1,5 +1,5 @@
 version: 1
-git_protocol: https
+git_protocol: ssh
 editor:
 prompt: enabled
 prefer_editor_prompt: disabled
