@@ -6,7 +6,7 @@
 if command -v fnm &>/dev/null; then
     if [[ $- == *i* ]]; then
         eval "$(fnm env --use-on-cd --shell bash)"
-    else
+    elif [[ -z ${FNM_MULTISHELL_PATH:-} ]]; then
         eval "$(fnm env --shell bash)"
     fi
 fi
