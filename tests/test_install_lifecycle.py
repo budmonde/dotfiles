@@ -16,6 +16,7 @@ sys.path.insert(0, str(REPO_ROOT / "install/lib/python"))
 import lifecycle as LIFECYCLE
 from lifecycle import core as CORE
 from lifecycle import npm as NPM
+from lifecycle import ssh_key as SSH_KEY
 from lifecycle import uv as UV
 
 sys.path.insert(0, str(REPO_ROOT))
@@ -42,7 +43,13 @@ def completed(arguments):
 
 class FacadeTests(unittest.TestCase):
     def test_public_backend_imports_remain_available(self):
-        for name in ("main", "npm_global", "npm_project", "uv_tool"):
+        for name in (
+            "main",
+            "managed_ssh_key",
+            "npm_global",
+            "npm_project",
+            "uv_tool",
+        ):
             self.assertTrue(callable(getattr(LIFECYCLE, name)))
 
 
@@ -299,19 +306,21 @@ class GithubAuthInstallerTests(unittest.TestCase):
 class GithubSshKeyInstallerTests(unittest.TestCase):
     def test_status_is_read_only_when_the_managed_key_is_current(self):
         with mock.patch.object(
-            GITHUB_SSH_KEY.shutil, "which", return_value="command"
+            SSH_KEY.shutil, "which", return_value="command"
         ), mock.patch.object(
-            GITHUB_SSH_KEY,
+            SSH_KEY,
             "_key_paths",
             return_value=(Path("private"), Path("public")),
         ), mock.patch.object(
-            GITHUB_SSH_KEY,
+            SSH_KEY,
             "_observe",
             return_value=("current", ("ssh-ed25519", "AAAA"), []),
-        ), mock.patch.object(GITHUB_SSH_KEY, "_generate_key") as generate, mock.patch.object(
+        ), mock.patch.object(SSH_KEY, "_generate_key") as generate, mock.patch.object(
+            SSH_KEY, "_verify_key"
+        ) as verify, mock.patch.object(
             GITHUB_SSH_KEY, "_upload_key"
         ) as upload, mock.patch.object(
-            GITHUB_SSH_KEY, "_delete_stale_keys"
+            SSH_KEY, "_delete_stale_keys"
         ) as delete, mock.patch.dict(
             os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
         ):
@@ -319,6 +328,7 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
 
         self.assertEqual(state, "current")
         generate.assert_not_called()
+        verify.assert_not_called()
         upload.assert_not_called()
         delete.assert_not_called()
 
@@ -332,29 +342,29 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
             }
         ]
         with mock.patch.object(
-            GITHUB_SSH_KEY.shutil, "which", return_value="command"
+            SSH_KEY.shutil, "which", return_value="command"
         ), mock.patch.object(
-            GITHUB_SSH_KEY,
+            SSH_KEY,
             "_key_paths",
             return_value=(Path("private"), Path("public")),
         ), mock.patch.object(
-            GITHUB_SSH_KEY,
+            SSH_KEY,
             "_observe",
             side_effect=[("absent", None, []), ("current", identity, registered)],
         ), mock.patch.object(
-            GITHUB_SSH_KEY,
+            SSH_KEY,
             "_local_key",
             return_value=("current", identity),
         ), mock.patch.object(
             GITHUB_SSH_KEY, "_remote_keys", return_value=[]
         ), mock.patch.object(
-            GITHUB_SSH_KEY, "_generate_key", return_value=True
+            SSH_KEY, "_generate_key", return_value=True
         ) as generate, mock.patch.object(
             GITHUB_SSH_KEY, "_upload_key", return_value=True
         ) as upload, mock.patch.object(
-            GITHUB_SSH_KEY, "_verify_key", return_value=True
+            SSH_KEY, "_verify_key", return_value=True
         ) as verify, mock.patch.object(
-            GITHUB_SSH_KEY, "_delete_stale_keys"
+            SSH_KEY, "_delete_stale_keys"
         ) as delete, mock.patch.dict(
             os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
         ):
@@ -368,15 +378,15 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
 
     def test_apply_preserves_a_partial_local_key_pair(self):
         with mock.patch.object(
-            GITHUB_SSH_KEY.shutil, "which", return_value="command"
+            SSH_KEY.shutil, "which", return_value="command"
         ), mock.patch.object(
-            GITHUB_SSH_KEY,
+            SSH_KEY,
             "_key_paths",
             return_value=(Path("private"), Path("public")),
         ), mock.patch.object(
-            GITHUB_SSH_KEY, "_observe", return_value=("drifted", None, [])
+            SSH_KEY, "_observe", return_value=("drifted", None, [])
         ), mock.patch.object(
-            GITHUB_SSH_KEY, "_generate_key"
+            SSH_KEY, "_generate_key"
         ) as generate, mock.patch.dict(
             os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
         ):
@@ -392,27 +402,121 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
             {"id": 2, "title": "dotfiles:workstation", "key": "ssh-ed25519 BBBB"},
         ]
         with mock.patch.object(
-            GITHUB_SSH_KEY.shutil, "which", return_value="command"
+            SSH_KEY.shutil, "which", return_value="command"
         ), mock.patch.object(
-            GITHUB_SSH_KEY,
+            SSH_KEY,
             "_key_paths",
             return_value=(Path("private"), Path("public")),
         ), mock.patch.object(
-            GITHUB_SSH_KEY,
+            SSH_KEY,
             "_observe",
             return_value=("current", identity, inventory),
         ), mock.patch.object(
-            GITHUB_SSH_KEY, "_verify_key"
+            SSH_KEY, "_verify_key"
         ) as verify, mock.patch.object(
-            GITHUB_SSH_KEY, "_delete_stale_keys"
+            SSH_KEY, "_delete_stale_keys"
         ) as delete, mock.patch.dict(
             os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
         ):
             state = GITHUB_SSH_KEY.github_ssh_key("apply", "")
 
         self.assertEqual(state, "current")
-        verify.assert_not_called()
+        verify.assert_called_once()
         delete.assert_not_called()
+
+    def test_verification_uses_the_accept_new_host_key_policy(self):
+        result = subprocess.CompletedProcess(
+            [],
+            1,
+            stdout="",
+            stderr="Hi! You've successfully authenticated",
+        )
+        with mock.patch.object(SSH_KEY, "capture", return_value=result) as capture:
+            verified = SSH_KEY._verify_key(
+                Path("private"), "github.com", "successfully authenticated"
+            )
+
+        self.assertTrue(verified)
+        arguments = capture.call_args.args[0]
+        self.assertIn("StrictHostKeyChecking=accept-new", arguments)
+
+    def test_apply_rotates_an_unusable_key_before_deleting_it(self):
+        old_identity = ("ssh-ed25519", "OLD")
+        new_identity = ("ssh-ed25519", "NEW")
+        expired = [
+            {
+                "id": 7,
+                "title": "legacy-workstation",
+                "key": "ssh-ed25519 OLD",
+            }
+        ]
+        replacement = [
+            {
+                "id": 8,
+                "title": "dotfiles:workstation",
+                "key": "ssh-ed25519 NEW",
+            }
+        ]
+        events = []
+        upload = mock.Mock(
+            side_effect=lambda *_: events.append("upload") or True
+        )
+        delete = mock.Mock(
+            side_effect=lambda *_: events.append("delete") or True
+        )
+        with mock.patch.object(
+            SSH_KEY.shutil, "which", return_value="command"
+        ), mock.patch.object(
+            SSH_KEY,
+            "_key_paths",
+            return_value=(Path("private"), Path("public")),
+        ), mock.patch.object(
+            SSH_KEY,
+            "_observe",
+            side_effect=[
+                ("drifted", old_identity, expired),
+                ("current", new_identity, replacement),
+            ],
+        ), mock.patch.object(
+            SSH_KEY,
+            "_replacement_key_paths",
+            return_value=(Path("replacement"), Path("replacement.pub")),
+        ), mock.patch.object(
+            SSH_KEY, "_generate_key", return_value=True
+        ), mock.patch.object(
+            SSH_KEY,
+            "_local_key",
+            return_value=("current", new_identity),
+        ), mock.patch.object(
+            SSH_KEY,
+            "_verify_key",
+            side_effect=lambda *_: events.append("verify") or True,
+        ), mock.patch.object(
+            SSH_KEY,
+            "_activate_replacement",
+            side_effect=lambda *_: events.append("activate") or True,
+        ), mock.patch.object(
+            SSH_KEY, "_remove_key_pair"
+        ), mock.patch.dict(
+            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+        ):
+            state = SSH_KEY.managed_ssh_key(
+                "apply",
+                "",
+                service_name="GitLab",
+                key_filename="gitlab_ed25519",
+                required_commands=("glab", "ssh", "ssh-keygen"),
+                ssh_target="git@gitlab.example.com",
+                authentication_text="welcome to gitlab",
+                list_remote_keys=mock.Mock(),
+                upload_remote_key=upload,
+                delete_remote_key=delete,
+                remote_key_usable=lambda _: False,
+            )
+
+        self.assertEqual(state, "current")
+        self.assertEqual(events, ["upload", "verify", "activate", "delete"])
+        delete.assert_called_once_with(7)
 
     def test_upgrade_does_not_delete_stale_keys_before_verification(self):
         identity = ("ssh-ed25519", "AAAA")
@@ -421,19 +525,19 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
             {"id": 2, "title": "dotfiles:workstation", "key": "ssh-ed25519 BBBB"},
         ]
         with mock.patch.object(
-            GITHUB_SSH_KEY.shutil, "which", return_value="command"
+            SSH_KEY.shutil, "which", return_value="command"
         ), mock.patch.object(
-            GITHUB_SSH_KEY,
+            SSH_KEY,
             "_key_paths",
             return_value=(Path("private"), Path("public")),
         ), mock.patch.object(
-            GITHUB_SSH_KEY,
+            SSH_KEY,
             "_observe",
             return_value=("current", identity, inventory),
         ), mock.patch.object(
-            GITHUB_SSH_KEY, "_verify_key", return_value=False
+            SSH_KEY, "_verify_key", return_value=False
         ), mock.patch.object(
-            GITHUB_SSH_KEY, "_delete_stale_keys"
+            SSH_KEY, "_delete_stale_keys"
         ) as delete, mock.patch.dict(
             os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
         ):
@@ -452,8 +556,11 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
         with mock.patch.object(
             GITHUB_SSH_KEY, "capture", return_value=completed([])
         ) as capture:
-            deleted = GITHUB_SSH_KEY._delete_stale_keys(
-                inventory, identity, "dotfiles:workstation"
+            deleted = SSH_KEY._delete_stale_keys(
+                inventory,
+                identity,
+                "dotfiles:workstation",
+                GITHUB_SSH_KEY._delete_key,
             )
 
         self.assertTrue(deleted)
