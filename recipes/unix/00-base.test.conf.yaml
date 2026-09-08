@@ -13,6 +13,11 @@ checks:
       fzf-tmux:
         locations: ["${XDG_DATA_HOME:-$HOME/.local/share}/fzf/bin"]
 
+  bash:
+    paths: [bash]
+    commands:
+      history: ["bash -ic 'test \"$HISTFILE\" = \"${XDG_STATE_HOME:-$HOME/.local/state}/bash/history\" && test -d \"${HISTFILE%/*}\" && echo ready'", '(?m)^ready$']
+
   zsh:
     links:
       "~/.zshenv": config/zshenv
@@ -22,6 +27,7 @@ checks:
     commands:
       version: [zsh --version, zsh]
       configuration: ["zsh -ic 'print -r -- \"$KEYTIMEOUT\"'", '(?m)^1$']
+      history: ["zsh -ic 'test \"$HISTFILE\" = \"${XDG_STATE_HOME:-$HOME/.local/state}/zsh/history\" && test -d \"${HISTFILE:h}\" && print -r -- ready'", '(?m)^ready$']
 
   tmux:
     links:
