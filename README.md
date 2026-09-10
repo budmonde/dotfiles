@@ -1,18 +1,53 @@
 # dotfiles
 
-## Windows Bootstrap
+## Bootstrap
 
-On a fresh Windows machine:
+Bootstrap creates a validated machine identity in `~/.name`,
+clones the public repository to `~/dotfiles/common`,
+and creates a base-only `.install-recipes` plan.
+It refuses to replace an existing identity file and does not clone or name private repositories.
 
-1. Set up a local account: upon initial boot, open command prompt (`Shift + F10`) and run `OOBE\BYPASSNRO`.
-2. Run in PowerShell (as admin):
+On a fresh Windows machine,
+set up a local account if needed by opening Command Prompt during initial boot with `Shift + F10` and running `OOBE\BYPASSNRO`.
+Then run PowerShell as administrator:
 
 ```powershell
 irm https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.ps1 | iex
 ```
 
-This ensures winget is on PATH, installs git and python via winget, configures git to use Windows OpenSSH, and enables the ssh-agent service.
-Then follow the printed next steps to add SSH keys, clone, and run `install.ps1`.
+For non-interactive Windows bootstrap:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.ps1))) --machine_name workstation
+```
+
+The Windows entry point ensures winget is on `PATH`,
+installs Git with Windows OpenSSH and installs Python,
+and enables the `ssh-agent` service.
+
+On a fresh Unix machine with Git and Python 3.9 or newer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.sh | bash
+```
+
+For non-interactive Unix bootstrap:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.sh | bash -s -- --machine_name workstation
+```
+
+After either bootstrap finishes,
+run the printed common installer and tester commands.
+GitHub authentication and the managed SSH key belong to the optional `05-github` recipe.
+
+On an existing installation that predates bootstrap-managed identity,
+create `~/.name` once with one lowercase machine name before running forge resources.
+The accepted format is 1-64 letters,
+digits,
+dots,
+underscores,
+or hyphens and must begin with a letter or digit.
 
 ## Installer Development
 

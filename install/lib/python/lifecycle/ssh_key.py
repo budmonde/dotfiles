@@ -10,17 +10,17 @@ MACHINE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 
 
 def _machine_id(service_name):
-    value = os.environ.get("ENVTEST_MACHINE_ID", "").strip()
+    value = os.environ.get("DOTFILES_MACHINE_ID", "").strip()
     if not value:
         diagnostic(
-            "Set ENVTEST_MACHINE_ID before managing the {} SSH key.".format(
+            "Set DOTFILES_MACHINE_ID before managing the {} SSH key.".format(
                 service_name
             )
         )
         return None
     if MACHINE_ID_PATTERN.fullmatch(value) is None:
         diagnostic(
-            "ENVTEST_MACHINE_ID must be lowercase and contain only letters, digits, dots, underscores, or hyphens."
+            "DOTFILES_MACHINE_ID must be lowercase and contain only letters, digits, dots, underscores, or hyphens."
         )
         return None
     return value

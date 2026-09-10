@@ -3,6 +3,7 @@ import importlib.util
 import io
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -322,7 +323,7 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
         ) as upload, mock.patch.object(
             SSH_KEY, "_delete_stale_keys"
         ) as delete, mock.patch.dict(
-            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+            os.environ, {"DOTFILES_MACHINE_ID": "workstation"}
         ):
             state = GITHUB_SSH_KEY.github_ssh_key("status", "")
 
@@ -366,7 +367,7 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
         ) as verify, mock.patch.object(
             SSH_KEY, "_delete_stale_keys"
         ) as delete, mock.patch.dict(
-            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+            os.environ, {"DOTFILES_MACHINE_ID": "workstation"}
         ):
             state = GITHUB_SSH_KEY.github_ssh_key("apply", "")
 
@@ -388,7 +389,7 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
         ), mock.patch.object(
             SSH_KEY, "_generate_key"
         ) as generate, mock.patch.dict(
-            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+            os.environ, {"DOTFILES_MACHINE_ID": "workstation"}
         ):
             state = GITHUB_SSH_KEY.github_ssh_key("apply", "")
 
@@ -416,7 +417,7 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
         ) as verify, mock.patch.object(
             SSH_KEY, "_delete_stale_keys"
         ) as delete, mock.patch.dict(
-            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+            os.environ, {"DOTFILES_MACHINE_ID": "workstation"}
         ):
             state = GITHUB_SSH_KEY.github_ssh_key("apply", "")
 
@@ -498,7 +499,7 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
         ), mock.patch.object(
             SSH_KEY, "_remove_key_pair"
         ), mock.patch.dict(
-            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+            os.environ, {"DOTFILES_MACHINE_ID": "workstation"}
         ):
             state = SSH_KEY.managed_ssh_key(
                 "apply",
@@ -539,7 +540,7 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
         ), mock.patch.object(
             SSH_KEY, "_delete_stale_keys"
         ) as delete, mock.patch.dict(
-            os.environ, {"ENVTEST_MACHINE_ID": "workstation"}
+            os.environ, {"DOTFILES_MACHINE_ID": "workstation"}
         ):
             state = GITHUB_SSH_KEY.github_ssh_key("upgrade", "")
 
@@ -903,6 +904,142 @@ class ManifestOrderingTests(unittest.TestCase):
             bootstrap,
         )
         self.assertNotIn("Copy-Item .install-recipes.example .install-recipes", bootstrap)
+
+    def test_bootstraps_create_machine_identity_without_overwriting_it(self):
+        windows = (REPO_ROOT / "bootstrap.ps1").read_text(encoding="utf-8")
+        unix = (REPO_ROOT / "bootstrap.sh").read_text(encoding="utf-8")
+
+        for bootstrap in (windows, unix):
+            self.assertIn("--machine_name", bootstrap)
+            self.assertIn("DOTFILES_MACHINE_ID", bootstrap)
+            self.assertIn("already exists", bootstrap)
+            self.assertIn("00-base", bootstrap)
+            self.assertNotIn("dotfiles-local", bootstrap)
+        self.assertIn("[System.IO.FileMode]::CreateNew", windows)
+        self.assertIn("set -C", unix)
+        self.assertIn("./install.sh", unix)
+        self.assertIn("./test.sh", unix)
+
+    def test_shell_machine_loader_exports_the_canonical_identity(self):
+        bash = shutil.which("bash")
+        if os.name == "nt":
+            git = shutil.which("git")
+            git_bash = (
+                Path(git).parent.parent / "bin/bash.exe" if git else Path()
+            )
+            bash = str(git_bash) if git_bash.is_file() else None
+        if bash is None:
+            self.skipTest("bash is not available")
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            Path(temporary_directory, ".name").write_text(
+                "workstation\n", encoding="utf-8"
+            )
+            environment = os.environ.copy()
+            environment["HOME"] = Path(temporary_directory).as_posix()
+            result = subprocess.run(
+                [
+                    bash,
+                    "-c",
+                    '. "$1"; printf "%s" "$DOTFILES_MACHINE_ID"',
+                    "bash",
+                    (REPO_ROOT / "config/shell/machine.sh").as_posix(),
+                ],
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "workstation")
+
+    def test_powershell_machine_loader_exports_the_canonical_identity(self):
+        powershell = shutil.which("pwsh") or shutil.which("powershell")
+        if powershell is None:
+            self.skipTest("PowerShell is not available")
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            Path(temporary_directory, ".name").write_text(
+                "workstation\n", encoding="utf-8"
+            )
+            script_path = str(REPO_ROOT / "config/powershell/machine.ps1").replace(
+                "'", "''"
+            )
+            home_path = temporary_directory.replace("'", "''")
+            result = subprocess.run(
+                [
+                    powershell,
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-Command",
+                    "& '{}' -HomePath '{}'; Write-Output $env:DOTFILES_MACHINE_ID".format(
+                        script_path, home_path
+                    ),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "workstation")
+
+    def test_prompts_show_machine_identity_and_current_hostname(self):
+        powershell = shutil.which("pwsh") or shutil.which("powershell")
+        if powershell is not None:
+            environment = os.environ.copy()
+            environment["DOTFILES_MACHINE_ID"] = "cluster"
+            environment["COMPUTERNAME"] = "LOGIN07"
+            prompt_path = str(
+                REPO_ROOT / "config/powershell/prompt.ps1"
+            ).replace("'", "''")
+            result = subprocess.run(
+                [
+                    powershell,
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-Command",
+                    ". '{}'; Write-Output (Get-MachineName)".format(
+                        prompt_path
+                    ),
+                ],
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "cluster : login07")
+
+        bash = shutil.which("bash")
+        if os.name == "nt":
+            git = shutil.which("git")
+            git_bash = (
+                Path(git).parent.parent / "bin/bash.exe" if git else Path()
+            )
+            bash = str(git_bash) if git_bash.is_file() else None
+        if bash is not None:
+            environment = os.environ.copy()
+            environment["DOTFILES_MACHINE_ID"] = "cluster"
+            result = subprocess.run(
+                [
+                    bash,
+                    "-c",
+                    '. "$1" >/dev/null 2>&1; '
+                    'printf "%s\n%s" "$(hostname)" "$(machine_name)"',
+                    "bash",
+                    (REPO_ROOT / "config/bash/prompt.bash").as_posix(),
+                ],
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            lines = result.stdout.splitlines()
+            self.assertEqual(len(lines), 2, result.stderr)
+            self.assertEqual(lines[1], "cluster : {}".format(lines[0]))
 
 
 if __name__ == "__main__":

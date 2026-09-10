@@ -76,10 +76,12 @@ print_named_colors() {
 }
 
 machine_name() {
-    if [[ -f $HOME/.name ]]; then
-        cat $HOME/.name
+    local host_name
+    host_name="$(hostname)"
+    if [[ -n ${DOTFILES_MACHINE_ID:-} ]]; then
+        printf '%s : %s\n' "$DOTFILES_MACHINE_ID" "$host_name"
     else
-        hostname
+        printf '%s\n' "$host_name"
     fi
 }
 

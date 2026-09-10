@@ -5,6 +5,8 @@ param(
 
 Merge-EnvironmentPath
 
+. "$PSScriptRoot\powershell\machine.ps1"
+
 # External tool environment variables.
 . "$PSScriptRoot\powershell\external.ps1"
 

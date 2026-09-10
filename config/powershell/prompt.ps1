@@ -18,8 +18,15 @@ $script:Color = @{
 }
 
 function Get-MachineName {
-    if (Test-Path "$HOME\.name") { return (Get-Content "$HOME\.name" -Raw).Trim() }
-    return $env:COMPUTERNAME.ToLower()
+    $hostname = if ($env:COMPUTERNAME) {
+        $env:COMPUTERNAME.ToLowerInvariant()
+    } else {
+        [System.Net.Dns]::GetHostName().ToLowerInvariant()
+    }
+    if ($env:DOTFILES_MACHINE_ID) {
+        return "$($env:DOTFILES_MACHINE_ID) : $hostname"
+    }
+    return $hostname
 }
 
 function Get-GitBranch {
