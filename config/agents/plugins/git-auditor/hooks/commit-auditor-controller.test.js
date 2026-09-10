@@ -22,7 +22,7 @@ const managedEnvironment = {
     CODEX_THREAD_ID: "thread-origin",
     CODEX_CTL_GATE_ENDPOINT: "http://127.0.0.1:49152",
     CODEX_CTL_GATE_TOKEN: "capability-token",
-    CODEX_CTL_GENERATION_ID: "generation-4",
+    CODEX_CTL_SOURCE_ID: "cohort-4",
     CODEX_CTL_GATE_PROTOCOL: "1",
     CODEX_CTL_EXECUTABLE: "C:\\dev\\codex-ctl\\bin\\codex-ctl.mjs",
     CODEX_CTL_INSTANCE: "dev",
@@ -54,12 +54,12 @@ test("an unmanaged Codex thread remains in local policy mode", () => {
     });
 });
 
-test("a complete managed capability identifies its generation and executable", () => {
+test("a complete managed capability identifies its cohort source and executable", () => {
     assert.deepEqual(classifyRuntime(managedEnvironment), {
         kind: "codex",
         managed: true,
         executable: managedEnvironment.CODEX_CTL_EXECUTABLE,
-        generationId: "generation-4",
+        sourceId: "cohort-4",
         instance: "dev",
         originThreadId: "thread-origin",
         runtimeInstanceId: null,
@@ -71,7 +71,7 @@ test("a runtime-neutral capability identifies an OpenCode origin without provide
         kind: "opencode",
         managed: true,
         executable: runtimeManagedEnvironment.CODEX_CTL_EXECUTABLE,
-        generationId: null,
+        sourceId: null,
         instance: "dev",
         originThreadId: "session-a",
         runtimeInstanceId: "opencode-main",
@@ -105,7 +105,7 @@ test("partial and mixed runtime markers fail closed", () => {
         CODEX_THREAD_ID: "thread-origin",
     });
     assert.equal(mixed.kind, "invalid");
-    assert.match(mixed.reason, /mixed generation and runtime gate markers/);
+    assert.match(mixed.reason, /mixed Codex-source and runtime gate markers/);
 });
 
 test("audit bindings tie the final commit to the audited base and index tree", () => {
@@ -169,7 +169,7 @@ test("structured verdicts are read from the provider-neutral result envelope", (
     assert.deepEqual(
         normalizeStructuredVerdict({
             gateId: "git-commit",
-            invocationId: "generation-4.invocation-1",
+            invocationId: "cohort-4.invocation-1",
             result: {
                 verdict: "rewrite",
                 message: "[TEST] Exercise gate",
@@ -189,11 +189,11 @@ test("a finalization receipt round-trips through Git metadata", (t) => {
     t.after(() => fs.rmSync(gitDir, { recursive: true, force: true }));
 
     const receipt = {
-        schemaVersion: 2,
+        schemaVersion: 3,
         gateId: "git-commit",
-        invocationId: "generation-4.invocation-1",
+        invocationId: "cohort-4.invocation-1",
         finalizationToken: "one-time-token",
-        generationId: "generation-4",
+        sourceId: "cohort-4",
         originThreadId: "thread-origin",
         auditBinding: {
             schemaVersion: 1,
@@ -240,11 +240,11 @@ test("reference transactions reject a final commit whose parent differs from the
     ]);
     const gitDir = runGit(repository, ["rev-parse", "--absolute-git-dir"]);
     const receipt = {
-        schemaVersion: 2,
+        schemaVersion: 3,
         gateId: "git-commit",
-        invocationId: "generation-4.invocation-1",
+        invocationId: "cohort-4.invocation-1",
         finalizationToken: "one-time-token",
-        generationId: "generation-4",
+        sourceId: "cohort-4",
         originThreadId: "thread-origin",
         auditBinding: {
             schemaVersion: 1,

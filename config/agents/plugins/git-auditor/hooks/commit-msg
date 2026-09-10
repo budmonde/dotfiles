@@ -129,11 +129,11 @@ async function dispatchManaged(runtime, messageText, repoTopLevel, gitDir, audit
         receipt: verdict.kind === "REJECT"
             ? null
             : {
-                schemaVersion: 2,
+                schemaVersion: 3,
                 gateId: response.gateId,
                 invocationId: response.invocationId,
                 finalizationToken: response.finalizationToken,
-                generationId: response.generationId,
+                sourceId: response.sourceId,
                 originThreadId: response.originThreadId,
                 auditBinding: verifiedAuditBinding,
             },
@@ -270,7 +270,7 @@ async function main() {
                 : null,
         origin_session_id:
             runtime.managed ? runtime.originThreadId : null,
-        generation_id: runtime.generationId,
+        source_id: runtime.sourceId,
         repo: repoTopLevel,
         git_dir: gitOutput("rev-parse --absolute-git-dir") || null,
         cwd: process.cwd(),

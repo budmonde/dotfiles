@@ -42,7 +42,7 @@ async function main() {
             result: "GATE_FINALIZE_FAILED",
             infrastructure_failure: true,
             origin_session_id: runtime.originThreadId,
-            generation_id: runtime.generationId,
+            source_id: runtime.sourceId,
             rationale: error.message,
         });
         process.stderr.write(
@@ -81,7 +81,7 @@ async function main() {
             gate_id: receipt.gateId,
             invocation_id: receipt.invocationId,
             origin_session_id: runtime.originThreadId,
-            generation_id: runtime.generationId,
+            source_id: runtime.sourceId,
             rationale: reason,
         });
         process.stderr.write(

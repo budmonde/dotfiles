@@ -29,7 +29,7 @@ function classifyRuntime(env = process.env) {
         const protocol = env.CODEX_CTL_GATE_PROTOCOL;
         const required = protocol === "2"
             ? [...GATE_REQUIRED_ENV, ...RUNTIME_REQUIRED_ENV]
-            : [...GATE_REQUIRED_ENV, "CODEX_CTL_GENERATION_ID", "CODEX_THREAD_ID"];
+            : [...GATE_REQUIRED_ENV, "CODEX_CTL_SOURCE_ID", "CODEX_THREAD_ID"];
         const missing = required.filter((key) => !present(env, key));
         if (missing.length > 0) {
             return {
@@ -43,17 +43,21 @@ function classifyRuntime(env = process.env) {
                 reason: `unsupported managed gate protocol ${JSON.stringify(protocol)}`,
             };
         }
-        if (protocol === "2" && (present(env, "CODEX_THREAD_ID") || present(env, "CODEX_CTL_GENERATION_ID"))) {
+        if (protocol === "2" && (
+            present(env, "CODEX_THREAD_ID")
+            || present(env, "CODEX_CTL_SOURCE_ID")
+            || present(env, "CODEX_CTL_GENERATION_ID")
+        )) {
             return {
                 kind: "invalid",
-                reason: "mixed generation and runtime gate markers are not allowed",
+                reason: "mixed Codex-source and runtime gate markers are not allowed",
             };
         }
         return {
             kind: protocol === "1" ? "codex" : env.CODEX_CTL_RUNTIME_KIND,
             managed: true,
             executable: env.CODEX_CTL_EXECUTABLE,
-            generationId: protocol === "1" ? env.CODEX_CTL_GENERATION_ID : null,
+            sourceId: protocol === "1" ? env.CODEX_CTL_SOURCE_ID : null,
             instance: env.CODEX_CTL_INSTANCE,
             originThreadId: protocol === "1" ? env.CODEX_THREAD_ID : env.CODEX_CTL_SESSION_ID,
             runtimeInstanceId: protocol === "2" ? env.CODEX_CTL_RUNTIME_INSTANCE : null,
@@ -186,14 +190,14 @@ function pendingReceiptPath(gitDir) {
 }
 
 function validateReceipt(receipt) {
-    if (!receipt || receipt.schemaVersion !== 2) {
+    if (!receipt || receipt.schemaVersion !== 3) {
         throw new Error("invalid gate finalization receipt schema");
     }
     for (const key of [
         "gateId",
         "invocationId",
         "finalizationToken",
-        "generationId",
+        "sourceId",
         "originThreadId",
     ]) {
         if (typeof receipt[key] !== "string" || receipt[key].trim() === "") {

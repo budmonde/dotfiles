@@ -80,7 +80,7 @@ function reject(runtime, gitDir, receipt, reason) {
         gate_id: receipt?.gateId || null,
         invocation_id: receipt?.invocationId || null,
         origin_session_id: runtime.originThreadId,
-        generation_id: runtime.generationId,
+        source_id: runtime.sourceId,
         rationale: reason,
     });
     if (receipt) abortInvocation(runtime, receipt, reason);

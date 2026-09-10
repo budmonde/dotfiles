@@ -64,7 +64,7 @@ Interpret these states:
 
 The query is constrained to the invocation ID,
 origin thread ID,
-and controller generation.
+and exact cohort source or managed runtime session.
 A mismatch is an identity error,
 not evidence that the invocation is absent.
 
