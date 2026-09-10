@@ -80,7 +80,64 @@ def _local_key(service_name, private_key, public_key):
             )
         )
         return "drifted", None
+    _warn_if_private_key_exposed(service_name, private_key)
     return "current", public_identity
+
+
+def _private_key_exposed(private_key):
+    if os.name != "nt":
+        try:
+            return bool(private_key.stat().st_mode & 0o077)
+        except OSError:
+            return None
+
+    powershell = shutil.which("pwsh") or shutil.which("powershell")
+    if powershell is None:
+        return None
+    script = (
+        "$acl=Get-Acl -LiteralPath $args[0];"
+        "$owner=(New-Object System.Security.Principal.NTAccount($acl.Owner))."
+        "Translate([System.Security.Principal.SecurityIdentifier]).Value;"
+        "$safe=@($owner,'S-1-5-18','S-1-5-32-544');"
+        "$exposed=$false;"
+        "foreach($rule in $acl.Access){"
+        "try{$sid=$rule.IdentityReference.Translate("
+        "[System.Security.Principal.SecurityIdentifier]).Value}catch{continue};"
+        "if($rule.AccessControlType -eq "
+        "[System.Security.AccessControl.AccessControlType]::Allow -and "
+        "$safe -notcontains $sid -and ([int]$rule.FileSystemRights -band 1)){"
+        "$exposed=$true;break}};"
+        "if($exposed){'exposed'}else{'protected'}"
+    )
+    result = capture(
+        [
+            powershell,
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            script,
+            str(private_key),
+        ]
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip().splitlines()[-1:] == ["exposed"]
+
+
+def _warn_if_private_key_exposed(service_name, private_key):
+    exposed = _private_key_exposed(private_key)
+    if exposed is True:
+        diagnostic(
+            "Warning: the managed {} private key at {} has broader-than-owner access; permissions were not changed.".format(
+                service_name, private_key
+            )
+        )
+    elif exposed is None:
+        diagnostic(
+            "Warning: unable to inspect access controls for the managed {} private key at {}; permissions were not changed.".format(
+                service_name, private_key
+            )
+        )
 
 
 def _observe(

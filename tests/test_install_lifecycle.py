@@ -441,6 +441,42 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
         arguments = capture.call_args.args[0]
         self.assertIn("StrictHostKeyChecking=accept-new", arguments)
 
+    def test_exposed_private_key_warns_without_changing_current_state(self):
+        result = subprocess.CompletedProcess(
+            [], 0, stdout="ssh-ed25519 AAAA\n", stderr=""
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            private_key = Path(temporary_directory) / "private"
+            public_key = Path(temporary_directory) / "private.pub"
+            private_key.write_text("private material", encoding="utf-8")
+            public_key.write_text("ssh-ed25519 AAAA workstation\n", encoding="utf-8")
+            with mock.patch.object(
+                SSH_KEY, "capture", return_value=result
+            ), mock.patch.object(
+                SSH_KEY, "_private_key_exposed", return_value=True
+            ), mock.patch.object(SSH_KEY, "diagnostic") as diagnostic:
+                state, identity = SSH_KEY._local_key(
+                    "GitHub", private_key, public_key
+                )
+
+            self.assertEqual(state, "current")
+            self.assertEqual(identity, ("ssh-ed25519", "AAAA"))
+            self.assertEqual(
+                private_key.read_text(encoding="utf-8"), "private material"
+            )
+            self.assertIn("permissions were not changed", diagnostic.call_args.args[0])
+
+    def test_windows_private_key_acl_probe_returns_a_result(self):
+        if os.name != "nt":
+            self.skipTest("Windows ACL probe")
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            private_key = Path(temporary_directory) / "private"
+            private_key.write_text("private material", encoding="utf-8")
+            exposed = SSH_KEY._private_key_exposed(private_key)
+
+        self.assertIsInstance(exposed, bool)
+
     def test_apply_rotates_an_unusable_key_before_deleting_it(self):
         old_identity = ("ssh-ed25519", "OLD")
         new_identity = ("ssh-ed25519", "NEW")
