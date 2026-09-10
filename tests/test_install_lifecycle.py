@@ -204,6 +204,66 @@ class UvToolTests(unittest.TestCase):
 
 
 class GithubAuthInstallerTests(unittest.TestCase):
+    def test_command_environment_ignores_token_sources(self):
+        with mock.patch.dict(
+            os.environ,
+            {
+                "GH_TOKEN": "token",
+                "GITHUB_TOKEN": "token",
+                "GH_ENTERPRISE_TOKEN": "token",
+                "GITHUB_ENTERPRISE_TOKEN": "token",
+            },
+        ):
+            environment = GITHUB_AUTH._command_environment(Path("private"))
+
+        for name in GITHUB_AUTH.TOKEN_ENVIRONMENT_VARIABLES:
+            self.assertNotIn(name, environment)
+        self.assertEqual(environment["GH_CONFIG_DIR"], "private")
+
+    def test_linux_keyring_initialization_is_temporary(self):
+        with mock.patch.object(
+            GITHUB_AUTH.sys, "platform", "linux"
+        ), mock.patch.object(
+            GITHUB_AUTH.shutil, "which", return_value="/usr/bin/secret-tool"
+        ), mock.patch.object(
+            GITHUB_AUTH.subprocess,
+            "run",
+            side_effect=[completed([]), completed([])],
+        ) as run, mock.patch.object(GITHUB_AUTH, "diagnostic"):
+            prepared = GITHUB_AUTH._prepare_linux_keyring()
+
+        self.assertTrue(prepared)
+        store = run.call_args_list[0]
+        clear = run.call_args_list[1]
+        self.assertEqual(store.args[0][1], "store")
+        self.assertEqual(store.kwargs["input"], "initialization")
+        self.assertEqual(clear.args[0][1], "clear")
+        self.assertEqual(clear.kwargs["stdin"], subprocess.DEVNULL)
+
+    def test_linux_keyring_initialization_requires_secret_tool(self):
+        with mock.patch.object(
+            GITHUB_AUTH.sys, "platform", "linux"
+        ), mock.patch.object(
+            GITHUB_AUTH.shutil, "which", return_value=None
+        ), mock.patch.object(
+            GITHUB_AUTH.subprocess, "run"
+        ) as run, mock.patch.object(GITHUB_AUTH, "diagnostic"):
+            prepared = GITHUB_AUTH._prepare_linux_keyring()
+
+        self.assertFalse(prepared)
+        run.assert_not_called()
+
+    def test_non_linux_keyring_initialization_is_a_noop(self):
+        with mock.patch.object(
+            GITHUB_AUTH.sys, "platform", "darwin"
+        ), mock.patch.object(
+            GITHUB_AUTH.subprocess, "run"
+        ) as run:
+            prepared = GITHUB_AUTH._prepare_linux_keyring()
+
+        self.assertTrue(prepared)
+        run.assert_not_called()
+
     def test_authorization_opens_the_device_page_without_prompting(self):
         process = mock.Mock()
         process.stdout = iter(
@@ -217,7 +277,13 @@ class GithubAuthInstallerTests(unittest.TestCase):
             GITHUB_AUTH.subprocess, "Popen", return_value=process
         ) as popen, mock.patch.object(
             GITHUB_AUTH.webbrowser, "open", return_value=True
-        ) as open_browser:
+        ) as open_browser, mock.patch.object(
+            GITHUB_AUTH, "_prepare_linux_keyring", return_value=True
+        ), mock.patch.object(
+            GITHUB_AUTH, "_prepare_auth_directory", return_value=True
+        ), mock.patch.object(
+            GITHUB_AUTH, "_publish_auth_metadata", return_value=True
+        ):
             authorized = GITHUB_AUTH._run_authorization(["gh", "auth", "refresh"])
 
         self.assertTrue(authorized)
@@ -225,6 +291,8 @@ class GithubAuthInstallerTests(unittest.TestCase):
             "https://github.com/login/device", new=2
         )
         self.assertEqual(popen.call_args.kwargs["stdin"], subprocess.DEVNULL)
+        self.assertIn("GH_CONFIG_DIR", popen.call_args.kwargs["env"])
+        self.assertNotIn("GH_TOKEN", popen.call_args.kwargs["env"])
 
     def test_authorization_fails_promptly_when_the_browser_cannot_open(self):
         process = mock.Mock()
@@ -234,11 +302,70 @@ class GithubAuthInstallerTests(unittest.TestCase):
         process.wait.return_value = 1
         with mock.patch.object(
             GITHUB_AUTH.subprocess, "Popen", return_value=process
-        ), mock.patch.object(GITHUB_AUTH.webbrowser, "open", return_value=False):
+        ), mock.patch.object(
+            GITHUB_AUTH.webbrowser, "open", return_value=False
+        ), mock.patch.object(
+            GITHUB_AUTH, "_prepare_linux_keyring", return_value=True
+        ), mock.patch.object(
+            GITHUB_AUTH, "_prepare_auth_directory", return_value=True
+        ):
             authorized = GITHUB_AUTH._run_authorization(["gh", "auth", "refresh"])
 
         self.assertFalse(authorized)
         process.terminate.assert_called_once_with()
+
+    def test_authorization_rejects_plaintext_fallback_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)
+            (source / "hosts.yml").write_text(
+                "github.com:\n    oauth_token: secret\n", encoding="utf-8"
+            )
+            with mock.patch.object(GITHUB_AUTH, "diagnostic"):
+                published = GITHUB_AUTH._publish_auth_metadata(source)
+
+        self.assertFalse(published)
+
+    def test_authorization_prepares_an_existing_temporary_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            target = root / "target"
+            source.mkdir()
+            target.mkdir()
+            metadata = "github.com:\n    user: example-user\n"
+            (source / "hosts.yml").write_text(metadata, encoding="utf-8")
+
+            with mock.patch.object(
+                GITHUB_AUTH, "_config_directory", return_value=source
+            ):
+                prepared = GITHUB_AUTH._prepare_auth_directory(target)
+
+            self.assertTrue(prepared)
+            self.assertEqual(
+                (target / "hosts.yml").read_text(encoding="utf-8"),
+                metadata,
+            )
+
+    def test_authorization_publishes_non_secret_host_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            destination = root / "destination"
+            source.mkdir()
+            destination.mkdir()
+            metadata = "github.com:\n    user: example-user\n"
+            (source / "hosts.yml").write_text(metadata, encoding="utf-8")
+
+            with mock.patch.object(
+                GITHUB_AUTH, "_config_directory", return_value=destination
+            ):
+                published = GITHUB_AUTH._publish_auth_metadata(source)
+
+            self.assertTrue(published)
+            self.assertEqual(
+                (destination / "hosts.yml").read_text(encoding="utf-8"),
+                metadata,
+            )
 
     def test_status_is_read_only_when_key_access_is_available(self):
         status = subprocess.CompletedProcess(
@@ -253,20 +380,45 @@ class GithubAuthInstallerTests(unittest.TestCase):
         with mock.patch.object(
             GITHUB_AUTH.shutil, "which", return_value="gh"
         ), mock.patch.object(
-            GITHUB_AUTH, "capture", side_effect=[status, completed([])]
+            GITHUB_AUTH, "_plaintext_token_present", return_value=False
+        ), mock.patch.object(
+            GITHUB_AUTH, "_capture", side_effect=[status, completed([])]
         ), mock.patch.object(GITHUB_AUTH, "_run_authorization") as authorize:
             state = GITHUB_AUTH.github_auth("status", "")
 
         self.assertEqual(state, "current")
         authorize.assert_not_called()
 
+    def test_status_rejects_a_non_keyring_token_source(self):
+        status = subprocess.CompletedProcess(
+            [],
+            0,
+            stdout=(
+                '{"hosts":{"github.com":[{"active":true,"state":"success",'
+                '"tokenSource":"/home/example/.config/gh/hosts.yml"}]}}'
+            ),
+            stderr="",
+        )
+        with mock.patch.object(
+            GITHUB_AUTH.shutil, "which", return_value="gh"
+        ), mock.patch.object(
+            GITHUB_AUTH, "_plaintext_token_present", return_value=False
+        ), mock.patch.object(
+            GITHUB_AUTH, "_capture", return_value=status
+        ), mock.patch.object(
+            GITHUB_AUTH, "diagnostic"
+        ):
+            state = GITHUB_AUTH.github_auth("status", "")
+
+        self.assertEqual(state, "drifted")
+
     def test_apply_refreshes_an_account_missing_key_scope(self):
         with mock.patch.object(
             GITHUB_AUTH,
             "_authentication_state",
             side_effect=[
-                ("drifted", True),
-                ("current", True),
+                ("drifted", True, False),
+                ("current", True, False),
             ],
         ), mock.patch.object(
             GITHUB_AUTH, "_run_authorization", return_value=True
@@ -282,7 +434,7 @@ class GithubAuthInstallerTests(unittest.TestCase):
         with mock.patch.object(
             GITHUB_AUTH,
             "_authentication_state",
-            side_effect=[("absent", False), ("current", True)],
+            side_effect=[("absent", False, False), ("current", True, False)],
         ), mock.patch.object(
             GITHUB_AUTH, "_run_authorization", return_value=True
         ) as authorize:
@@ -298,10 +450,27 @@ class GithubAuthInstallerTests(unittest.TestCase):
         status = subprocess.CompletedProcess([], 1, stdout="", stderr="not logged in")
         with mock.patch.object(
             GITHUB_AUTH.shutil, "which", return_value="gh"
-        ), mock.patch.object(GITHUB_AUTH, "capture", return_value=status):
+        ), mock.patch.object(
+            GITHUB_AUTH, "_plaintext_token_present", return_value=False
+        ), mock.patch.object(GITHUB_AUTH, "_capture", return_value=status):
             state = GITHUB_AUTH.github_auth("status", "")
 
         self.assertEqual(state, "absent")
+
+    def test_apply_blocks_existing_plaintext_credentials_for_manual_migration(self):
+        with mock.patch.object(
+            GITHUB_AUTH,
+            "_authentication_state",
+            return_value=("drifted", False, True),
+        ), mock.patch.object(
+            GITHUB_AUTH, "_run_authorization"
+        ) as authorize, mock.patch.object(
+            GITHUB_AUTH, "diagnostic"
+        ):
+            state = GITHUB_AUTH.github_auth("apply", "")
+
+        self.assertEqual(state, "blocked")
+        authorize.assert_not_called()
 
 
 class GithubSshKeyInstallerTests(unittest.TestCase):
@@ -607,6 +776,18 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
 
 
 class RecipeTests(unittest.TestCase):
+    def test_unix_github_recipe_installs_secret_service_before_authentication(self):
+        unix = (
+            REPO_ROOT / "recipes/unix/05-github.conf.yaml"
+        ).read_text(encoding="utf-8")
+        windows = (
+            REPO_ROOT / "recipes/windows/05-github.conf.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertLess(unix.index("gnome-keyring"), unix.index("libsecret-tools"))
+        self.assertLess(unix.index("libsecret-tools"), unix.index("github-auth.py"))
+        self.assertNotIn("gnome-keyring", windows)
+
     def test_discovers_canonical_platform_recipes(self):
         windows = [recipe.name for recipe in ORCHESTRATE.discover_recipes(REPO_ROOT, "windows")]
         unix = [recipe.name for recipe in ORCHESTRATE.discover_recipes(REPO_ROOT, "unix")]

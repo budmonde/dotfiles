@@ -1,3 +1,5 @@
 - install:
-    - [install/shared/github-auth.py, Authenticating GitHub CLI (device code is in the clipboard; paste it in the browser)]
+    - [install/unix/apt/gnome-keyring, Installing GNOME Keyring]
+    - [install/unix/apt/libsecret-tools, Installing Secret Service tools]
+    - [install/shared/github-auth.py, Authenticating GitHub CLI (unlock the keyring if prompted; the device code is in the clipboard)]
     - [install/shared/github-ssh-key.py, Configuring the GitHub SSH key]
