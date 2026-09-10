@@ -12,6 +12,7 @@ Load this skill when creating or substantially editing markdown documents.
 
 Use **semantic line breaks** (one sentence per line).
 Break lines at sentence boundaries, not at a fixed column width.
+Do not break lines at commas; treat commas as ordinary inline characters.
 
 This produces git diffs that show exactly which sentence changed, rather than reflowing entire paragraphs.
 
