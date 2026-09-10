@@ -6,6 +6,10 @@ checks:
       worktree-clean: [git status --porcelain, '!\S']
       upstream-synchronized: ['git rev-list --left-right --count "@{upstream}...HEAD"', '^0\s+0\s*$']
 
+  machine-identity:
+    files:
+      "~/.name": file
+
   # Shell
   shell:
     links:
