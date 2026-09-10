@@ -1035,6 +1035,37 @@ class ManifestTests(unittest.TestCase):
             )
 
 class ManifestOrderingTests(unittest.TestCase):
+    def test_shellver_resets_inherited_generation_in_plugin_layer(self):
+        cases = (
+            (
+                "config/bash/plugins.bash",
+                "unset SHELLVER",
+                'eval "$(shellver init bash)"',
+            ),
+            (
+                "config/zsh/plugins.zsh",
+                "unset SHELLVER",
+                'eval "$(shellver init zsh)"',
+            ),
+            (
+                "config/powershell/plugins.ps1",
+                "Remove-Item Env:SHELLVER",
+                "init powershell",
+            ),
+        )
+
+        for path, reset, initialization in cases:
+            content = (REPO_ROOT / path).read_text(encoding="utf-8")
+            self.assertLess(content.index(reset), content.index(initialization), path)
+
+        for path in (
+            "config/bashrc",
+            "config/zshrc",
+            "config/profile.ps1",
+        ):
+            content = (REPO_ROOT / path).read_text(encoding="utf-8")
+            self.assertNotIn("shellver init", content)
+
     def test_platform_base_tests_start_with_bootstrap_requirements(self):
         unix = (REPO_ROOT / "recipes/unix/00-base.test.conf.yaml").read_text(
             encoding="utf-8"

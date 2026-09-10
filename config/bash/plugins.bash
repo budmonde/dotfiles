@@ -8,5 +8,6 @@ source "${XDG_DATA_HOME:-$HOME/.local/share}/fzf/shell/key-bindings.bash" 2>/dev
 # Shellver
 ###############################################################################
 if command -v shellver >/dev/null 2>&1; then
+    unset SHELLVER
     eval "$(shellver init bash)"
 fi

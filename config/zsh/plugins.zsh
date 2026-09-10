@@ -25,5 +25,6 @@ fi
 # Shellver
 ###############################################################################
 if command -v shellver >/dev/null 2>&1; then
+    unset SHELLVER
     eval "$(shellver init zsh)"
 fi

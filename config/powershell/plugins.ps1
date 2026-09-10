@@ -22,5 +22,6 @@ if ($Host.UI.SupportsVirtualTerminal -and (Get-Module -ListAvailable -Name Compl
 ###############################################################################
 $shellverCommand = Get-Command shellver -CommandType Application -ErrorAction SilentlyContinue
 if ($null -ne $shellverCommand) {
+    Remove-Item Env:SHELLVER -ErrorAction SilentlyContinue
     Invoke-Expression (& $shellverCommand.Path init powershell | Out-String)
 }
