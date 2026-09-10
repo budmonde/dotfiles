@@ -1,0 +1,22 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "formatter": false,
+  "share": "disabled",
+  "autoupdate": false,
+  "instructions": [
+    "~/.agents/AGENTS.md",
+    "~/.config/opencode/AGENTS_PRIVATE.md",
+    "wiki/index.md"
+  ],
+  "permission": {
+    "bash": {
+      "git push": "deny",
+      "git push *": "deny"
+    },
+    "external_directory": {
+      "~/AppData/Local/Temp/opencode/**": "allow",
+      "C:/Users/*/AppData/Local/Temp/opencode/**": "allow",
+      "C:\\Users\\*\\AppData\\Local\\Temp\\opencode\\**": "allow"
+    }
+  }
+}
