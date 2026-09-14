@@ -151,6 +151,22 @@ from lifecycle import main, npm_global
 raise SystemExit(main(lambda operation, version: npm_global("example-package", operation, version)))
 ```
 
+A shared `uv` source-backed tool keeps its source policy in the thin resource wrapper:
+
+```python
+from lifecycle import main, uv_tool
+
+
+SOURCE = "git+ssh://git@example.com/team/example.git"
+
+
+raise SystemExit(
+    main(lambda operation, version: uv_tool("example", "example", operation, version, source=SOURCE))
+)
+```
+
+Source-backed tools reject recipe exact versions because the source reference is their version authority.
+
 ## Writing a custom installer
 
 Use a custom resource script for release-asset selection,

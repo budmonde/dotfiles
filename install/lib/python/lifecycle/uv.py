@@ -10,7 +10,15 @@ def uv_tool(
     executable: str,
     operation: str,
     requested_version: str = "",
+    *,
+    source: str = "",
 ) -> str:
+    if source and requested_version:
+        raise InstallerError(
+            "{} does not support an exact version with a source installation".format(
+                package
+            )
+        )
     uv = shutil.which("uv")
     if uv is None:
         return "blocked"
@@ -24,7 +32,7 @@ def uv_tool(
         return "blocked"
 
     installed_version = _uv_tool_installed_version(uv, package)
-    if operation == "upgrade" and state == "current":
+    if operation == "upgrade" and state == "current" and not source:
         arguments = [uv, "tool", "upgrade", package]
     else:
         target = (
@@ -35,6 +43,8 @@ def uv_tool(
         arguments = [uv, "tool", "install"]
         if installed_version is not None:
             arguments.append("--force")
+        if source:
+            arguments.extend(["--from", source])
         arguments.append(target)
 
     result = capture(arguments)

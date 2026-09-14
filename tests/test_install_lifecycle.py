@@ -202,6 +202,43 @@ class UvToolTests(unittest.TestCase):
             [call.args[0] for call in capture.call_args_list],
         )
 
+    def test_apply_installs_an_absent_source_tool(self):
+        source = "git+ssh://git@example.com/team/example.git"
+        with mock.patch.object(
+            UV.shutil,
+            "which",
+            side_effect=lambda name: "uv" if name == "uv" else None,
+        ), mock.patch.object(
+            UV,
+            "_uv_tool_installed_version",
+            return_value=None,
+        ), mock.patch.object(
+            UV,
+            "_uv_tool_state",
+            side_effect=["absent", "current"],
+        ), mock.patch.object(
+            UV,
+            "capture",
+            return_value=completed([]),
+        ) as capture:
+            state = UV.uv_tool("example", "example", "apply", source=source)
+
+        self.assertEqual(state, "current")
+        self.assertIn(
+            ["uv", "tool", "install", "--from", source, "example"],
+            [call.args[0] for call in capture.call_args_list],
+        )
+
+    def test_source_tool_rejects_an_exact_version(self):
+        with self.assertRaises(UV.InstallerError):
+            UV.uv_tool(
+                "example",
+                "example",
+                "apply",
+                "1.0.0",
+                source="git+ssh://git@example.com/team/example.git",
+            )
+
 
 class GithubAuthInstallerTests(unittest.TestCase):
     def test_command_environment_ignores_token_sources(self):
