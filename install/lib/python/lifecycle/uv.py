@@ -23,7 +23,13 @@ def uv_tool(
     if uv is None:
         return "blocked"
 
-    state = _uv_tool_state(uv, package, executable, requested_version)
+    state = _uv_tool_state(
+        uv,
+        package,
+        executable,
+        requested_version,
+        source=source,
+    )
     if operation == "status" or state == "unsupported":
         return state
     if state == "current" and (operation == "apply" or requested_version):
@@ -52,7 +58,13 @@ def uv_tool(
     if result.returncode != 0:
         raise InstallerError("uv failed to install {}".format(package))
 
-    final_state = _uv_tool_state(uv, package, executable, requested_version)
+    final_state = _uv_tool_state(
+        uv,
+        package,
+        executable,
+        requested_version,
+        source=source,
+    )
     if final_state != "current":
         raise InstallerError("{} remains {} after installation".format(package, final_state))
     return final_state
@@ -69,11 +81,27 @@ def _uv_tool_installed_version(uv: str, package: str) -> Optional[str]:
     return match.group(1) if match else None
 
 
+def _uv_tool_installed_requirement(uv: str, package: str) -> Optional[str]:
+    result = capture([uv, "tool", "list", "--show-version-specifiers"])
+    if result.returncode != 0:
+        report(result)
+        raise InstallerError("uv could not list managed tool requirements")
+    match = re.search(
+        r"(?m)^{} v[^\s]+ \[required:\s*(.*?)\]\s*$".format(
+            re.escape(package)
+        ),
+        result.stdout,
+    )
+    return match.group(1).strip() if match else None
+
+
 def _uv_tool_state(
     uv: str,
     package: str,
     executable: str,
     requested_version: str = "",
+    *,
+    source: str = "",
 ) -> str:
     installed_version = _uv_tool_installed_version(uv, package)
     executable_path = shutil.which(executable)
@@ -82,5 +110,7 @@ def _uv_tool_state(
     if executable_path is None or capture([executable_path, "--help"]).returncode != 0:
         return "drifted"
     if requested_version and installed_version != requested_version:
+        return "drifted"
+    if source and _uv_tool_installed_requirement(uv, package) != source:
         return "drifted"
     return "current"

@@ -229,6 +229,98 @@ class UvToolTests(unittest.TestCase):
             [call.args[0] for call in capture.call_args_list],
         )
 
+    def test_apply_replaces_a_source_tool_installed_from_another_requirement(self):
+        source = "git+ssh://git@example.com/team/example.git"
+        with mock.patch.object(
+            UV.shutil,
+            "which",
+            side_effect=lambda name: "uv" if name == "uv" else "example",
+        ), mock.patch.object(
+            UV,
+            "_uv_tool_installed_version",
+            return_value="1.0.0",
+        ), mock.patch.object(
+            UV,
+            "_uv_tool_state",
+            side_effect=["drifted", "current"],
+        ), mock.patch.object(
+            UV,
+            "capture",
+            return_value=completed([]),
+        ) as capture:
+            state = UV.uv_tool("example", "example", "apply", source=source)
+
+        self.assertEqual(state, "current")
+        self.assertIn(
+            [
+                "uv",
+                "tool",
+                "install",
+                "--force",
+                "--from",
+                source,
+                "example",
+            ],
+            [call.args[0] for call in capture.call_args_list],
+        )
+
+    def test_installed_requirement_reads_the_uv_source_specifier(self):
+        source = "git+ssh://git@example.com/team/example.git"
+        listing = subprocess.CompletedProcess(
+            [],
+            0,
+            stdout="example v1.0.0 [required:  {}]\n- example\n".format(source),
+            stderr="",
+        )
+        with mock.patch.object(UV, "capture", return_value=listing) as capture:
+            requirement = UV._uv_tool_installed_requirement("uv", "example")
+
+        self.assertEqual(requirement, source)
+        capture.assert_called_once_with(
+            ["uv", "tool", "list", "--show-version-specifiers"]
+        )
+
+    def test_state_rejects_an_editable_requirement_for_a_git_source(self):
+        with mock.patch.object(
+            UV.shutil, "which", return_value="example"
+        ), mock.patch.object(
+            UV, "_uv_tool_installed_version", return_value="1.0.0"
+        ), mock.patch.object(
+            UV,
+            "_uv_tool_installed_requirement",
+            return_value="file:///workspace/example",
+        ), mock.patch.object(
+            UV, "capture", return_value=completed([])
+        ):
+            state = UV._uv_tool_state(
+                "uv",
+                "example",
+                "example",
+                source="git+ssh://git@example.com/team/example.git",
+            )
+
+        self.assertEqual(state, "drifted")
+
+    def test_state_accepts_the_requested_git_source(self):
+        source = "git+ssh://git@example.com/team/example.git"
+        with mock.patch.object(
+            UV.shutil, "which", return_value="example"
+        ), mock.patch.object(
+            UV, "_uv_tool_installed_version", return_value="1.0.0"
+        ), mock.patch.object(
+            UV, "_uv_tool_installed_requirement", return_value=source
+        ), mock.patch.object(
+            UV, "capture", return_value=completed([])
+        ):
+            state = UV._uv_tool_state(
+                "uv",
+                "example",
+                "example",
+                source=source,
+            )
+
+        self.assertEqual(state, "current")
+
     def test_source_tool_rejects_an_exact_version(self):
         with self.assertRaises(UV.InstallerError):
             UV.uv_tool(
