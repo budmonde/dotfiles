@@ -52,12 +52,11 @@ local function configure_smartlog_syntax()
     vim.cmd("highlight default link FugitiveSmartlogArrow Yellow")
 end
 
-local function foldtext()
-    local summary = vim.fn["fugitive#Foldtext"]()
+local function scan_fold(lines)
     local file_highlight = "Folded"
     local rename_from
     local rename_to
-    for _, line in ipairs(vim.fn.getline(vim.v.foldstart, vim.v.foldend)) do
+    for _, line in ipairs(lines) do
         local from = line:match("^rename from (.+)$")
         local to = line:match("^rename to (.+)$")
         if from then
@@ -72,42 +71,51 @@ local function foldtext()
             file_highlight = "Added"
         end
     end
+    return file_highlight, rename_from, rename_to
+end
 
-    local function append_rename(chunks, spacing)
-        local from_parts = vim.split(rename_from, "/", { plain = true })
-        local to_parts = vim.split(rename_to, "/", { plain = true })
-        local common_parts = {}
-        while #from_parts > 1 and #to_parts > 1 and from_parts[1] == to_parts[1] do
-            table.insert(common_parts, table.remove(from_parts, 1))
-            table.remove(to_parts, 1)
-        end
-        local common_prefix = #common_parts > 0 and table.concat(common_parts, "/") .. "/" or ""
-        if spacing and spacing ~= "" then
-            table.insert(chunks, { spacing, "Folded" })
-        end
-        if common_prefix ~= "" then
-            table.insert(chunks, { common_prefix, "Folded" })
-            table.insert(chunks, { "{", "Folded" })
-        end
-        vim.list_extend(chunks, {
-            { table.concat(from_parts, "/"), "Renamed" },
-            { " → ", "Folded" },
-            { table.concat(to_parts, "/"), "Renamed" },
-        })
-        if common_prefix ~= "" then
-            table.insert(chunks, { "}", "Folded" })
-        end
-        return chunks
+local function rename_chunks(chunks, spacing, rename_from, rename_to)
+    local from_parts = vim.split(rename_from, "/", { plain = true })
+    local to_parts = vim.split(rename_to, "/", { plain = true })
+    local common_parts = {}
+    while #from_parts > 1 and #to_parts > 1 and from_parts[1] == to_parts[1] do
+        table.insert(common_parts, table.remove(from_parts, 1))
+        table.remove(to_parts, 1)
     end
+    local common_prefix = #common_parts > 0 and table.concat(common_parts, "/") .. "/" or ""
+    if spacing and spacing ~= "" then
+        table.insert(chunks, { spacing, "Folded" })
+    end
+    if common_prefix ~= "" then
+        table.insert(chunks, { common_prefix, "Folded" })
+        table.insert(chunks, { "{", "Folded" })
+    end
+    vim.list_extend(chunks, {
+        { table.concat(from_parts, "/"), "Renamed" },
+        { " → ", "Folded" },
+        { table.concat(to_parts, "/"), "Renamed" },
+    })
+    if common_prefix ~= "" then
+        table.insert(chunks, { "}", "Folded" })
+    end
+    return chunks
+end
 
-    local prefix, additions, separator, deletions, filename =
-        summary:match("^(%+%-+%s+)(%s*%d+%+)(%s+)(%s*%d+%-)(.*)$")
+local function parse_summary(summary)
+    return summary:match("^(%+%-+%s+)(%s*%d+%+)(%s+)(%s*%d+%-)(.*)$")
+end
+
+local function foldtext()
+    local summary = vim.fn["fugitive#Foldtext"]()
+    local lines = vim.fn.getline(vim.v.foldstart, vim.v.foldend)
+    local file_highlight, rename_from, rename_to = scan_fold(lines)
+    local prefix, additions, separator, deletions, filename = parse_summary(summary)
 
     if not prefix then
         local binary_prefix, binary_filename = summary:match("^(Binary:%s+)(.*)$")
         if binary_prefix then
             if rename_from and rename_to then
-                return append_rename({ { binary_prefix, "Folded" } })
+                return rename_chunks({ { binary_prefix, "Folded" } }, nil, rename_from, rename_to)
             end
             return {
                 { binary_prefix, "Folded" },
@@ -115,7 +123,12 @@ local function foldtext()
             }
         end
         if rename_from and rename_to then
-            return append_rename({ { "+-" .. vim.v.folddashes .. " ", "Folded" } })
+            return rename_chunks(
+                { { "+-" .. vim.v.folddashes .. " ", "Folded" } },
+                nil,
+                rename_from,
+                rename_to
+            )
         end
         return { { summary, "Folded" } }
     end
@@ -127,7 +140,7 @@ local function foldtext()
         { deletions, tonumber(deletions:match("%d+")) > 0 and "Removed" or "Folded" },
     }
     if rename_from and rename_to then
-        append_rename(chunks, filename:match("^%s*"))
+        rename_chunks(chunks, filename:match("^%s*"), rename_from, rename_to)
     else
         table.insert(chunks, { filename, file_highlight })
     end
