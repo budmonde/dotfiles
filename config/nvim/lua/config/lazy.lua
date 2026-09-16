@@ -242,6 +242,109 @@ local filesystem_plugins = {
         init = function()
             vim.g.fugitive_focus_gained = 1
         end,
+        config = function()
+            local fugitive_group = vim.api.nvim_create_augroup("fugitive_customizations", { clear = true })
+            local smartlog_aliases = {
+                sl = true,
+                sl1 = true,
+                sl2 = true,
+                sl3 = true,
+                ssl = true,
+                ssl1 = true,
+                ssl2 = true,
+                ssl3 = true,
+                ["sl1-specific"] = true,
+                ["sl2-specific"] = true,
+                ["sl3-specific"] = true,
+            }
+
+            local function configure_smartlog_syntax()
+                local result = vim.fn.FugitiveResult(vim.api.nvim_get_current_buf())
+                local alias = type(result) == "table" and result.args and result.args[1]
+                if not smartlog_aliases[alias] then
+                    return
+                end
+
+                vim.cmd([[
+                    syntax match FugitiveSmartlogGraph /^[*|\/\\ ]\+/
+                    syntax match FugitiveSmartlogHash /\<\x\{4,40\}\ze - /
+                    syntax region FugitiveSmartlogDecoration start=/\s(\ze[^()]*)\s*$/ end=/)$/ contains=FugitiveSmartlogLocal,FugitiveSmartlogRemote,FugitiveSmartlogTag,FugitiveSmartlogHead,FugitiveSmartlogArrow
+                    syntax match FugitiveSmartlogLocal /[[:alnum:]_.-]\+/ contained
+                    syntax match FugitiveSmartlogRemote /\<[[:alnum:]_.-]\+\/[[:alnum:]_.\/-]\+\>/ contained
+                    syntax match FugitiveSmartlogTag /tag: [^,)]*/ contained
+                    syntax keyword FugitiveSmartlogHead HEAD contained
+                    syntax match FugitiveSmartlogArrow /->/ contained
+                    syntax match FugitiveSmartlogRelativeDate /([^)]\+ ago)/ containedin=ALL
+                    syntax match FugitiveSmartlogCommittedDate /(committed: [^)]\+)/ containedin=ALL
+                    syntax match FugitiveSmartlogAuthor /- \zs\%(\%( - \)\@!.\)\{-}\ze\%(\s\+([^()]*)\)\?$/
+                    syntax match FugitiveSmartlogCommitter /(committer: [^)]\+)/ containedin=ALL
+                    syntax match FugitiveSmartlogAbsoluteDate /[A-Z][a-z]\{2}, \d\{1,2} [A-Z][a-z]\{2} \d\{4} \d\{2}:\d\{2}:\d\{2} [+-]\d\{4}/ containedin=ALL
+                ]])
+
+                vim.cmd("highlight default link FugitiveSmartlogGraph Grey")
+                vim.cmd("highlight default link FugitiveSmartlogHash Blue")
+                vim.cmd("highlight default link FugitiveSmartlogAbsoluteDate Aqua")
+                vim.cmd("highlight default link FugitiveSmartlogRelativeDate Green")
+                vim.cmd("highlight default link FugitiveSmartlogCommittedDate Aqua")
+                vim.cmd("highlight default link FugitiveSmartlogAuthor Grey")
+                vim.cmd("highlight default link FugitiveSmartlogCommitter Grey")
+                vim.cmd("highlight default link FugitiveSmartlogDecoration Yellow")
+                vim.cmd("highlight default link FugitiveSmartlogLocal Green")
+                vim.cmd("highlight default link FugitiveSmartlogRemote Red")
+                vim.cmd("highlight default link FugitiveSmartlogTag Yellow")
+                vim.cmd("highlight default link FugitiveSmartlogHead Aqua")
+                vim.cmd("highlight default link FugitiveSmartlogArrow Yellow")
+            end
+
+            _G.DotfilesFugitiveFoldtext = function()
+                local summary = vim.fn["fugitive#Foldtext"]()
+                local file_highlight = "Folded"
+                for _, line in ipairs(vim.fn.getline(vim.v.foldstart, vim.v.foldend)) do
+                    if line:match("^deleted file mode ") or line == "+++ /dev/null" then
+                        file_highlight = "Removed"
+                        break
+                    elseif line:match("^new file mode ") or line == "--- /dev/null" then
+                        file_highlight = "Added"
+                    end
+                end
+
+                local prefix, additions, separator, deletions, filename =
+                    summary:match("^(%+%-+%s+)(%s*%d+%+)(%s+)(%s*%d+%-)(.*)$")
+
+                if not prefix then
+                    local binary_prefix, binary_filename = summary:match("^(Binary:%s+)(.*)$")
+                    if binary_prefix then
+                        return {
+                            { binary_prefix, "Folded" },
+                            { binary_filename, file_highlight },
+                        }
+                    end
+                    return { { summary, "Folded" } }
+                end
+
+                return {
+                    { prefix, "Folded" },
+                    { additions, tonumber(additions:match("%d+")) > 0 and "Added" or "Folded" },
+                    { separator, "Folded" },
+                    { deletions, tonumber(deletions:match("%d+")) > 0 and "Removed" or "Folded" },
+                    { filename, file_highlight },
+                }
+            end
+
+            vim.api.nvim_create_autocmd("User", {
+                group = fugitive_group,
+                pattern = "FugitiveCommit",
+                callback = function()
+                    vim.wo.foldtext = "v:lua.DotfilesFugitiveFoldtext()"
+                end,
+            })
+
+            vim.api.nvim_create_autocmd("User", {
+                group = fugitive_group,
+                pattern = "FugitivePager",
+                callback = configure_smartlog_syntax,
+            })
+        end,
     },
 }
 
