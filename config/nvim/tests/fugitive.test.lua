@@ -116,11 +116,12 @@ local function test_pure_rename_with_common_prefix()
         { "+-- ", "Folded" },
         { "install/lib/python/", "Folded" },
         { "{", "Folded" },
-        { "lifecycle.py", "Yellow" },
+        { "lifecycle.py", "Renamed" },
         { " → ", "Folded" },
-        { "lifecycle/npm.py", "Yellow" },
+        { "lifecycle/npm.py", "Renamed" },
         { "}", "Folded" },
     })
+    assert_equal(vim.api.nvim_get_hl(0, { name = "Renamed", link = true }).link, "Yellow")
 end
 
 local function test_edited_rename_preserves_counts_and_spacing()
@@ -144,14 +145,20 @@ local function test_edited_rename_preserves_counts_and_spacing()
 end
 
 local function test_rename_without_common_prefix()
-    local rendered = fold({
+    local rendered, chunks = fold({
         "diff --git a/old.lua b/new.lua",
         "similarity index 100%",
         "rename from old.lua",
         "rename to new.lua",
     })
 
-    assert_equal(rendered, "+-- {old.lua → new.lua}")
+    assert_equal(rendered, "+-- old.lua → new.lua")
+    assert_equal(chunks, {
+        { "+-- ", "Folded" },
+        { "old.lua", "Renamed" },
+        { " → ", "Folded" },
+        { "new.lua", "Renamed" },
+    })
 end
 
 local function test_spaces_and_quoted_paths()

@@ -87,14 +87,16 @@ local function foldtext()
         end
         if common_prefix ~= "" then
             table.insert(chunks, { common_prefix, "Folded" })
+            table.insert(chunks, { "{", "Folded" })
         end
         vim.list_extend(chunks, {
-            { "{", "Folded" },
-            { table.concat(from_parts, "/"), "Yellow" },
+            { table.concat(from_parts, "/"), "Renamed" },
             { " → ", "Folded" },
-            { table.concat(to_parts, "/"), "Yellow" },
-            { "}", "Folded" },
+            { table.concat(to_parts, "/"), "Renamed" },
         })
+        if common_prefix ~= "" then
+            table.insert(chunks, { "}", "Folded" })
+        end
         return chunks
     end
 
@@ -139,6 +141,7 @@ end
 function M.setup()
     local fugitive_group = vim.api.nvim_create_augroup("fugitive_customizations", { clear = true })
 
+    vim.cmd("highlight default link Renamed Yellow")
     _G.DotfilesFugitiveFoldtext = foldtext
 
     vim.api.nvim_create_autocmd("User", {
