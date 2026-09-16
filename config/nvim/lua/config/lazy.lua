@@ -299,7 +299,16 @@ local filesystem_plugins = {
             _G.DotfilesFugitiveFoldtext = function()
                 local summary = vim.fn["fugitive#Foldtext"]()
                 local file_highlight = "Folded"
+                local rename_from
+                local rename_to
                 for _, line in ipairs(vim.fn.getline(vim.v.foldstart, vim.v.foldend)) do
+                    local from = line:match("^rename from (.+)$")
+                    local to = line:match("^rename to (.+)$")
+                    if from then
+                        rename_from = vim.fn["fugitive#Unquote"](from)
+                    elseif to then
+                        rename_to = vim.fn["fugitive#Unquote"](to)
+                    end
                     if line:match("^deleted file mode ") or line == "+++ /dev/null" then
                         file_highlight = "Removed"
                         break
@@ -308,27 +317,63 @@ local filesystem_plugins = {
                     end
                 end
 
+                local function append_rename(chunks, spacing)
+                    local from_parts = vim.split(rename_from, "/", { plain = true })
+                    local to_parts = vim.split(rename_to, "/", { plain = true })
+                    local common_parts = {}
+                    while #from_parts > 1 and #to_parts > 1 and from_parts[1] == to_parts[1] do
+                        table.insert(common_parts, table.remove(from_parts, 1))
+                        table.remove(to_parts, 1)
+                    end
+                    local common_prefix = #common_parts > 0 and table.concat(common_parts, "/") .. "/" or ""
+                    if spacing and spacing ~= "" then
+                        table.insert(chunks, { spacing, "Folded" })
+                    end
+                    if common_prefix ~= "" then
+                        table.insert(chunks, { common_prefix, "Folded" })
+                    end
+                    vim.list_extend(chunks, {
+                        { "{", "Folded" },
+                        { table.concat(from_parts, "/"), "Yellow" },
+                        { " → ", "Folded" },
+                        { table.concat(to_parts, "/"), "Yellow" },
+                        { "}", "Folded" },
+                    })
+                    return chunks
+                end
+
                 local prefix, additions, separator, deletions, filename =
                     summary:match("^(%+%-+%s+)(%s*%d+%+)(%s+)(%s*%d+%-)(.*)$")
 
                 if not prefix then
                     local binary_prefix, binary_filename = summary:match("^(Binary:%s+)(.*)$")
                     if binary_prefix then
+                        if rename_from and rename_to then
+                            return append_rename({ { binary_prefix, "Folded" } })
+                        end
                         return {
                             { binary_prefix, "Folded" },
                             { binary_filename, file_highlight },
                         }
                     end
+                    if rename_from and rename_to then
+                        return append_rename({ { "+-" .. vim.v.folddashes .. " ", "Folded" } })
+                    end
                     return { { summary, "Folded" } }
                 end
 
-                return {
+                local chunks = {
                     { prefix, "Folded" },
                     { additions, tonumber(additions:match("%d+")) > 0 and "Added" or "Folded" },
                     { separator, "Folded" },
                     { deletions, tonumber(deletions:match("%d+")) > 0 and "Removed" or "Folded" },
-                    { filename, file_highlight },
                 }
+                if rename_from and rename_to then
+                    append_rename(chunks, filename:match("^%s*"))
+                else
+                    table.insert(chunks, { filename, file_highlight })
+                end
+                return chunks
             end
 
             vim.api.nvim_create_autocmd("User", {
