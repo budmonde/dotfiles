@@ -53,24 +53,26 @@ local function configure_smartlog_syntax()
 end
 
 local function scan_fold(lines)
-    local file_highlight = "Folded"
-    local rename_from
-    local rename_to
+    local metadata = {
+        file_highlight = "Folded",
+    }
     for _, line in ipairs(lines) do
         local from = line:match("^rename from (.+)$")
         local to = line:match("^rename to (.+)$")
         if from then
-            rename_from = vim.fn["fugitive#Unquote"](from)
+            metadata.rename = metadata.rename or {}
+            metadata.rename.from = vim.fn["fugitive#Unquote"](from)
         elseif to then
-            rename_to = vim.fn["fugitive#Unquote"](to)
+            metadata.rename = metadata.rename or {}
+            metadata.rename.to = vim.fn["fugitive#Unquote"](to)
         end
         if line:match("^deleted file mode ") or line == "+++ /dev/null" then
-            file_highlight = "Removed"
+            metadata.file_highlight = "Removed"
         elseif line:match("^new file mode ") or line == "--- /dev/null" then
-            file_highlight = "Added"
+            metadata.file_highlight = "Added"
         end
     end
-    return file_highlight, rename_from, rename_to
+    return metadata
 end
 
 local function rename_chunks(spacing, rename_from, rename_to)
@@ -102,7 +104,25 @@ local function rename_chunks(spacing, rename_from, rename_to)
 end
 
 local function parse_summary(summary)
-    return summary:match("^(%+%-+%s+)(%s*%d+%+)(%s+)(%s*%d+%-)(%s+)(.*)$")
+    local prefix, additions, separator, deletions, filename_separator, filename =
+        summary:match("^(%+%-+%s+)(%s*%d+%+)(%s+)(%s*%d+%-)(%s+)(.*)$")
+    if not prefix then
+        return nil
+    end
+    return {
+        prefix = prefix,
+        additions = {
+            text = additions,
+            count = tonumber(additions:match("%d+")),
+        },
+        separator = separator,
+        deletions = {
+            text = deletions,
+            count = tonumber(deletions:match("%d+")),
+        },
+        filename_separator = filename_separator,
+        filename = filename,
+    }
 end
 
 local function diff_header_filename(line)
@@ -119,16 +139,17 @@ end
 local function foldtext()
     local summary = vim.fn["fugitive#Foldtext"]()
     local lines = vim.fn.getline(vim.v.foldstart, vim.v.foldend)
-    local file_highlight, rename_from, rename_to = scan_fold(lines)
-    local prefix, additions, separator, deletions, filename_separator, filename = parse_summary(summary)
+    local metadata = scan_fold(lines)
+    local parsed_summary = parse_summary(summary)
+    local rename = metadata.rename
 
-    if not prefix then
+    if not parsed_summary then
         local binary_prefix, binary_filename = summary:match("^(Binary:%s+)(.*)$")
         if binary_prefix then
-            if rename_from and rename_to then
+            if rename and rename.from and rename.to then
                 return vim.list_extend(
                     { { binary_prefix, "Folded" } },
-                    rename_chunks(nil, rename_from, rename_to)
+                    rename_chunks(nil, rename.from, rename.to)
                 )
             end
             local header_filename = diff_header_filename(lines[1])
@@ -137,29 +158,38 @@ local function foldtext()
             end
             return {
                 { binary_prefix, "Folded" },
-                { binary_filename, file_highlight },
+                { binary_filename, metadata.file_highlight },
             }
         end
-        if rename_from and rename_to then
+        if rename and rename.from and rename.to then
             return vim.list_extend(
                 { { "+-" .. vim.v.folddashes .. " ", "Folded" } },
-                rename_chunks(nil, rename_from, rename_to)
+                rename_chunks(nil, rename.from, rename.to)
             )
         end
         return { { summary, "Folded" } }
     end
 
     local chunks = {
-        { prefix, "Folded" },
-        { additions, tonumber(additions:match("%d+")) > 0 and "Added" or "Folded" },
-        { separator, "Folded" },
-        { deletions, tonumber(deletions:match("%d+")) > 0 and "Removed" or "Folded" },
+        { parsed_summary.prefix, "Folded" },
+        {
+            parsed_summary.additions.text,
+            parsed_summary.additions.count > 0 and "Added" or "Folded",
+        },
+        { parsed_summary.separator, "Folded" },
+        {
+            parsed_summary.deletions.text,
+            parsed_summary.deletions.count > 0 and "Removed" or "Folded",
+        },
     }
-    if rename_from and rename_to then
-        vim.list_extend(chunks, rename_chunks(filename_separator, rename_from, rename_to))
+    if rename and rename.from and rename.to then
+        vim.list_extend(
+            chunks,
+            rename_chunks(parsed_summary.filename_separator, rename.from, rename.to)
+        )
     else
-        table.insert(chunks, { filename_separator, "Folded" })
-        table.insert(chunks, { filename, file_highlight })
+        table.insert(chunks, { parsed_summary.filename_separator, "Folded" })
+        table.insert(chunks, { parsed_summary.filename, metadata.file_highlight })
     end
     return chunks
 end
