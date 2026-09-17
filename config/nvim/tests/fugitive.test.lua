@@ -108,6 +108,27 @@ local function test_binary_file()
     })
 end
 
+local function test_binary_rename()
+    local rendered, chunks = fold({
+        "diff --git a/assets/old.bin b/assets/new.bin",
+        "similarity index 80%",
+        "rename from assets/old.bin",
+        "rename to assets/new.bin",
+        "Binary files a/assets/old.bin and b/assets/new.bin differ",
+    })
+
+    assert_equal(rendered, "Binary: assets/{old.bin → new.bin}")
+    assert_equal(chunks, {
+        { "Binary: ", "Folded" },
+        { "assets/", "Folded" },
+        { "{", "Folded" },
+        { "old.bin", "Renamed" },
+        { " → ", "Folded" },
+        { "new.bin", "Renamed" },
+        { "}", "Folded" },
+    })
+end
+
 local function test_pure_rename_with_common_prefix()
     local rendered, chunks = fold({
         "diff --git a/install/lib/python/lifecycle.py b/install/lib/python/lifecycle/npm.py",
@@ -182,6 +203,7 @@ local tests = {
     test_added_file,
     test_deleted_file,
     test_binary_file,
+    test_binary_rename,
     test_pure_rename_with_common_prefix,
     test_edited_rename_preserves_counts_and_spacing,
     test_rename_without_common_prefix,
