@@ -66,7 +66,6 @@ local function scan_fold(lines)
         end
         if line:match("^deleted file mode ") or line == "+++ /dev/null" then
             file_highlight = "Removed"
-            break
         elseif line:match("^new file mode ") or line == "--- /dev/null" then
             file_highlight = "Added"
         end
