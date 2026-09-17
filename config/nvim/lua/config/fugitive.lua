@@ -136,62 +136,76 @@ local function diff_header_filename(line)
     return filename
 end
 
+local function complete_rename(metadata)
+    local rename = metadata.rename
+    if rename and rename.from and rename.to then
+        return rename
+    end
+end
+
+local function render_rename(prefix_chunks, spacing, rename)
+    return vim.list_extend(prefix_chunks, rename_chunks(spacing, rename.from, rename.to))
+end
+
+local function render_binary(binary_prefix, binary_filename, lines, metadata, rename)
+    if rename then
+        return render_rename({ { binary_prefix, "Folded" } }, nil, rename)
+    end
+    local header_filename = diff_header_filename(lines[1])
+    if header_filename ~= "" then
+        binary_filename = header_filename
+    end
+    return {
+        { binary_prefix, "Folded" },
+        { binary_filename, metadata.file_highlight },
+    }
+end
+
+local function render_summary(summary, metadata, rename)
+    local chunks = {
+        { summary.prefix, "Folded" },
+        {
+            summary.additions.text,
+            summary.additions.count > 0 and "Added" or "Folded",
+        },
+        { summary.separator, "Folded" },
+        {
+            summary.deletions.text,
+            summary.deletions.count > 0 and "Removed" or "Folded",
+        },
+    }
+    if rename then
+        return render_rename(chunks, summary.filename_separator, rename)
+    end
+    table.insert(chunks, { summary.filename_separator, "Folded" })
+    table.insert(chunks, { summary.filename, metadata.file_highlight })
+    return chunks
+end
+
 local function foldtext()
     local summary = vim.fn["fugitive#Foldtext"]()
     local lines = vim.fn.getline(vim.v.foldstart, vim.v.foldend)
     local metadata = scan_fold(lines)
+    local rename = complete_rename(metadata)
     local parsed_summary = parse_summary(summary)
-    local rename = metadata.rename
-
-    if not parsed_summary then
-        local binary_prefix, binary_filename = summary:match("^(Binary:%s+)(.*)$")
-        if binary_prefix then
-            if rename and rename.from and rename.to then
-                return vim.list_extend(
-                    { { binary_prefix, "Folded" } },
-                    rename_chunks(nil, rename.from, rename.to)
-                )
-            end
-            local header_filename = diff_header_filename(lines[1])
-            if header_filename ~= "" then
-                binary_filename = header_filename
-            end
-            return {
-                { binary_prefix, "Folded" },
-                { binary_filename, metadata.file_highlight },
-            }
-        end
-        if rename and rename.from and rename.to then
-            return vim.list_extend(
-                { { "+-" .. vim.v.folddashes .. " ", "Folded" } },
-                rename_chunks(nil, rename.from, rename.to)
-            )
-        end
-        return { { summary, "Folded" } }
+    if parsed_summary then
+        return render_summary(parsed_summary, metadata, rename)
     end
 
-    local chunks = {
-        { parsed_summary.prefix, "Folded" },
-        {
-            parsed_summary.additions.text,
-            parsed_summary.additions.count > 0 and "Added" or "Folded",
-        },
-        { parsed_summary.separator, "Folded" },
-        {
-            parsed_summary.deletions.text,
-            parsed_summary.deletions.count > 0 and "Removed" or "Folded",
-        },
-    }
-    if rename and rename.from and rename.to then
-        vim.list_extend(
-            chunks,
-            rename_chunks(parsed_summary.filename_separator, rename.from, rename.to)
+    local binary_prefix, binary_filename = summary:match("^(Binary:%s+)(.*)$")
+    if binary_prefix then
+        return render_binary(binary_prefix, binary_filename, lines, metadata, rename)
+    end
+
+    if rename then
+        return render_rename(
+            { { "+-" .. vim.v.folddashes .. " ", "Folded" } },
+            nil,
+            rename
         )
-    else
-        table.insert(chunks, { parsed_summary.filename_separator, "Folded" })
-        table.insert(chunks, { parsed_summary.filename, metadata.file_highlight })
     end
-    return chunks
+
+    return { { summary, "Folded" } }
 end
 
 function M.init()
