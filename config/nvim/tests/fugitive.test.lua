@@ -99,10 +99,10 @@ local function test_binary_file()
         "Binary files a/assets/image.bin and b/assets/image.bin differ",
     })
 
-    assert_equal(rendered, "Binary: sets/image.bin")
+    assert_equal(rendered, "Binary: assets/image.bin")
     assert_equal(chunks, {
         { "Binary: ", "Folded" },
-        { "sets/image.bin", "Folded" },
+        { "assets/image.bin", "Folded" },
     })
 end
 

@@ -105,6 +105,17 @@ local function parse_summary(summary)
     return summary:match("^(%+%-+%s+)(%s*%d+%+)(%s+)(%s*%d+%-)(%s+)(.*)$")
 end
 
+local function diff_header_filename(line)
+    local filename = vim.fn.matchstr(
+        line,
+        [[\C^diff .\{-\} \zs"\=[abciow12]/\zs.*\ze "\=[abciow12]/]]
+    )
+    if filename:sub(-1) == '"' then
+        return vim.fn["fugitive#Unquote"]('"' .. filename)
+    end
+    return filename
+end
+
 local function foldtext()
     local summary = vim.fn["fugitive#Foldtext"]()
     local lines = vim.fn.getline(vim.v.foldstart, vim.v.foldend)
@@ -119,6 +130,10 @@ local function foldtext()
                     { { binary_prefix, "Folded" } },
                     rename_chunks(nil, rename_from, rename_to)
                 )
+            end
+            local header_filename = diff_header_filename(lines[1])
+            if header_filename ~= "" then
+                binary_filename = header_filename
             end
             return {
                 { binary_prefix, "Folded" },
