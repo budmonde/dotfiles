@@ -178,6 +178,7 @@ function M.setup()
         group = fugitive_group,
         pattern = "FugitiveCommit",
         callback = function()
+            vim.wo.foldmethod = "syntax"
             vim.wo.foldtext = "v:lua.DotfilesFugitiveFoldtext()"
         end,
     })

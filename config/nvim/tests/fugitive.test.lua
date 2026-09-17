@@ -25,8 +25,10 @@ local function fold(lines)
     vim.bo.modifiable = true
     vim.api.nvim_buf_set_lines(0, 0, -1, false, vim.list_extend(vim.deepcopy(lines), { "END" }))
     vim.bo.filetype = "git"
-    vim.wo.foldmethod = "syntax"
+    vim.wo.foldmethod = "manual"
     vim.wo.foldtext = "v:lua.DotfilesFugitiveFoldtext()"
+    vim.api.nvim_exec_autocmds("User", { pattern = "FugitiveCommit" })
+    assert(vim.wo.foldmethod == "syntax", "FugitiveCommit did not enable syntax folding")
     vim.cmd("silent! syntax clear DotfilesFugitiveTestDiff")
     vim.cmd("syntax region DotfilesFugitiveTestDiff start=/^diff / end=/^END$/ fold keepend")
     vim.wo.foldlevel = 0
