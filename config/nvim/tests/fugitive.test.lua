@@ -12,10 +12,10 @@ local fugitive = require("config.fugitive")
 fugitive.init()
 fugitive.setup()
 
-local configured_foldtext = _G.DotfilesFugitiveFoldtext
+local configured_foldtext = fugitive.foldtext
 local captured_chunks
 
-_G.DotfilesFugitiveFoldtext = function()
+fugitive.foldtext = function()
     captured_chunks = configured_foldtext()
     return captured_chunks
 end
@@ -26,7 +26,7 @@ local function fold(lines)
     vim.api.nvim_buf_set_lines(0, 0, -1, false, vim.list_extend(vim.deepcopy(lines), { "END" }))
     vim.bo.filetype = "git"
     vim.wo.foldmethod = "manual"
-    vim.wo.foldtext = "v:lua.DotfilesFugitiveFoldtext()"
+    vim.wo.foldtext = "v:lua.require'config.fugitive'.foldtext()"
     vim.api.nvim_exec_autocmds("User", { pattern = "FugitiveCommit" })
     assert(vim.wo.foldmethod == "syntax", "FugitiveCommit did not enable syntax folding")
     vim.cmd("silent! syntax clear DotfilesFugitiveTestDiff")

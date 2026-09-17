@@ -182,7 +182,7 @@ local function render_summary(summary, metadata, rename)
     return chunks
 end
 
-local function foldtext()
+function M.foldtext()
     local summary = vim.fn["fugitive#Foldtext"]()
     local lines = vim.fn.getline(vim.v.foldstart, vim.v.foldend)
     local metadata = scan_fold(lines)
@@ -216,14 +216,12 @@ function M.setup()
     local fugitive_group = vim.api.nvim_create_augroup("fugitive_customizations", { clear = true })
 
     vim.cmd("highlight default link Renamed Yellow")
-    _G.DotfilesFugitiveFoldtext = foldtext
-
     vim.api.nvim_create_autocmd("User", {
         group = fugitive_group,
         pattern = "FugitiveCommit",
         callback = function()
             vim.wo.foldmethod = "syntax"
-            vim.wo.foldtext = "v:lua.DotfilesFugitiveFoldtext()"
+            vim.wo.foldtext = "v:lua.require'config.fugitive'.foldtext()"
         end,
     })
 
