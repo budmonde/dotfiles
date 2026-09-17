@@ -58,7 +58,8 @@ local function test_modified_file()
     })
 
     assert_equal(rendered, "+--  1+  1- lua/config.lua")
-    assert_equal(chunks[#chunks], { " lua/config.lua", "Folded" })
+    assert_equal(chunks[#chunks - 1], { " ", "Folded" })
+    assert_equal(chunks[#chunks], { "lua/config.lua", "Folded" })
 end
 
 local function test_added_file()
@@ -72,7 +73,8 @@ local function test_added_file()
     })
 
     assert_equal(rendered, "+--  1+  0- lua/new.lua")
-    assert_equal(chunks[#chunks], { " lua/new.lua", "Added" })
+    assert_equal(chunks[#chunks - 1], { " ", "Folded" })
+    assert_equal(chunks[#chunks], { "lua/new.lua", "Added" })
 end
 
 local function test_deleted_file()
@@ -86,7 +88,8 @@ local function test_deleted_file()
     })
 
     assert_equal(rendered, "+--  0+  1- lua/old.lua")
-    assert_equal(chunks[#chunks], { " lua/old.lua", "Removed" })
+    assert_equal(chunks[#chunks - 1], { " ", "Folded" })
+    assert_equal(chunks[#chunks], { "lua/old.lua", "Removed" })
 end
 
 local function test_binary_file()

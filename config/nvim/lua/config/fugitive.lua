@@ -103,14 +103,14 @@ local function rename_chunks(spacing, rename_from, rename_to)
 end
 
 local function parse_summary(summary)
-    return summary:match("^(%+%-+%s+)(%s*%d+%+)(%s+)(%s*%d+%-)(.*)$")
+    return summary:match("^(%+%-+%s+)(%s*%d+%+)(%s+)(%s*%d+%-)(%s+)(.*)$")
 end
 
 local function foldtext()
     local summary = vim.fn["fugitive#Foldtext"]()
     local lines = vim.fn.getline(vim.v.foldstart, vim.v.foldend)
     local file_highlight, rename_from, rename_to = scan_fold(lines)
-    local prefix, additions, separator, deletions, filename = parse_summary(summary)
+    local prefix, additions, separator, deletions, filename_separator, filename = parse_summary(summary)
 
     if not prefix then
         local binary_prefix, binary_filename = summary:match("^(Binary:%s+)(.*)$")
@@ -142,8 +142,9 @@ local function foldtext()
         { deletions, tonumber(deletions:match("%d+")) > 0 and "Removed" or "Folded" },
     }
     if rename_from and rename_to then
-        vim.list_extend(chunks, rename_chunks(filename:match("^%s*"), rename_from, rename_to))
+        vim.list_extend(chunks, rename_chunks(filename_separator, rename_from, rename_to))
     else
+        table.insert(chunks, { filename_separator, "Folded" })
         table.insert(chunks, { filename, file_highlight })
     end
     return chunks
