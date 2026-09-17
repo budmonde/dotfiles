@@ -14,6 +14,22 @@ local smartlog_aliases = {
     ["sl3-specific"] = true,
 }
 
+local smartlog_highlights = {
+    FugitiveSmartlogAbsoluteDate = "Aqua",
+    FugitiveSmartlogArrow = "Yellow",
+    FugitiveSmartlogAuthor = "Grey",
+    FugitiveSmartlogCommittedDate = "Aqua",
+    FugitiveSmartlogCommitter = "Grey",
+    FugitiveSmartlogDecoration = "Yellow",
+    FugitiveSmartlogGraph = "Grey",
+    FugitiveSmartlogHash = "Blue",
+    FugitiveSmartlogHead = "Aqua",
+    FugitiveSmartlogLocal = "Green",
+    FugitiveSmartlogRelativeDate = "Green",
+    FugitiveSmartlogRemote = "Red",
+    FugitiveSmartlogTag = "Yellow",
+}
+
 local function configure_smartlog_syntax()
     local result = vim.fn.FugitiveResult(vim.api.nvim_get_current_buf())
     local alias = type(result) == "table" and result.args and result.args[1]
@@ -37,19 +53,9 @@ local function configure_smartlog_syntax()
         syntax match FugitiveSmartlogAbsoluteDate /[A-Z][a-z]\{2}, \d\{1,2} [A-Z][a-z]\{2} \d\{4} \d\{2}:\d\{2}:\d\{2} [+-]\d\{4}/ containedin=ALL
     ]])
 
-    vim.cmd("highlight default link FugitiveSmartlogGraph Grey")
-    vim.cmd("highlight default link FugitiveSmartlogHash Blue")
-    vim.cmd("highlight default link FugitiveSmartlogAbsoluteDate Aqua")
-    vim.cmd("highlight default link FugitiveSmartlogRelativeDate Green")
-    vim.cmd("highlight default link FugitiveSmartlogCommittedDate Aqua")
-    vim.cmd("highlight default link FugitiveSmartlogAuthor Grey")
-    vim.cmd("highlight default link FugitiveSmartlogCommitter Grey")
-    vim.cmd("highlight default link FugitiveSmartlogDecoration Yellow")
-    vim.cmd("highlight default link FugitiveSmartlogLocal Green")
-    vim.cmd("highlight default link FugitiveSmartlogRemote Red")
-    vim.cmd("highlight default link FugitiveSmartlogTag Yellow")
-    vim.cmd("highlight default link FugitiveSmartlogHead Aqua")
-    vim.cmd("highlight default link FugitiveSmartlogArrow Yellow")
+    for group, link in pairs(smartlog_highlights) do
+        vim.api.nvim_set_hl(0, group, { default = true, link = link })
+    end
 end
 
 local function scan_fold(lines)
