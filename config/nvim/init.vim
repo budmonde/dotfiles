@@ -1,8 +1,7 @@
 " Neovim configuration
-" Architecture: vimrc.before -> lazy.nvim -> vimrc.after
+" Architecture: vimrc.before -> lazy.nvim -> runtime plugins
 "   vimrc.before - Common settings (no rtp dependencies)
 "   lazy.nvim    - Plugin manager (resets rtp, restores ~/.vim via rtp.paths)
-"   vimrc.after  - Settings requiring ~/.vim in rtp (keymap, spell)
 
 " Skip colorscheme from vimrc (lazy.nvim handles it)
 let g:skip_colorscheme = 1
@@ -47,7 +46,3 @@ lua require('config.telemetry')
 " Load Lua configuration (includes colorscheme via lazy.nvim)
 " lazy.nvim preserves ~/.vim in rtp via performance.rtp.paths
 lua require('config.lazy')
-
-" Source vimrc.after now that rtp includes ~/.vim
-" Needs ~/.vim/keymap/ for Mongolian input and ~/.vim/spell/ for dictionaries
-source ~/.vim/vimrc.after

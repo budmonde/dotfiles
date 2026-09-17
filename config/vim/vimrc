@@ -1,14 +1,7 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vimrc - Entry point for Vim
 "
-" Architecture:
-"   vimrc.before - Common settings (no rtp dependencies)
-"   vimrc.after  - Settings requiring ~/.vim in runtimepath
-"
-" For Vim:    rtp already includes ~/.vim, so we source both files
-" For Neovim: Uses init.vim which loads vimrc.before, then lazy.nvim,
-"             then lazy.lua sources vimrc.after after rtp is set up
+" Shared settings load here; runtime plugins load afterward.
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 source ~/.vim/vimrc.before
-source ~/.vim/vimrc.after
