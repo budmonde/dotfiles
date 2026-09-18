@@ -1246,7 +1246,7 @@ class ManifestTests(unittest.TestCase):
             REPO_ROOT / "recipes/windows/40-research.conf.yaml"
         ).read_text(encoding="utf-8")
 
-        entry = "install/windows/winget/google-drive.ps1"
+        entry = "[[install/windows/winget.ps1, Google.GoogleDrive]"
         self.assertIn(entry, collab)
         self.assertNotIn(entry, research)
 

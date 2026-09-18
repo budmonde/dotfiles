@@ -2,11 +2,11 @@
 # Usage: .\install.ps1 --recipe creative
 
 - install:
-    - [install/windows/winget/blender.ps1, Installing Blender]
-    - [install/windows/winget/darktable.ps1, Installing darktable]
-    - [install/windows/winget/figma.ps1, Installing Figma]
-    - [install/windows/winget/gimp.ps1, Installing GIMP]
-    - [install/windows/winget/inkscape.ps1, Installing Inkscape]
+    - [[install/windows/winget.ps1, BlenderFoundation.Blender], Installing Blender]
+    - [[install/windows/winget.ps1, darktable.darktable], Installing darktable]
+    - [[install/windows/winget.ps1, Figma.Figma], Installing Figma]
+    - [[install/windows/winget.ps1, GIMP.GIMP], Installing GIMP]
+    - [[install/windows/winget.ps1, Inkscape.Inkscape], Installing Inkscape]
 
 - shell:
     - command: shellver bump machine

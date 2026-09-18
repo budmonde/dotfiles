@@ -2,5 +2,5 @@
 # Usage: .\install.ps1 --recipe iqa
 
 - install:
-    - [install/windows/winget/vlc.ps1, Installing VLC]
-    - [install/windows/winget/ffmpeg.ps1, Installing FFmpeg]
+    - [[install/windows/winget.ps1, VideoLAN.VLC], Installing VLC]
+    - [[install/windows/winget.ps1, Gyan.FFmpeg], Installing FFmpeg]

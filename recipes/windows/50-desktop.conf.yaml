@@ -25,13 +25,13 @@
     ~/.config/Code/User/settings.json: config/vscode/settings.json
 
 - install:
-    - [install/windows/winget/autohotkey.ps1, Installing AutoHotkey]
+    - [[install/windows/winget.ps1, AutoHotkey.AutoHotkey], Installing AutoHotkey]
 
 - shell:
     - [powershell -NonInteractive -Command "Start-Process '%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\startup.ahk' -ArgumentList '/restart'", Restarting AHK startup script]
 
 - install:
-    - [install/windows/winget/powertoys.ps1, Installing PowerToys]
+    - [[install/windows/winget.ps1, Microsoft.PowerToys], Installing PowerToys]
 
 - shell:
     - [powershell -NonInteractive -File bin\Sync-PowerToysSettings.ps1, Applying PowerToys settings]
@@ -39,8 +39,8 @@
 
 - install:
     - [install/windows/vscode-user-data.ps1, Preparing Visual Studio Code user data]
-    - [install/windows/winget/vscode.ps1, Installing Visual Studio Code]
-    - [install/windows/winget/firefox.ps1, Installing Firefox]
+    - [[install/windows/winget.ps1, Microsoft.VisualStudioCode], Installing Visual Studio Code]
+    - [[install/windows/winget.ps1, Mozilla.Firefox], Installing Firefox]
 
 - shell:
     - [shellver bump machine, Refreshing Shellver machine generation]

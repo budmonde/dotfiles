@@ -3,5 +3,5 @@
 # Start a new shell after the first install before running npm-consuming recipes.
 
 - install:
-    - [install/windows/winget/fnm.ps1, Installing fnm]
+    - [[install/windows/winget.ps1, Schniz.fnm], Installing fnm]
     - [[install/windows/node.ps1, -RequestedVersion, "24.19.0"], Installing Node.js]

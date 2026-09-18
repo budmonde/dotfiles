@@ -29,10 +29,10 @@
     ~/.local/bin/optimize-wsl-vhd.bat: bin/optimize-wsl-vhd.bat
 
 - install:
-    - [install/windows/winget/uv.ps1, Installing uv]
+    - [[install/windows/winget.ps1, astral-sh.uv], Installing uv]
     - [install/windows/shellver.ps1, Installing Shellver]
     - [install/windows/profile-loader.ps1, Installing the PowerShell profile loader]
-    - [install/windows/winget/powershell.ps1, Installing PowerShell 7]
+    - [[install/windows/winget.ps1, Microsoft.PowerShell], Installing PowerShell 7]
 
 - shell:
     - command: >-
@@ -45,9 +45,9 @@
     - [install/windows/psreadline.ps1, Installing PSReadLine]
     - [install/windows/psfzf.ps1, Installing PSFzf]
     - [install/windows/completion-predictor.ps1, Installing CompletionPredictor]
-    - [install/windows/winget/ripgrep.ps1, Installing ripgrep]
-    - [install/windows/winget/rclone.ps1, Installing rclone]
-    - [install/windows/winget/neovim.ps1, Installing Neovim]
-    - [install/windows/winget/github-cli.ps1, Installing GitHub CLI]
+    - [[install/windows/winget.ps1, BurntSushi.ripgrep.MSVC], Installing ripgrep]
+    - [[install/windows/winget.ps1, Rclone.Rclone], Installing rclone]
+    - [[install/windows/winget.ps1, Neovim.Neovim], Installing Neovim]
+    - [[install/windows/winget.ps1, GitHub.cli], Installing GitHub CLI]
     - [install/windows/fonts.ps1, Installing configured fonts]
     - [install/windows/debloat.ps1, Applying Windows debloat configuration]

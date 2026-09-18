@@ -2,5 +2,5 @@
 # Usage: .\install.ps1 --recipe research
 
 - install:
-    - [install/windows/winget/miktex.ps1, Installing MiKTeX]
-    - [install/windows/winget/chrome.ps1, Installing Google Chrome]
+    - [[install/windows/winget.ps1, MiKTeX.MiKTeX], Installing MiKTeX]
+    - [[install/windows/winget.ps1, Google.Chrome], Installing Google Chrome]

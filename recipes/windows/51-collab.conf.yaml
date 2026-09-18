@@ -2,10 +2,10 @@
 # Usage: .\install.ps1 --recipe collab
 
 - install:
-    - [install/windows/winget/discord.ps1, Installing Discord]
-    - [install/windows/winget/slack.ps1, Installing Slack]
-    - [install/windows/winget/google-drive.ps1, Installing Google Drive]
-    - [install/windows/winget/zoom.ps1, Installing Zoom]
+    - [[install/windows/winget.ps1, Discord.Discord], Installing Discord]
+    - [[install/windows/winget.ps1, SlackTechnologies.Slack], Installing Slack]
+    - [[install/windows/winget.ps1, Google.GoogleDrive], Installing Google Drive]
+    - [[install/windows/winget.ps1, Zoom.Zoom], Installing Zoom]
 
 - shell:
     - command: shellver bump machine

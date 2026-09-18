@@ -2,7 +2,7 @@
 # Usage: .\install.ps1 --recipe gamedev
 
 - install:
-    - [install/windows/winget/unity-hub.ps1, Installing Unity Hub]
+    - [[install/windows/winget.ps1, Unity.UnityHub], Installing Unity Hub]
 
 - shell:
     - command: shellver bump machine

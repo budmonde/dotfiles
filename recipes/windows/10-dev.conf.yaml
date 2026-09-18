@@ -2,8 +2,8 @@
 # Usage: .\install.ps1 --recipe dev
 
 - install:
-    - [install/windows/winget/visual-studio.ps1, Installing Visual Studio]
-    - [install/windows/winget/cmake.ps1, Installing CMake]
-    - [install/windows/winget/make.ps1, Installing Make]
-    - [install/windows/winget/go.ps1, Installing Go]
-    - [install/windows/winget/nsight-compute.ps1, Installing NVIDIA Nsight Compute]
+    - [[install/windows/winget.ps1, Microsoft.VisualStudio.2022.Community], Installing Visual Studio]
+    - [[install/windows/winget.ps1, Kitware.CMake], Installing CMake]
+    - [[install/windows/winget.ps1, ezwinports.make], Installing Make]
+    - [[install/windows/winget.ps1, GoLang.Go], Installing Go]
+    - [[install/windows/winget.ps1, Nvidia.Nsight.Compute], Installing NVIDIA Nsight Compute]

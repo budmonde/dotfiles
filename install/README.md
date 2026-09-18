@@ -41,7 +41,7 @@ A nested list supplies an argument vector without shell parsing:
 
 ```yaml
 - install:
-    - [install/windows/winget/ripgrep.ps1, Installing ripgrep]
+    - [[install/windows/winget.ps1, BurntSushi.ripgrep.MSVC], Installing ripgrep]
     - [[install/windows/node.ps1, -RequestedVersion, "24.19.0"], Installing Node.js]
 ```
 
@@ -100,7 +100,7 @@ The child process receives:
 
 ## Reusing a backend
 
-Use a thin wrapper when an existing backend owns all required behavior.
+Use a generic resource command when an existing backend owns all required behavior.
 
 An APT resource needs only its package name:
 
@@ -113,18 +113,19 @@ source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
 installer_apt_package cmake "$@"
 ```
 
-A WinGet resource needs only its package ID:
+A WinGet resource receives its package ID from the recipe:
 
 ```powershell
 param(
-    [ValidateSet('status', 'apply', 'upgrade')][string]$Operation = 'apply',
+    [Parameter(Mandatory, Position = 0)][string]$PackageId,
+    [Parameter(Position = 1)][ValidateSet('status', 'apply', 'upgrade')][string]$Operation = 'apply',
     [string]$RequestedVersion
 )
 
 Import-Module (Join-Path $env:DOTBOT_INSTALL_REPO_ROOT 'install\lib\windows\Lifecycle.psm1') -Force
 
 Invoke-DotbotInstaller {
-    Invoke-WinGetPackage -PackageId 'Kitware.CMake' -Operation $Operation -RequestedVersion $RequestedVersion
+    Invoke-WinGetPackage -PackageId $PackageId -Operation $Operation -RequestedVersion $RequestedVersion
 }
 ```
 

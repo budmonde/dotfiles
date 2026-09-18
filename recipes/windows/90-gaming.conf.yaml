@@ -2,7 +2,7 @@
 # Usage: .\install.ps1 --recipe gaming
 
 - install:
-    - [install/windows/winget/steam.ps1, Installing Steam]
+    - [[install/windows/winget.ps1, Valve.Steam], Installing Steam]
 
 - shell:
     - command: shellver bump machine
