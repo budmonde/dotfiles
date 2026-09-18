@@ -35,38 +35,36 @@ The plugin rejects a mismatched path before running any installer.
 
 ## Dotbot surface
 
-Use a list of path-description pairs.
-Add a quoted third value only when the recipe owns an exact desired version:
+Use a list containing an installer command and description.
+A scalar command names an installer with no resource arguments.
+A nested list supplies an argument vector without shell parsing:
 
 ```yaml
 - install:
     - [install/windows/winget/ripgrep.ps1, Installing ripgrep]
-    - [install/windows/node.ps1, Installing Node.js, "24.19.0"]
+    - [[install/windows/node.ps1, -RequestedVersion, "24.19.0"], Installing Node.js]
 ```
 
 The plugin preflights every entry before execution,
 preserves declaration order,
 and stops at the first failed installer.
-It accepts exactly:
+It accepts these forms:
 
 ```text
 [installer-path, description]
-[installer-path, description, "desired-version"]
+[[installer-path, argument, ...], description]
 ```
 
-Backend names,
-platform selectors,
-and resource-specific options do not belong in the directive.
-Keep that policy in the resource script or backend library.
+The plugin treats resource arguments as opaque values and appends the selected lifecycle operation.
 
 ## Protocol
 
-The plugin invokes one of these forms:
+The plugin invokes one of these forms after any declared resource arguments:
 
 ```text
-<installer> status [desired-version]
-<installer> apply [desired-version]
-<installer> upgrade [desired-version]
+<installer> [arguments...] status
+<installer> [arguments...] apply
+<installer> [arguments...] upgrade
 ```
 
 `status` is read-only.
@@ -97,13 +95,7 @@ The child process receives:
 
 | Variable | Meaning |
 | --- | --- |
-| `DOTBOT_INSTALL_PROTOCOL_VERSION` | Protocol version, currently `2`. |
-| `DOTBOT_INSTALL_OPERATION` | `status`, `apply`, or `upgrade`. |
-| `DOTBOT_INSTALL_DESIRED_VERSION` | The current entry's exact version, or unset. |
-| `DOTBOT_INSTALL_ID` | Installer path relative to the owning repository. |
 | `DOTBOT_INSTALL_REPO_ROOT` | Canonical path to the owning repository. |
-| `DOTBOT_INSTALL_STATE_DIR` | Stable per-installer state directory. |
-| `DOTBOT_INSTALL_LOCK_FILE` | Conventional repository integrity-lock path. |
 | `DOTBOT_INSTALL_ONLINE` | Whether online discovery is permitted. |
 
 ## Reusing a backend
@@ -181,7 +173,7 @@ A custom installer must:
 - derive repository paths from `DOTBOT_INSTALL_REPO_ROOT`;
 - keep `status` free of mutations;
 - make `apply` idempotent and version-preserving;
-- honor an explicit desired version or reject it;
+- honor or reject any resource arguments explicitly;
 - verify the installed result before returning success;
 - treat an unowned installation as `unsupported` or `blocked` rather than overwriting it;
 - use standard error for progress and diagnostics;
@@ -248,7 +240,8 @@ Validate the selected recipes without running installers:
 ./install.sh --recipe node --only install --dry-run
 ```
 
-Set `DOTBOT_INSTALL_OPERATION=status` and `DOTBOT_INSTALL_ONLINE=0` for a read-only offline state pass.
+Pass `--only install --dry-run` for a read-only preflight,
+or set `DOTBOT_INSTALL_ONLINE=0` to suppress online discovery during an installer run.
 Run focused tests with:
 
 ```text

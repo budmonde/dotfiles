@@ -1180,11 +1180,22 @@ class ManifestTests(unittest.TestCase):
                     self.fail("{} must use installer list entries: {}".format(manifest, stripped))
                 elif stripped.startswith("- [install/"):
                     match = re.fullmatch(
-                        r'- \[(install/[^,\]]+), ([^,\]]+?)(?:, "([^"]+)")?\]',
+                        r"- \[(install/[^,\]]+), ([^,\]]+?)\]",
                         stripped,
                     )
                     self.assertIsNotNone(match, (manifest, stripped))
-                    references.append((manifest, match.group(1), match.group(3) or ""))
+                    references.append((manifest, match.group(1), []))
+                elif stripped.startswith("- [[install/"):
+                    match = re.fullmatch(
+                        r"- \[\[(install/[^,\]]+), (.+)\], ([^,\]]+?)\]",
+                        stripped,
+                    )
+                    self.assertIsNotNone(match, (manifest, stripped))
+                    arguments = [
+                        value.strip().strip('"')
+                        for value in match.group(2).split(",")
+                    ]
+                    references.append((manifest, match.group(1), arguments))
         return references
 
     def test_every_directive_resolves_inside_the_repository(self):
@@ -1220,8 +1231,8 @@ class ManifestTests(unittest.TestCase):
 
     def test_node_recipe_owns_one_cross_platform_exact_version(self):
         versions = {
-            version
-            for manifest, reference, version in self.references()
+            arguments[-1]
+            for manifest, reference, arguments in self.references()
             if reference in {"install/unix/node", "install/windows/node.ps1"}
         }
         self.assertEqual(versions, {"24.19.0"})
@@ -1240,9 +1251,10 @@ class ManifestTests(unittest.TestCase):
         self.assertNotIn(entry, research)
 
     def test_exact_recipe_version_authority_stays_in_manifests(self):
-        for manifest, reference, requested_version in self.references():
-            if not requested_version:
+        for manifest, reference, arguments in self.references():
+            if not arguments:
                 continue
+            requested_version = arguments[-1]
             content = (REPO_ROOT / reference).read_text(encoding="utf-8")
             installer_versions = re.findall(
                 r"(?<![0-9A-Za-z])v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?(?![0-9A-Za-z])",

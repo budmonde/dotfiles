@@ -4,4 +4,4 @@
 
 - install:
     - [install/windows/winget/fnm.ps1, Installing fnm]
-    - [install/windows/node.ps1, Installing Node.js, "24.19.0"]
+    - [[install/windows/node.ps1, -RequestedVersion, "24.19.0"], Installing Node.js]

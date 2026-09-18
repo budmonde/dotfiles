@@ -1,6 +1,6 @@
 param(
-    [ValidateSet('status', 'apply', 'upgrade')][string]$Operation = 'apply',
-    [string]$RequestedVersion
+    [string]$RequestedVersion,
+    [ValidateSet('status', 'apply', 'upgrade')][string]$Operation = 'apply'
 )
 
 Set-StrictMode -Version Latest
