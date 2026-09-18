@@ -1394,17 +1394,18 @@ class ManifestOrderingTests(unittest.TestCase):
         manifest = (REPO_ROOT / "recipes/windows/30-agentic.conf.yaml").read_text(
             encoding="utf-8"
         )
-        installer = "install/windows/codex-environment.ps1"
+        installer = "install/windows/environment.ps1"
         self.assertIn(installer, manifest)
+        self.assertIn('"CODEX_HOME=User:Path:~/.config/codex"', manifest)
         base = (REPO_ROOT / "recipes/windows/00-base.conf.yaml").read_text(
             encoding="utf-8"
         )
         self.assertNotIn(installer, base)
 
         content = (REPO_ROOT / installer).read_text(encoding="utf-8")
-        self.assertIn("Invoke-WindowsEnvironmentVariable -Name 'CODEX_HOME'", content)
-        self.assertIn("-Scope User", content)
-        self.assertNotIn("EnvironmentVariableTarget]::Machine", content)
+        self.assertIn("Invoke-WindowsEnvironmentVariable -Name $name", content)
+        self.assertIn("[EnvironmentVariableTarget]::User", content)
+        self.assertIn("[EnvironmentVariableTarget]::Machine", content)
         self.assertNotIn("[Environment]::GetEnvironmentVariable", content)
         self.assertNotIn("[Environment]::SetEnvironmentVariable", content)
 
