@@ -124,9 +124,28 @@ local filesystem_plugins = {
     {
         "nvim-tree/nvim-tree.lua",
         dependencies = { "nvim-tree/nvim-web-devicons" },
+        keys = {
+            { "<M-n>", "<cmd>NvimTreeToggle<CR>", desc = "Toggle file tree" },
+            { "<M-N>", "<cmd>NvimTreeFindFile<CR>", desc = "Reveal current file in tree" },
+        },
         config = function()
             local use_nerd_fonts = vim.g.use_nerd_fonts ~= 0
+            local nvim_tree_api = require("nvim-tree.api")
+            local fugitive_tree = require("config.fugitive.nvim_tree")
+
+            local function on_attach(buffer)
+                nvim_tree_api.config.mappings.default_on_attach(buffer)
+                local function map(lhs, command, description)
+                    vim.keymap.set("n", lhs, command, { buffer = buffer, desc = description, silent = true })
+                end
+
+                map("<leader>gs", fugitive_tree.open_selected_status, "Git status for selected repository")
+                map("<leader>gc", fugitive_tree.open_selected_log, "Git commit log for selected repository")
+                map("<leader>gl", fugitive_tree.open_selected_smartlog, "Git smartlog for selected repository")
+            end
+
             require("nvim-tree").setup({
+                on_attach = on_attach,
                 view = { width = 40 },
                 sync_root_with_cwd = true,
                 respect_buf_cwd = true,
@@ -190,8 +209,6 @@ local filesystem_plugins = {
                     },
                 },
             })
-            vim.keymap.set("n", "<M-n>", ":NvimTreeToggle<CR>", { silent = true })
-            vim.keymap.set("n", "<M-N>", ":NvimTreeFindFile<CR>", { silent = true })
         end,
     },
 
