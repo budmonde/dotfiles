@@ -7,4 +7,5 @@
       description: Registering agentic Git-auditor hooks with the common repository
 
 - install:
+    - [install/windows/codex-environment.ps1, Configuring the persistent Codex environment]
     - [install/windows/opencode.ps1, Installing OpenCode]

@@ -54,6 +54,102 @@ class FacadeTests(unittest.TestCase):
             self.assertTrue(callable(getattr(LIFECYCLE, name)))
 
 
+class WindowsEnvironmentBackendTests(unittest.TestCase):
+    def run_lifecycle(self, script):
+        if os.name != "nt":
+            self.skipTest("Windows environment scopes require Windows")
+        powershell = shutil.which("pwsh") or shutil.which("powershell")
+        if powershell is None:
+            self.skipTest("PowerShell is not available")
+        module = str(REPO_ROOT / "install/lib/windows/Lifecycle.psm1").replace(
+            "'", "''"
+        )
+        result = subprocess.run(
+            [
+                powershell,
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Import-Module '{}' -Force; {}".format(module, script),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return result.stdout.strip().splitlines()
+
+    def test_facade_exports_the_stable_windows_lifecycle_api(self):
+        lines = self.run_lifecycle(
+            "Get-Command -Module Lifecycle | Sort-Object Name | Select-Object -ExpandProperty Name"
+        )
+
+        self.assertEqual(
+            lines,
+            [
+                "Get-WindowsEnvironmentVariable",
+                "Get-WindowsEnvironmentVariableState",
+                "Invoke-DotbotInstaller",
+                "Invoke-PowerShellGalleryModule",
+                "Invoke-WindowsEnvironmentVariable",
+                "Invoke-WinGetPackage",
+                "Restart-DotbotInstallerInPowerShellCore",
+                "Send-WindowsEnvironmentChange",
+                "Set-WindowsEnvironmentVariable",
+                "Test-WindowsEnvironmentValue",
+                "Write-DotbotInstallerDiagnostic",
+            ],
+        )
+
+    def test_state_distinguishes_absent_current_and_drifted(self):
+        lines = self.run_lifecycle(
+            "$name = 'DOTFILES_LIFECYCLE_TEST_VALUE'; "
+            "[Environment]::SetEnvironmentVariable($name, $null, 'Process'); "
+            "Get-WindowsEnvironmentVariableState -Name $name -Value 'expected' -Scope Process; "
+            "[Environment]::SetEnvironmentVariable($name, 'expected', 'Process'); "
+            "Get-WindowsEnvironmentVariableState -Name $name -Value 'expected' -Scope Process; "
+            "Get-WindowsEnvironmentVariableState -Name $name -Value 'other' -Scope Process"
+        )
+
+        self.assertEqual(lines, ["absent", "current", "drifted"])
+
+    def test_apply_converges_and_reads_the_process_scope(self):
+        lines = self.run_lifecycle(
+            "$name = 'DOTFILES_LIFECYCLE_TEST_APPLY'; "
+            "[Environment]::SetEnvironmentVariable($name, $null, 'Process'); "
+            "$state = Invoke-WindowsEnvironmentVariable -Name $name -Value 'expected' "
+            "-Scope Process -Operation apply; "
+            "$actual = Get-WindowsEnvironmentVariable -Name $name -Scope Process; "
+            'Write-Output "$state|$actual"'
+        )
+
+        self.assertEqual(lines, ["current|expected"])
+
+    def test_status_is_read_only(self):
+        lines = self.run_lifecycle(
+            "$name = 'DOTFILES_LIFECYCLE_TEST_STATUS'; "
+            "[Environment]::SetEnvironmentVariable($name, $null, 'Process'); "
+            "$state = Invoke-WindowsEnvironmentVariable -Name $name -Value 'expected' "
+            "-Scope Process -Operation status; "
+            "$actual = Get-WindowsEnvironmentVariable -Name $name -Scope Process; "
+            "if ([string]::IsNullOrEmpty($actual)) { $actual = '<absent>' }; "
+            'Write-Output "$state|$actual"'
+        )
+
+        self.assertEqual(lines, ["absent|<absent>"])
+
+    def test_path_state_normalizes_case_and_trailing_separator(self):
+        lines = self.run_lifecycle(
+            "$name = 'DOTFILES_LIFECYCLE_TEST_PATH'; "
+            "$expected = Join-Path $env:TEMP 'DotfilesEnvironment'; "
+            "$actual = $expected.ToUpperInvariant() + '\\'; "
+            "[Environment]::SetEnvironmentVariable($name, $actual, 'Process'); "
+            "Get-WindowsEnvironmentVariableState -Name $name -Value $expected -Scope Process -Path"
+        )
+
+        self.assertEqual(lines, ["current"])
+
+
 class MainTests(unittest.TestCase):
     def test_main_prints_one_valid_state(self):
         stdout = io.StringIO()
@@ -1281,6 +1377,32 @@ class ManifestOrderingTests(unittest.TestCase):
             bootstrap,
         )
         self.assertNotIn("Copy-Item .install-recipes.example .install-recipes", bootstrap)
+
+    def test_windows_agentic_owns_persistent_codex_home(self):
+        manifest = (REPO_ROOT / "recipes/windows/30-agentic.conf.yaml").read_text(
+            encoding="utf-8"
+        )
+        installer = "install/windows/codex-environment.ps1"
+        self.assertIn(installer, manifest)
+        base = (REPO_ROOT / "recipes/windows/00-base.conf.yaml").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn(installer, base)
+
+        content = (REPO_ROOT / installer).read_text(encoding="utf-8")
+        self.assertIn("Invoke-WindowsEnvironmentVariable -Name 'CODEX_HOME'", content)
+        self.assertIn("-Scope User", content)
+        self.assertNotIn("EnvironmentVariableTarget]::Machine", content)
+        self.assertNotIn("[Environment]::GetEnvironmentVariable", content)
+        self.assertNotIn("[Environment]::SetEnvironmentVariable", content)
+
+        vscode = (REPO_ROOT / "install/windows/vscode-user-data.ps1").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Get-WindowsEnvironmentVariableState", vscode)
+        self.assertIn("Set-WindowsEnvironmentVariable", vscode)
+        self.assertNotIn("[Environment]::GetEnvironmentVariable", vscode)
+        self.assertNotIn("[Environment]::SetEnvironmentVariable", vscode)
 
     def test_bootstraps_create_machine_identity_without_overwriting_it(self):
         windows = (REPO_ROOT / "bootstrap.ps1").read_text(encoding="utf-8")

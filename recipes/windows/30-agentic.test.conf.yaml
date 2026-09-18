@@ -1,6 +1,16 @@
 schema_version: 3
 
 checks:
+  codex-environment:
+    commands:
+      home:
+        - >-
+          $actual = [Environment]::GetEnvironmentVariable('CODEX_HOME', 'User');
+          $expected = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.config\codex';
+          if ($actual -and [IO.Path]::GetFullPath($actual).TrimEnd('\', '/') -ieq
+          [IO.Path]::GetFullPath($expected).TrimEnd('\', '/')) { 'configured' } else { 'drifted' }
+        - configured
+
   git-auditor:
     commands:
       trigger:
