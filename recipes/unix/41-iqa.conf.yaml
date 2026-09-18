@@ -5,5 +5,5 @@
 # non-apt distros or macOS install these out-of-band (brew, dnf, etc.).
 
 - install:
-    - [install/unix/apt/vlc, Installing VLC]
-    - [install/unix/apt/ffmpeg, Installing FFmpeg]
+    - [[install/unix/apt-package, vlc], Installing VLC]
+    - [[install/unix/apt-package, ffmpeg], Installing FFmpeg]

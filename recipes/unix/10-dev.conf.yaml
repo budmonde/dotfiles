@@ -11,7 +11,7 @@
 # the CUDA repo configured.
 
 - install:
-    - [install/unix/apt/go, Installing Go]
-    - [install/unix/apt/cmake, Installing CMake]
-    - [install/unix/apt/build-essential, Installing build-essential]
-    - [install/unix/apt/nsight-compute, Installing NVIDIA Nsight Compute]
+    - [[install/unix/apt-package, golang-go], Installing Go]
+    - [[install/unix/apt-package, cmake], Installing CMake]
+    - [[install/unix/apt-package, build-essential], Installing build-essential]
+    - [[install/unix/apt-package, nsight-compute], Installing NVIDIA Nsight Compute]

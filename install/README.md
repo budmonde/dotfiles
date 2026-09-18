@@ -102,7 +102,7 @@ The child process receives:
 
 Use a generic resource command when an existing backend owns all required behavior.
 
-An APT resource needs only its package name:
+An APT resource receives its package name from the recipe:
 
 ```bash
 #!/usr/bin/env bash
@@ -110,7 +110,9 @@ set -euo pipefail
 
 source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
 
-installer_apt_package cmake "$@"
+package="${1:?APT package name is required}"
+shift
+installer_apt_package "$package" "$@"
 ```
 
 A WinGet resource receives its package ID from the recipe:
