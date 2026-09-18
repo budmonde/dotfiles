@@ -131,7 +131,7 @@ Invoke-DotbotInstaller {
 }
 ```
 
-A shared npm-global resource delegates through the Python backend:
+A shared npm-global resource receives its package name from the recipe:
 
 ```python
 import os
@@ -143,7 +143,8 @@ sys.path.insert(0, str(Path(os.environ["DOTBOT_INSTALL_REPO_ROOT"]) / "install/l
 from lifecycle import main, npm_global
 
 
-raise SystemExit(main(lambda operation, version: npm_global("example-package", operation, version)))
+package, operation = sys.argv[1:]
+raise SystemExit(main(lambda selected, version: npm_global(package, selected, version), [operation]))
 ```
 
 A shared `uv` source-backed tool keeps its source policy in the thin resource wrapper:
