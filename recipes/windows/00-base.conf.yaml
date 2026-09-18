@@ -42,9 +42,9 @@
 
 - install:
     - [install/windows/fzf.ps1, Installing fzf]
-    - [install/windows/psreadline.ps1, Installing PSReadLine]
-    - [install/windows/psfzf.ps1, Installing PSFzf]
-    - [install/windows/completion-predictor.ps1, Installing CompletionPredictor]
+    - [[install/windows/powershell-gallery.ps1, PSReadLine, -SkipPublisherCheck], Installing PSReadLine]
+    - [[install/windows/powershell-gallery.ps1, PSFzf], Installing PSFzf]
+    - [[install/windows/powershell-gallery.ps1, CompletionPredictor], Installing CompletionPredictor]
     - [[install/windows/winget.ps1, BurntSushi.ripgrep.MSVC], Installing ripgrep]
     - [[install/windows/winget.ps1, Rclone.Rclone], Installing rclone]
     - [[install/windows/winget.ps1, Neovim.Neovim], Installing Neovim]

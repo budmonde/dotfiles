@@ -1,8 +1,7 @@
 function Restart-DotbotInstallerInPowerShellCore {
     param(
         [Parameter(Mandatory)][string]$ScriptPath,
-        [Parameter(Mandatory)][string]$Operation,
-        [string]$RequestedVersion
+        [Parameter(Mandatory)][string[]]$Arguments
     )
 
     if ($PSVersionTable.PSEdition -eq 'Core') {
@@ -21,11 +20,8 @@ function Restart-DotbotInstallerInPowerShellCore {
         exit 1
     }
 
-    $arguments = @('-NoLogo', '-NoProfile', '-NonInteractive', '-File', $ScriptPath, $Operation)
-    if ($RequestedVersion) {
-        $arguments += $RequestedVersion
-    }
-    & $pwsh.Path @arguments
+    $pwshArguments = @('-NoLogo', '-NoProfile', '-NonInteractive', '-File', $ScriptPath) + $Arguments
+    & $pwsh.Path @pwshArguments
     exit $LASTEXITCODE
 }
 
