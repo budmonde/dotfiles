@@ -37,7 +37,7 @@ def uv_tool(
     else:
         target = (
             "{}=={}".format(package, requested_version)
-            if requested_version
+            if requested_version and not source
             else package
         )
         arguments = [uv, "tool", "install"]

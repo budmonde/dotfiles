@@ -440,9 +440,19 @@ class UvToolTests(unittest.TestCase):
 
         self.assertEqual(state, "current")
         self.assertIn(
-            ["uv", "tool", "install", "--from", source, "example==1.2.3"],
+            ["uv", "tool", "install", "--from", source, "example"],
             [call.args[0] for call in capture.call_args_list],
         )
+
+    def test_apply_rejects_a_git_source_with_the_wrong_version(self):
+        source = "git+ssh://git@example.com/team/example.git"
+        with mock.patch.object(UV.shutil, "which", return_value="uv"), mock.patch.object(
+            UV, "_uv_tool_installed_version", return_value=None
+        ), mock.patch.object(
+            UV, "_uv_tool_state", side_effect=["absent", "drifted"]
+        ), mock.patch.object(UV, "capture", return_value=completed([])):
+            with self.assertRaisesRegex(UV.InstallerError, "remains drifted"):
+                UV.uv_tool("example", "example", "apply", "1.2.3", source=source)
 
 
 class GithubAuthInstallerTests(unittest.TestCase):
