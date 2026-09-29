@@ -13,12 +13,6 @@ def uv_tool(
     *,
     source: str = "",
 ) -> str:
-    if source and requested_version:
-        raise InstallerError(
-            "{} does not support an exact version with a source installation".format(
-                package
-            )
-        )
     uv = shutil.which("uv")
     if uv is None:
         return "blocked"

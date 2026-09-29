@@ -161,7 +161,8 @@ raise SystemExit(
 )
 ```
 
-Source-backed tools reject recipe exact versions because the source reference is their version authority.
+An exact recipe version can accompany a Git source requirement.
+The installer verifies both the selected source and the package version reported by that source.
 
 ## Writing a custom installer
 
