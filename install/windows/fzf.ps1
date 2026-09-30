@@ -40,19 +40,9 @@ function Get-FzfState {
     if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) {
         return 'absent'
     }
-    $installed = (& $binary --version 2>$null | Out-String).Trim().Split(' ')[0]
+    $null = (& $binary --version 2>$null | Out-String)
     if ($LASTEXITCODE -ne 0) {
         return 'drifted'
-    }
-    if ($env:DOTBOT_INSTALL_ONLINE -notin @('0', 'false', 'False', 'no', 'No', 'off', 'Off')) {
-        try {
-            $latest = Get-FzfRelease
-            if ($latest.Version -ne $installed) {
-                return 'update-available'
-            }
-        } catch {
-            Write-DotbotInstallerDiagnostic "Could not query the latest fzf version: $($_.Exception.Message)"
-        }
     }
     return 'current'
 }
@@ -131,7 +121,7 @@ function Install-Fzf {
 
 Invoke-DotbotInstaller {
     $state = Get-FzfState
-    if ($Operation -eq 'status' -or ($Operation -eq 'apply' -and $state -in @('current', 'update-available'))) {
+    if ($Operation -eq 'status' -or ($Operation -eq 'apply' -and $state -eq 'current')) {
         return $state
     }
     Install-Fzf -Version $RequestedVersion

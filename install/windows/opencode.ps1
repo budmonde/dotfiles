@@ -21,16 +21,6 @@ function Get-OpenCodeState {
     if (-not $installedVersion) {
         return 'absent'
     }
-    if ($env:DOTBOT_INSTALL_ONLINE -notin @('0', 'false', 'False', 'no', 'No', 'off', 'Off')) {
-        $npm = Get-Command npm -CommandType Application -ErrorAction SilentlyContinue |
-            Select-Object -First 1
-        if ($npm) {
-            $latest = (& $npm.Path view opencode-ai version --json 2>$null | Out-String).Trim().Trim('"')
-            if ($LASTEXITCODE -eq 0 -and $latest -and $latest -ne $installedVersion) {
-                return 'update-available'
-            }
-        }
-    }
     return 'current'
 }
 

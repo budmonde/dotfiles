@@ -1,8 +1,7 @@
 function Get-WinGetPackageState {
     param(
         [Parameter(Mandatory)][string]$PackageId,
-        [string]$RequestedVersion,
-        [switch]$CheckUpdates
+        [string]$RequestedVersion
     )
 
     $winget = Get-Command winget -CommandType Application -ErrorAction SilentlyContinue |
@@ -35,16 +34,6 @@ function Get-WinGetPackageState {
         }
     }
 
-    if (-not $CheckUpdates -or -not (Test-DotbotInstallerOnline)) {
-        return 'current'
-    }
-    $upgrade = Invoke-DotbotCapturedCommand -FilePath $winget.Path -ArgumentList @(
-        'list', '--id', $PackageId, '--exact', '--upgrade-available', '--include-unknown',
-        '--include-pinned', '--details', '--disable-interactivity'
-    )
-    if ($upgrade.Output -match $packagePattern) {
-        return 'update-available'
-    }
     return 'current'
 }
 
@@ -55,10 +44,10 @@ function Invoke-WinGetPackage {
         [string]$RequestedVersion
     )
 
-    $state = Get-WinGetPackageState -PackageId $PackageId -RequestedVersion $RequestedVersion -CheckUpdates
+    $state = Get-WinGetPackageState -PackageId $PackageId -RequestedVersion $RequestedVersion
     if ($Operation -eq 'status' -or
-        ($Operation -eq 'apply' -and $state -in @('current', 'update-available')) -or
-        ($Operation -eq 'upgrade' -and $RequestedVersion -and $state -in @('current', 'update-available'))) {
+        ($Operation -eq 'apply' -and $state -eq 'current') -or
+        ($Operation -eq 'upgrade' -and $RequestedVersion -and $state -eq 'current')) {
         return $state
     }
     if ($state -eq 'blocked') {
@@ -83,7 +72,7 @@ function Invoke-WinGetPackage {
         throw "winget $verb failed for $PackageId with exit code $($result.ExitCode)"
     }
 
-    $verified = Get-WinGetPackageState -PackageId $PackageId -RequestedVersion $RequestedVersion -CheckUpdates
+    $verified = Get-WinGetPackageState -PackageId $PackageId -RequestedVersion $RequestedVersion
     if ($verified -in @('absent', 'blocked', 'drifted')) {
         throw "winget did not verify $PackageId after $verb"
     }

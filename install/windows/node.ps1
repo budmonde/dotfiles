@@ -48,12 +48,6 @@ function Get-NodeState {
     if ($LASTEXITCODE -ne 0 -or $default -ne $version) {
         return 'drifted'
     }
-    if ($env:DOTBOT_INSTALL_ONLINE -notin @('0', 'false', 'False', 'no', 'No', 'off', 'Off')) {
-        $latest = (& $fnm list-remote --latest 2>$null | Out-String).Trim().TrimStart('v')
-        if ($LASTEXITCODE -eq 0 -and $latest -and $latest -ne $version) {
-            return 'update-available'
-        }
-    }
     return 'current'
 }
 
@@ -78,7 +72,7 @@ Invoke-DotbotInstaller {
         throw 'The Node.js recipe must declare an exact desired version'
     }
     $state = Get-NodeState -Version $target
-    if ($Operation -eq 'status' -or $state -in @('current', 'update-available')) {
+    if ($Operation -eq 'status' -or $state -eq 'current') {
         return $state
     }
     if ($state -eq 'blocked') {

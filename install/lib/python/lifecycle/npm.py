@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from .core import InstallerError, capture, diagnostic, online_allowed, report
+from .core import InstallerError, capture, report
 
 
 def npm_global(package: str, operation: str, requested_version: str = "") -> str:
@@ -13,12 +13,10 @@ def npm_global(package: str, operation: str, requested_version: str = "") -> str
         return "blocked"
 
     installed_version = _npm_installed_version(npm, package)
-    state = _npm_state(npm, package, installed_version, requested_version)
+    state = _npm_state(installed_version, requested_version)
     if operation == "status":
         return state
-    if state in {"current", "update-available"} and (
-        operation == "apply" or requested_version
-    ):
+    if state == "current" and (operation == "apply" or requested_version):
         return state
 
     target = package
@@ -38,7 +36,7 @@ def npm_global(package: str, operation: str, requested_version: str = "") -> str
                 package, installed_version, requested_version
             )
         )
-    return _npm_state(npm, package, installed_version, requested_version)
+    return _npm_state(installed_version, requested_version)
 
 
 def npm_project(project: Path, operation: str, requested_version: str = "") -> str:
@@ -79,24 +77,7 @@ def _npm_installed_version(npm: str, package: str) -> Optional[str]:
     return version if isinstance(version, str) and version else None
 
 
-def _npm_latest_version(npm: str, package: str) -> Optional[str]:
-    if not online_allowed():
-        return None
-    result = capture([npm, "view", package, "version", "--json"])
-    if result.returncode != 0:
-        diagnostic("Could not query the latest npm version for {}".format(package))
-        return None
-    try:
-        value = json.loads(result.stdout)
-    except json.JSONDecodeError:
-        diagnostic("npm returned invalid latest-version metadata for {}".format(package))
-        return None
-    return value if isinstance(value, str) and value else None
-
-
 def _npm_state(
-    npm: str,
-    package: str,
     installed_version: Optional[str],
     requested_version: str = "",
 ) -> str:
@@ -104,9 +85,6 @@ def _npm_state(
         return "absent"
     if requested_version and installed_version != requested_version:
         return "drifted"
-    latest = _npm_latest_version(npm, package)
-    if latest and latest != installed_version:
-        return "update-available"
     return "current"
 
 

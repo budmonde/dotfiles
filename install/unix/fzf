@@ -12,10 +12,9 @@ installer_status() {
         printf 'absent\n'
         return
     fi
-    local installed latest
+    local installed
     installed="$("$binary" --version 2>/dev/null | awk '{ print $1 }')"
-    latest="$(installer_github_latest_version junegunn/fzf || true)"
-    installer_version_state "$installed" "$latest"
+    installer_version_state "$installed" ""
 }
 
 install_fzf() {

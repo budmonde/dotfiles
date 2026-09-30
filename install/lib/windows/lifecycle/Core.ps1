@@ -40,7 +40,3 @@ function Invoke-DotbotCapturedCommand {
         Output = $output
     }
 }
-
-function Test-DotbotInstallerOnline {
-    return $env:DOTBOT_INSTALL_ONLINE -notin @('0', 'false', 'False', 'no', 'No', 'off', 'Off')
-}

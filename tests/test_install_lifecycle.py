@@ -233,27 +233,32 @@ class NpmProjectTests(unittest.TestCase):
 
 
 class NpmGlobalTests(unittest.TestCase):
-    def test_apply_reports_an_update_without_installing_it(self):
+    def test_status_uses_local_version_without_querying_registry(self):
         with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
             NPM, "_npm_installed_version", return_value="1.0.0"
-        ), mock.patch.object(
-            NPM, "_npm_state", return_value="update-available"
+        ), mock.patch.object(NPM, "capture") as capture:
+            state = NPM.npm_global("example-package", "status")
+
+        self.assertEqual(state, "current")
+        capture.assert_not_called()
+
+    def test_apply_does_not_advance_an_acceptable_install(self):
+        with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
+            NPM, "_npm_installed_version", return_value="1.0.0"
         ), mock.patch.object(NPM, "capture") as capture:
             state = NPM.npm_global("example-package", "apply")
 
-        self.assertEqual(state, "update-available")
+        self.assertEqual(state, "current")
         capture.assert_not_called()
 
     def test_apply_converges_an_exact_version_drift(self):
         installed_versions = iter(["1.0.0", "2.0.0"])
         with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
             NPM, "_npm_installed_version", side_effect=installed_versions
-        ), mock.patch.object(
-            NPM, "_npm_latest_version", return_value="3.0.0"
         ), mock.patch.object(NPM, "capture", return_value=completed([])) as capture:
             state = NPM.npm_global("example-package", "apply", "2.0.0")
 
-        self.assertEqual(state, "update-available")
+        self.assertEqual(state, "current")
         capture.assert_called_once()
         self.assertIn("example-package@2.0.0", capture.call_args.args[0])
 

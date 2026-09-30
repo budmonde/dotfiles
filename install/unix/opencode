@@ -37,7 +37,7 @@ opencode_application_paths() {
 }
 
 installer_status() {
-    local candidate version installed= latest
+    local candidate version installed=
     while IFS= read -r candidate; do
         [ -n "$candidate" ] || continue
         if ! version="$("$candidate" --version 2>/dev/null)"; then
@@ -57,8 +57,7 @@ installer_status() {
         printf 'absent\n'
         return
     fi
-    latest="$(installer_github_latest_version anomalyco/opencode || true)"
-    installer_version_state "$installed" "$latest"
+    installer_version_state "$installed" ""
 }
 
 install_public_opencode() {

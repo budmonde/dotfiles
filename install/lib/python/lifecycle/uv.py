@@ -2,7 +2,7 @@ import re
 import shutil
 from typing import Optional
 
-from .core import InstallerError, capture, online_allowed, report
+from .core import InstallerError, capture, report
 
 
 def uv_tool(
@@ -28,9 +28,6 @@ def uv_tool(
         return state
     if state == "current" and (operation == "apply" or requested_version):
         return state
-    if not online_allowed():
-        return "blocked"
-
     installed_version = _uv_tool_installed_version(uv, package)
     if operation == "upgrade" and state == "current" and not source:
         arguments = [uv, "tool", "upgrade", package]

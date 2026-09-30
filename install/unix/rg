@@ -21,7 +21,7 @@ installer_status() {
         printf 'unsupported\n'
         return
     fi
-    local candidate installed latest
+    local candidate installed
     candidate="$binary"
     [ -x "$candidate" ] || candidate="$(command -v rg || true)"
     if [ -z "$candidate" ]; then
@@ -29,8 +29,7 @@ installer_status() {
         return
     fi
     installed="$("$candidate" --version 2>/dev/null | head -1 | awk '{ print $2 }')"
-    latest="$(installer_github_latest_version BurntSushi/ripgrep || true)"
-    installer_version_state "$installed" "$latest"
+    installer_version_state "$installed" ""
 }
 
 install_ripgrep() {

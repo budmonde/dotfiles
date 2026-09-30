@@ -15,7 +15,7 @@ installer_status() {
         printf 'blocked\n'
         return
     fi
-    local default_version latest
+    local default_version
     if ! "$fnm" exec --using "$version" -- node --version >/dev/null 2>&1; then
         printf 'absent\n'
         return
@@ -25,11 +25,7 @@ installer_status() {
         printf 'drifted\n'
         return
     fi
-    latest=
-    if installer_online; then
-        latest="$("$fnm" list-remote --latest 2>/dev/null | tail -1 | tr -d '[:space:]' | sed 's/^v//')"
-    fi
-    installer_version_state "${version#v}" "$latest"
+    installer_version_state "${version#v}" ""
 }
 
 converge_node() {
@@ -44,7 +40,7 @@ installer_apply() {
     local state
     state="$(installer_status "$version")"
     case "$state" in
-        current|update-available) printf '%s\n' "$state" ;;
+        current) printf '%s\n' "$state" ;;
         blocked) printf 'blocked\n' ;;
         *) converge_node "$version"; installer_status "$version" ;;
     esac

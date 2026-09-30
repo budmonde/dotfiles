@@ -81,7 +81,7 @@ The installer prints exactly one state to standard output and sends diagnostics 
 | `absent` | No acceptable installation exists. |
 | `current` | The installed resource satisfies recipe intent. |
 | `drifted` | Installer-owned state differs from an exact or otherwise declared target. |
-| `update-available` | Recipe intent is satisfied and a newer candidate was discovered. |
+| `update-available` | Recipe intent is satisfied and a newer candidate is visible in locally available metadata. |
 | `blocked` | The supported resource cannot be inspected or converged safely. |
 | `unsupported` | This host or installation variant is intentionally unmanaged. |
 
@@ -96,7 +96,6 @@ The child process receives:
 | Variable | Meaning |
 | --- | --- |
 | `DOTBOT_INSTALL_REPO_ROOT` | Canonical path to the owning repository. |
-| `DOTBOT_INSTALL_ONLINE` | Whether online discovery is permitted. |
 
 ## Reusing a backend
 
@@ -245,8 +244,8 @@ Validate the selected recipes without running installers:
 ./install.sh --recipe node --only install --dry-run
 ```
 
-Pass `--only install --dry-run` for a read-only preflight,
-or set `DOTBOT_INSTALL_ONLINE=0` to suppress online discovery during an installer run.
+Pass `--only install --dry-run` for a read-only preflight.
+Installer `status` uses installed state and locally available package metadata without discovering upstream releases.
 Run focused tests with:
 
 ```text

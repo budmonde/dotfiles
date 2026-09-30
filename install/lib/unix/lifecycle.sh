@@ -4,16 +4,8 @@ installer_note() {
     printf '%s\n' "$*" >&2
 }
 
-installer_online() {
-    case "${DOTBOT_INSTALL_ONLINE:-1}" in
-        0|false|False|no|No|off|Off) return 1 ;;
-        *) return 0 ;;
-    esac
-}
-
 installer_github_latest_version() {
     local repository="$1"
-    installer_online || return 1
     command -v curl >/dev/null 2>&1 || return 1
     curl -fsSL "https://api.github.com/repos/$repository/releases/latest" 2>/dev/null |
         sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v?([^"[:space:]]+)".*/\1/p' |

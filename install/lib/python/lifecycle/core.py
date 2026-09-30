@@ -1,4 +1,3 @@
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -23,15 +22,6 @@ class InstallerError(RuntimeError):
 
 def diagnostic(message: str) -> None:
     print(message, file=sys.stderr)
-
-
-def online_allowed() -> bool:
-    return os.environ.get("DOTBOT_INSTALL_ONLINE", "1").strip().lower() not in {
-        "0",
-        "false",
-        "no",
-        "off",
-    }
 
 
 def capture(
