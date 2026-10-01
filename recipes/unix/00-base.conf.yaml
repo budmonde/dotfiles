@@ -27,5 +27,6 @@
     - [install/unix/tmux-plugins, Installing tmux plugins]
     - [install/unix/rg, Installing ripgrep]
     - [install/unix/rclone, Installing rclone]
+    - [install/unix/vim, Installing Vim]
     - [install/unix/nvim, Installing Neovim]
     - [install/unix/gh, Installing GitHub CLI]

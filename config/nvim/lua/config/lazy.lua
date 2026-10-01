@@ -491,8 +491,6 @@ local keybinding_plugins = {
                 { "<leader>ll", desc = "Toggle Mongolian input" },
                 { "<leader>ls", desc = "Add word to spell dict" },
                 { "<leader>xo", desc = "Open file manager" },
-                { "<leader>xx", desc = "Toggle clipboard sync" },
-                { "<leader>xc", desc = "Yank to clipboard", mode = "v" },
                 { "<leader>d", desc = "Toggle display-line movement" },
                 { "<leader><CR>", desc = "Split sentences" },
             })

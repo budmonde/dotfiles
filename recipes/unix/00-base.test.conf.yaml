@@ -47,6 +47,10 @@ checks:
         - C-a
         - run-shell
 
+  vim:
+    commands:
+      version: [vim --version, 'VIM - Vi IMproved 9\.2', '\+clipboard_provider']
+
   push-notify:
     if: 'test -n "$WSL_DISTRO_NAME"'
     links:

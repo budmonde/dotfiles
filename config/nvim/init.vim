@@ -6,6 +6,12 @@
 " Skip colorscheme from vimrc (lazy.nvim handles it)
 let g:skip_colorscheme = 1
 
+if !empty($TMUX)
+    let g:clipboard = 'tmux'
+elseif !empty($SSH_CONNECTION) || !empty($SSH_TTY)
+    let g:clipboard = 'osc52'
+endif
+
 " Session mode: disabled by default, enable via env var NVIM_SESSION=1
 " Usage: NVIM_SESSION=1 nvim (or use the `vs` alias)
 if !exists('g:enable_session')

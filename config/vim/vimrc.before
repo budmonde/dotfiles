@@ -341,21 +341,3 @@ augroup END
 if !empty(glob("/usr/bin/wslinfo"))
     nnoremap <Leader>xo :silent !explorer.exe .<CR>
 endif
-
-" <Leader>xx : Toggle yank forwarding to Windows clipboard
-" <Leader>xc : Yank selection to Windows clipboard (visual mode)
-nnoremap <Leader>xx :call ToggleClipboardSync()<CR>
-if !empty(glob("/usr/bin/wslinfo"))
-    vnoremap <Leader>xc y:call YankToClipboard()<CR>
-    augroup ClipboardSynchronizer
-        autocmd!
-        autocmd TextYankPost * if get(g:, 'clipboard_sync_enabled', 0) | call YankToClipboard() | endif
-    augroup END
-endif
-function! YankToClipboard()
-    call system('echo '.shellescape(join(getreg('"', 1, 1), "\n")).' | clip.exe')
-endfunction
-function! ToggleClipboardSync()
-    let g:clipboard_sync_enabled = !get(g:, 'clipboard_sync_enabled', 0)
-    echom "clipboard_sync_enabled = " . g:clipboard_sync_enabled
-endfunction

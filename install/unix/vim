@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
+
+install_dir="${XDG_DATA_HOME:-$HOME/.local/share}/vim-install"
+bin_dir="$HOME/.local/bin"
+binary="$bin_dir/vim"
+
+vim_supported_host() {
+    [ "$(uname -s):$(uname -m)" = 'Linux:x86_64' ] || return 1
+    local libc
+    libc="$(getconf GNU_LIBC_VERSION 2>/dev/null)" || return 1
+    [[ "$libc" =~ ^glibc\ ([0-9]+)\.([0-9]+)$ ]] || return 1
+    (( BASH_REMATCH[1] > 2 || (BASH_REMATCH[1] == 2 && BASH_REMATCH[2] >= 34) ))
+}
+
+vim_compatible() {
+    local candidate="$1"
+    [ -x "$candidate" ] || return 1
+    local output
+    output="$("$candidate" --version 2>/dev/null)" || return 1
+    [[ "$output" == 'VIM - Vi IMproved 9.2'* ]] || return 1
+    [[ "$output" == *+clipboard_provider* ]]
+}
+
+installer_status() {
+    if ! vim_supported_host; then
+        printf 'unsupported\n'
+        return
+    fi
+    if [ -L "$binary" ] && [ "$(readlink "$binary")" = "$install_dir/AppRun" ]; then
+        if vim_compatible "$binary"; then
+            printf 'current\n'
+        else
+            printf 'drifted\n'
+        fi
+        return
+    fi
+    if [ -e "$binary" ] || [ -L "$binary" ]; then
+        if vim_compatible "$binary"; then
+            printf 'unsupported\n'
+        else
+            printf 'blocked\n'
+        fi
+        return
+    fi
+    local external
+    external="$(command -v vim || true)"
+    if [ -n "$external" ] && vim_compatible "$external"; then
+        printf 'unsupported\n'
+    else
+        printf 'absent\n'
+    fi
+}
+
+install_vim() {
+    local version
+    version="$(installer_github_latest_version vim/vim-appimage || true)"
+    [[ "$version" == 9.2.* ]] || {
+        installer_note 'Could not resolve a Vim 9.2 AppImage release'
+        return 1
+    }
+
+    local temporary staging backup= filename
+    temporary="$(mktemp -d)"
+    mkdir -p "$(dirname "$install_dir")"
+    staging="$(mktemp -d "${install_dir}.install.XXXXXX")"
+    cleanup_vim() {
+        rm -rf "$temporary"
+        [ ! -d "$staging" ] || rm -rf "$staging"
+        if [ -n "$backup" ] && [ ! -e "$install_dir" ] && [ -e "$backup" ]; then
+            mv "$backup" "$install_dir"
+        fi
+    }
+    trap cleanup_vim RETURN
+
+    filename="Vim-v${version}.glibc2.34-x86_64.AppImage"
+    curl -fsSL "https://github.com/vim/vim-appimage/releases/download/v${version}/${filename}" -o "$temporary/$filename"
+    chmod +x "$temporary/$filename"
+    (cd "$temporary" && "./$filename" --appimage-extract >/dev/null)
+    mv "$temporary/squashfs-root"/* "$staging/"
+    vim_compatible "$staging/AppRun" || {
+        installer_note 'Downloaded Vim lacks 9.2 clipboard provider support'
+        return 1
+    }
+
+    if [ -d "$install_dir" ]; then
+        backup="${install_dir}.previous.$$"
+        mv "$install_dir" "$backup"
+    elif [ -e "$install_dir" ]; then
+        installer_note "Refusing to replace non-directory Vim installation: $install_dir"
+        return 1
+    fi
+    mv "$staging" "$install_dir"
+    staging=
+    mkdir -p "$bin_dir"
+    ln -sfn "$install_dir/AppRun" "$binary"
+    if [ -n "$backup" ]; then
+        rm -rf "$backup"
+        backup=
+    fi
+    trap - RETURN
+    rm -rf "$temporary"
+}
+
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    case "$state" in
+        absent|drifted) install_vim; installer_status ;;
+        *) printf '%s\n' "$state" ;;
+    esac
+}
+
+installer_upgrade() {
+    if ! vim_supported_host; then
+        printf 'unsupported\n'
+        return
+    fi
+    local state
+    state="$(installer_status)"
+    case "$state" in
+        absent|current|drifted) install_vim; installer_status ;;
+        *) printf '%s\n' "$state" ;;
+    esac
+}
+
+installer_main "$@"
