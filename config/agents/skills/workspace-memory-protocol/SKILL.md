@@ -46,7 +46,11 @@ skills/
 An index plus `todo.md` is the minimum.
 Add other foundational files and artifact directories only when the workspace needs them.
 Multi-repository or relocated layouts are valid only when their index declares the scope, location, and loader configuration.
-When a Codex workspace uses a non-root index, add its workspace-relative path to `project_doc_fallback_filenames` in `.codex/config.toml` without removing existing fallback entries.
+When a Codex workspace keeps its index elsewhere, expose it through a workspace-root `AGENTS.md` symlink so Codex automatically includes the index as instructions.
+Prefer a relative symlink, such as `AGENTS.md` pointing to `wiki/index.md`, and make the workspace setup own its creation and verification.
+Preserve an existing root instruction file; if a symlink is unsuitable, have that file direct agents to load the canonical index at session entry.
+`project_doc_fallback_filenames` accepts plain filenames, not paths containing directories.
+Do not register relocated index paths there.
 
 ## Keep responsibilities distinct
 

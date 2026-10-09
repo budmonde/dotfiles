@@ -26,6 +26,12 @@ These mappings target the current WMP, which replaces procedural `workflow.md` d
 | Root-level operational notes | Appropriate scoped skill or foundational document | Classify content before moving it. Do not create a catch-all replacement file. |
 | Legacy `Commit Convention`, `Commit Messages`, or provenance section | Repository-root `COMMIT_POLICY.md`, or the default policy | Preserve repository-specific tags, message shape, provenance, scope, and reservations in the root policy. Remove the legacy section when no repository-specific rule remains. |
 
+## Relocated Codex index loaders
+
+| Observed form | Current target | Migration notes |
+|---|---|---|
+| A relocated index such as `wiki/index.md` registered as a path in `project_doc_fallback_filenames` | Workspace-root `AGENTS.md` entry point under the core WMP loader rule | Prefer a relative symlink to the canonical index, preserve existing root instructions, remove obsolete path entries while retaining plain-filename fallbacks, and update setup ownership and loader documentation. Verify index inclusion in a fresh Codex prompt when using a symlink. |
+
 ## Artifact identity migration
 
 Preserve an existing stable number whenever it unambiguously identifies an artifact.

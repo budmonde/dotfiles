@@ -23,7 +23,7 @@ Classify each as one of:
 
 - **Already conformant** — verify and leave it alone.
 - **Mechanical layout drift** — a safe casing or path rename with an unambiguous target.
-- **Loader-configuration drift** — a non-root Codex index is absent from `project_doc_fallback_filenames`.
+- **Loader-configuration drift** — a relocated Codex index has no workspace-root `AGENTS.md` entry point, or its loader relies on a path in `project_doc_fallback_filenames`.
 - **Semantic split or merge** — content must be classified between destinations.
 - **Operational-model drift** — procedures must move from a legacy document into scoped skills.
 - **Ambiguous** — the target or destination cannot be inferred safely.
@@ -64,7 +64,10 @@ Source-owned workspace skills belong in the scope owner's declared vendor catalo
 For example, an ordinary repository may vendor `skills/`, a wiki may vendor `wiki/skills/`, and shared WMP skills remain in the common agent-skill catalog.
 Record each workspace skill's scope, vendor location, and installation path in the index.
 
-When a Codex workspace uses a non-root index, add the index's workspace-relative path to `project_doc_fallback_filenames` in `.codex/config.toml` without removing existing fallback entries.
+For a relocated Codex index, apply the root `AGENTS.md` entry-point rule from `workspace-memory-protocol`.
+Preserve existing root instructions and stop for clarification if their relationship to the canonical index is ambiguous.
+Remove obsolete directory-containing entries from `project_doc_fallback_filenames` while preserving unrelated plain-filename entries; remove the setting when no entries remain.
+Update the workspace setup and its checks to own the entry point, and reconcile the index's loader description.
 
 ## Make future drift manageable
 
@@ -80,7 +83,8 @@ Before completion:
 
 - Validate every new or changed skill with the skill-authoring validator when available.
 - Confirm the index, architecture, roadmap, todo, skill catalog, and runtime configuration describe the resulting workspace only.
-- Confirm every non-root Codex index is registered in `.codex/config.toml` through `project_doc_fallback_filenames`.
+- Confirm each relocated Codex index has a working root `AGENTS.md` entry point and no directory-containing fallback entries remain in the affected Codex configurations.
+- Verify automatic inclusion with a fresh Codex prompt when available; for a root instruction file that directs agents to read the index, verify that directive separately from automatic index inclusion.
 - Search live files for old paths, filenames, headings, and operational entry points that the migration retired.
 - Confirm every migrated repository-specific commit rule now lives in that repository's `COMMIT_POLICY.md`, with no workflow or sibling-workspace fallback left live.
 - Verify artifact handles, archival prefixes, statuses, and path-form references affected by the migration.

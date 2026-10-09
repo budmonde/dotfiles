@@ -40,5 +40,10 @@ Before bootstrapping or changing a workspace index, foundational document, opera
 At session entry and after compaction, load the workspace index first.
 It identifies the applicable memory root, repository boundaries, local deviations, and operational skills.
 
+At session entry, if the workspace-root `AGENTS.md` is absent or its symlink is broken, look for an existing workspace index such as `wiki/index.md` or an instruction document identified by the workspace's own guidance.
+When an unambiguous document exists, load it for the current session and ask the user whether to create a relative root `AGENTS.md` symlink, naming both paths and explaining that the link enables automatic instruction loading in future sessions.
+If several documents are plausible, ask which should be the canonical instructions before proposing a link.
+Preserve existing root instructions and valid links, and do not repeat the prompt during the same session after the user has answered.
+
 When a workspace uses an older memory layout or needs a structural WMP upgrade, use the `workspace-memory-protocol-migration` skill.
 For a medium-to-large feature in a WMP-managed workspace, use `workspace-memory-protocol-feature-development`.
