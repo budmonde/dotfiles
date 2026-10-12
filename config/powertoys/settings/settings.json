@@ -44,6 +44,6 @@
         "Shortcut Guide": false,
         "TextExtractor": false,
         "Workspaces": false,
-        "ZoomIt": true
+        "ZoomIt": false
     }
 }
