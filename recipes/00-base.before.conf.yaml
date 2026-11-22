@@ -45,7 +45,6 @@
 
     # Common launchers
     ~/.local/bin/git-filter-repo: bin/git-filter-repo
-    ~/.local/bin/imgen: bin/imgen
     ~/.local/bin/set-title: bin/set-title
 
 - shell:

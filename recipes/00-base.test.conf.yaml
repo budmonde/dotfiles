@@ -132,16 +132,6 @@ checks:
     commands:
       help: [git-filter-repo --help, 'Rewrite \(or analyze\) repository history']
 
-  imgen:
-    links:
-      "~/.local/bin/imgen": bin/imgen
-    paths:
-      imgen:
-        locations: ["~/.local/bin"]
-    commands:
-      help: [imgen --help, "usage: imgen"]
-      credentials: [imgen --dry-run -o env-status-check.png "configuration validation", 'Authorization: Bearer <redacted>']
-
   set-title:
     links:
       "~/.local/bin/set-title": bin/set-title
