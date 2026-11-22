@@ -4,4 +4,3 @@
 
 - install:
     - [[install/windows/environment.ps1, "CODEX_HOME=User:Path:~/.config/codex"], Configuring the persistent Codex environment]
-    - [install/windows/opencode.ps1, Installing OpenCode]

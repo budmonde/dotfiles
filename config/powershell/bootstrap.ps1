@@ -1,5 +1,4 @@
 # Tool-managed paths
-if (Test-Path "$HOME\.opencode\bin") { Prepend-PathEntry "$HOME\.opencode\bin" }
 $fzfBin = if ($env:XDG_DATA_HOME) { Join-Path $env:XDG_DATA_HOME 'fzf\bin' } else { "$HOME\.local\share\fzf\bin" }
 if (Test-Path $fzfBin) { Prepend-PathEntry $fzfBin }
 

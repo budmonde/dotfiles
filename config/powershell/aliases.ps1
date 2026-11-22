@@ -49,5 +49,3 @@ function venv {
         Write-Host "Venv '$Name' not found in $venvDir"
     }
 }
-
-function opencode { & opencode.exe --hostname 127.0.0.1 @args }

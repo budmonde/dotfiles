@@ -162,7 +162,6 @@ local filesystem_plugins = {
                     ignore_dirs = {
                         "/.git$",
                         "/node_modules$",
-                        "/.opencode$",
                         "/p4$",
                         "/rclone$",
                         "/.local/share/nvim%-data$",
@@ -480,7 +479,6 @@ local keybinding_plugins = {
                 { "<leader>l", group = "language" },
                 { "<leader>s", group = "sessions" },
                 { "<leader>x", group = "external apps" },
-                { "<leader>o", group = "opencode" },
                 { "<leader>c", group = "claude" },
                 { "<leader><leader>", group = "motion" },
 
@@ -606,112 +604,6 @@ local keybinding_plugins = {
 -------------------------------------------------------------------------------
 local ai_plugins = {
     ---------------------------------------------------------------------------
-    --- PLUGIN : opencode.nvim
-    ---------------------------------------------------------------------------
-    {
-        "NickvanDyke/opencode.nvim",
-        dependencies = {
-            { "folke/snacks.nvim", opts = { input = {}, picker = {}, terminal = {} } },
-        },
-        config = function()
-            -- Required for auto-reload when opencode edits files
-            vim.o.autoread = true
-
-            ---@type opencode.Opts
-            vim.g.opencode_opts = {}
-
-            -- Helper: get opencode pane id and pid
-            local function get_opencode_pane_info()
-                local result = vim.fn.system("tmux list-panes -F '#{pane_id}:#{pane_pid}:#{pane_current_command}' 2>/dev/null")
-                for line in result:gmatch("[^\n]+") do
-                    local pane_id, pane_pid, cmd = line:match("(%%[0-9]+):([0-9]+):(.+)")
-                    if cmd and cmd:match("opencode") then
-                        return pane_id, tonumber(pane_pid)
-                    end
-                end
-                return nil, nil
-            end
-
-            -- Toggle opencode in tmux pane (right 40%, full window height)
-            vim.keymap.set("n", "<leader>oo", function()
-                local pane_id, pane_pid = get_opencode_pane_info()
-                if pane_id then
-                    -- Kill the process first, then the pane
-                    if pane_pid then
-                        vim.fn.system("kill " .. pane_pid .. " 2>/dev/null")
-                    end
-                    vim.fn.system("tmux kill-pane -t " .. pane_id)
-                else
-                    local cwd = vim.fn.getcwd()
-                    -- --port without a number lets opencode pick a random port while showing TUI
-                    local cmd = string.format(
-                        [[tmux split-window -hf -l 40%% -c %s 'opencode --port']],
-                        vim.fn.shellescape(cwd)
-                    )
-                    vim.fn.system(cmd)
-                    vim.fn.system("tmux select-pane -L")
-                end
-            end, { desc = "Toggle opencode (tmux)" })
-
-            -- Focus opencode pane
-            vim.keymap.set("n", "<leader>of", function()
-                local pane_id = get_opencode_pane_info()
-                if pane_id then
-                    vim.fn.system("tmux select-pane -t " .. pane_id)
-                else
-                    local cwd = vim.fn.getcwd()
-                    local cmd = string.format(
-                        [[tmux split-window -hf -l 40%% -c %s 'opencode --port']],
-                        vim.fn.shellescape(cwd)
-                    )
-                    vim.fn.system(cmd)
-                end
-            end, { desc = "Focus opencode (tmux)" })
-
-            -- Ask with context (opens input prompt)
-            vim.keymap.set({ "n", "x" }, "<leader>oa", function()
-                require("opencode").ask("@this: ", { submit = false })
-            end, { desc = "Ask opencode" })
-
-            -- Select from prompts/commands (review, explain, fix, etc.)
-            vim.keymap.set({ "n", "x" }, "<leader>os", function()
-                require("opencode").select()
-            end, { desc = "Opencode select action" })
-
-            -- Operator for adding ranges to context
-            vim.keymap.set({ "n", "x" }, "go", function()
-                return require("opencode").operator("@this ")
-            end, { desc = "Add range to opencode", expr = true })
-
-            vim.keymap.set("n", "goo", function()
-                return require("opencode").operator("@this ") .. "_"
-            end, { desc = "Add line to opencode", expr = true })
-
-            -- Quick actions
-            vim.keymap.set({ "n", "x" }, "<leader>or", function()
-                require("opencode").prompt("/review @this")
-            end, { desc = "Review selection" })
-
-            vim.keymap.set({ "n", "x" }, "<leader>oe", function()
-                require("opencode").prompt("/explain @this")
-            end, { desc = "Explain selection" })
-
-            vim.keymap.set("n", "<leader>od", function()
-                require("opencode").prompt("/diff")
-            end, { desc = "Review git diff" })
-
-            -- Session management
-            vim.keymap.set("n", "<leader>on", function()
-                require("opencode").command("session.new")
-            end, { desc = "New opencode session" })
-
-            vim.keymap.set("n", "<leader>oi", function()
-                require("opencode").command("session.interrupt")
-            end, { desc = "Interrupt opencode" })
-        end,
-    },
-
-    ---------------------------------------------------------------------------
     --- PLUGIN : claudecode.nvim
     ---------------------------------------------------------------------------
     {
@@ -724,7 +616,7 @@ local ai_plugins = {
                 terminal = {
                     provider = "native",  -- Use native neovim terminal splits
                     split_side = "right",
-                    split_width_percentage = 0.33,  -- 33% width, similar to opencode
+                    split_width_percentage = 0.33,
                     auto_close = true,
                 },
                 diff_opts = {
@@ -735,7 +627,6 @@ local ai_plugins = {
                 track_selection = true,
             })
 
-            -- Keymaps (using <leader>c prefix to complement opencode's <leader>o)
             -- Toggle claude panel
             vim.keymap.set({ "n", "t" }, "<leader>cc", "<cmd>ClaudeCode<cr>", { desc = "Toggle Claude Code" })
 

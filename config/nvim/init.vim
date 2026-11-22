@@ -38,7 +38,7 @@ if !isdirectory($HOME . "/.local/state/nvim/undo")
     call mkdir($HOME . "/.local/state/nvim/undo", "p", 0700)
 endif
 
-" Auto-reload files modified externally (e.g. by opencode, git)
+" Auto-reload files modified externally
 augroup AutoReload
     autocmd!
     autocmd FocusGained,BufEnter * checktime

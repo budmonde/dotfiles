@@ -1,11 +1,2 @@
-# Recipe: 30-agentic — agentic-coding CLI tooling
-# Usage: ./install.sh --recipe agentic
-#
-# On WSL, also masks systemd-timesyncd as an opencode-specific workaround.
-# Requires the common `node` recipe to be installed before starting this shell.
-
-- install:
-    - [install/unix/opencode, Installing OpenCode]
-
-- shell:
-    - ['[ -n "$WSL_DISTRO_NAME" ] && sudo systemctl mask --now systemd-timesyncd 2>/dev/null || true', Disabling timesyncd on WSL (opencode workaround)]
+# The shared fragments provide the Unix agentic recipe.
+[]

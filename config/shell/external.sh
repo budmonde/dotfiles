@@ -32,15 +32,6 @@ export PYTHONHISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/python/history"
 export DOCKER_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/docker"
 export UV_TOOL_BIN_DIR="$HOME/.local/bin"
 
-# opencode: use the shared ~/.agents/skills root but skip Claude-compatible
-# skill discovery.
-export OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1
-
-# opencode: disable built-in terminal title writer; the terminal-title.tsx
-# TUI plugin owns the title and emits the `OC | <cwd>[ : <branch>] | <session>`
-# pattern matching the NVIM/PS1 title scheme.
-export OPENCODE_DISABLE_TERMINAL_TITLE=1
-
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 
 if command -v nvim >/dev/null 2>&1; then

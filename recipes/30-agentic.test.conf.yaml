@@ -15,11 +15,6 @@ checks:
         timeout: 30
       authentication: [codex login status, 'Logged in using']
 
-  opencode:
-    paths: [opencode]
-    commands:
-      version: [opencode --version]
-
   claude:
     links:
       "~/.config/claude/settings.json": config/claude/settings.json
