@@ -2,10 +2,6 @@
 # Usage: .\install.ps1 --recipe agentic
 # Requires the common `node` recipe to be installed before starting this shell.
 
-- shell:
-    - command: powershell -NoProfile -Command "foreach ($h in 'commit-msg','post-commit','reference-transaction') { New-Item -ItemType SymbolicLink -Force -Path \".githooks/$h\" -Target \"$HOME/.agents/plugins/git-auditor/hooks/$h\" | Out-Null }"
-      description: Registering agentic Git-auditor hooks with the common repository
-
 - install:
     - [[install/windows/environment.ps1, "CODEX_HOME=User:Path:~/.config/codex"], Configuring the persistent Codex environment]
     - [install/windows/opencode.ps1, Installing OpenCode]

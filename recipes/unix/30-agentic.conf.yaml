@@ -4,10 +4,6 @@
 # On WSL, also masks systemd-timesyncd as an opencode-specific workaround.
 # Requires the common `node` recipe to be installed before starting this shell.
 
-- shell:
-    - ['for h in commit-msg post-commit reference-transaction; do ln -sfn "$HOME/.agents/plugins/git-auditor/hooks/$h" ".githooks/$h"; done', Registering agentic Git-auditor hooks with the common repository]
-    - ['chmod +x config/agents/plugins/git-auditor/hooks/commit-msg config/agents/plugins/git-auditor/hooks/post-commit config/agents/plugins/git-auditor/hooks/reference-transaction 2>/dev/null || true', Marking commit-auditor hook scripts executable]
-
 - install:
     - [install/unix/opencode, Installing OpenCode]
 

@@ -1377,16 +1377,6 @@ class ManifestOrderingTests(unittest.TestCase):
             )
             self.assertNotIn(action, content)
 
-    def test_agentic_shared_setup_is_pre_platform_work(self):
-        installer = "install/shared/git-auditor.py"
-        before = (REPO_ROOT / "recipes/30-agentic.before.conf.yaml").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn(installer, before)
-        for platform in ("unix", "windows"):
-            manifest = REPO_ROOT / "recipes" / platform / "30-agentic.conf.yaml"
-            self.assertNotIn(installer, manifest.read_text(encoding="utf-8"))
-
     def test_cross_platform_recipe_finalizers_are_shared(self):
         for recipe in ("10-dev", "20-node", "30-agentic", "40-research", "41-iqa"):
             after = REPO_ROOT / "recipes" / "{}.after.conf.yaml".format(recipe)

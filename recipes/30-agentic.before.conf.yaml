@@ -13,8 +13,6 @@
     - ~/.config/opencode
 
 - link:
-    ~/.agents: config/agents
-    ~/.config/codex/AGENTS.md: config/agents/AGENTS.md
     ~/.config/codex/config.toml: config/codex/config.toml
     ~/.config/claude/settings.json: config/claude/settings.json
     ~/.config/claude/keybindings.json: config/claude/keybindings.json
@@ -24,7 +22,3 @@
 - install:
     - [[install/shared/npm-global.py, "@openai/codex"], Installing Codex CLI]
     - [[install/shared/npm-global.py, "@anthropic-ai/claude-code"], Installing Claude Code]
-    - [install/shared/git-auditor.py, Installing Git-auditor]
-
-- shell:
-    - [git config core.hooksPath .githooks, Selecting the common repository hook system]

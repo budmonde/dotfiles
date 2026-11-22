@@ -4,7 +4,6 @@
   "share": "disabled",
   "autoupdate": false,
   "instructions": [
-    "~/.agents/AGENTS.md",
     "~/.config/opencode/AGENTS_PRIVATE.md",
     "wiki/index.md"
   ],

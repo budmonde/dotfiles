@@ -10,16 +10,3 @@ checks:
           if ($actual -and [IO.Path]::GetFullPath($actual).TrimEnd('\', '/') -ieq
           [IO.Path]::GetFullPath($expected).TrimEnd('\', '/')) { 'configured' } else { 'drifted' }
         - configured
-
-  git-auditor:
-    commands:
-      trigger:
-        - >-
-          $gateVariables = @('CODEX_CTL_GATE_ENDPOINT', 'CODEX_CTL_GATE_TOKEN',
-          'CODEX_CTL_GATE_PROTOCOL', 'CODEX_CTL_EXECUTABLE', 'CODEX_CTL_INSTANCE');
-          foreach ($name in $gateVariables) { Remove-Item "Env:$name" -ErrorAction SilentlyContinue };
-          $message = New-TemporaryFile;
-          try {
-          [System.IO.File]::WriteAllText($message, "[TEST] git-auditor hook validation`n");
-          git hook run commit-msg -- $message
-          } finally { Remove-Item -LiteralPath $message -Force }

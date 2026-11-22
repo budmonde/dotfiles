@@ -1,21 +1,7 @@
 schema_version: 3
 
 checks:
-  agents:
-    links:
-      "~/.agents": config/agents
-
-  git-auditor:
-    files:
-      ".githooks/commit-msg": file
-      ".githooks/post-commit": file
-      ".githooks/reference-transaction": file
-    commands:
-      hooks-path: [git config --get core.hooksPath, '^\.githooks\s*$']
-
   codex:
-    links:
-      "~/.config/codex/AGENTS.md": config/agents/AGENTS.md
     paths: [codex]
     commands:
       version: [codex --version]
