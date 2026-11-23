@@ -33,10 +33,8 @@ augroup END
 " Neovim-specific overrides
 set nolazyredraw               " lazyredraw behaves differently in neovim
 set autoread                   " Reload files changed outside of nvim
-set undodir=~/.local/state/nvim/undo
-if !isdirectory($HOME . "/.local/state/nvim/undo")
-    call mkdir($HOME . "/.local/state/nvim/undo", "p", 0700)
-endif
+" Use Neovim's XDG state directory to keep its undo files separate from Vim's.
+set undodir&
 
 " Auto-reload files modified externally
 augroup AutoReload
