@@ -68,7 +68,7 @@ set title
 let &titlestring = (has('nvim') ? 'NVIM' : 'VIM') . ' | %{fnamemodify(getcwd(), ":t")}%{exists("*FugitiveHead")&&len(FugitiveHead()) ? " : ".FugitiveHead() : ""}'
 
 set number                   " Show line numbers
-set relativenumber           " Line numbers are relative to currentline
+set norelativenumber
 " Toggle relative numbering
 nnoremap <C-n> :set rnu!<CR>
 
