@@ -37,17 +37,28 @@ For non-interactive Unix bootstrap:
 curl -fsSL https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.sh | bash -s -- --machine_name workstation
 ```
 
-After either bootstrap finishes,
-run the printed common installer and tester commands.
-GitHub authentication and the managed SSH key belong to the optional `05-github` recipe.
+After bootstrap, run the printed installer and tester commands.
 
-On an existing installation that predates bootstrap-managed identity,
-create `~/.name` once with one lowercase machine name before running forge resources.
-The accepted format is 1-64 letters,
-digits,
-dots,
-underscores,
-or hyphens and must begin with a letter or digit.
+If an older installation has no `~/.name`, create it before setting up GitHub authentication.
+Use a machine name of 1–64 lowercase letters, digits, dots, underscores, or hyphens, starting with a letter or digit.
+
+## Keyring
+
+Run the common installer and tester with `--recipe keyring` in the session that will run credential-dependent commands.
+The installer checks that the session can write, read, and delete a disposable credential.
+
+Windows and macOS use their built-in stores.
+On Linux, the recipe reuses an available Secret Service or installs GNOME Keyring and its client tools on APT-based hosts.
+Without noninteractive sudo, Ubuntu 24.04 amd64 uses signed Ubuntu packages installed in the user’s XDG data directory and the system D-Bus tools.
+
+If the recipe stops at the unlock check on headless Linux, run `python3 install/unix/keyring-session.py` from the common checkout and enter the keyring passphrase.
+Repeat the keyring install and test in the shell it opens, then continue setup there.
+A private D-Bus session started by the launcher lasts until that shell exits.
+
+## GitHub access
+
+For managed GitHub authentication and SSH key setup, complete [keyring setup](#keyring), then run the common installer and tester with `--recipe github` in the same session.
+If your machine plan includes `05-github`, put `04-keyring` before it.
 
 ## Installer Development
 

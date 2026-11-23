@@ -16,6 +16,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "install/lib/python"))
 import lifecycle as LIFECYCLE
 from lifecycle import core as CORE
+from lifecycle import keyring as KEYRING
+import unix_recipe as UNIX_RECIPE
 from lifecycle import npm as NPM
 from lifecycle import ssh_key as SSH_KEY
 from lifecycle import uv as UV
@@ -36,6 +38,7 @@ def load_installer(module_name, filename):
 
 GITHUB_AUTH = load_installer("github_auth_installer", "github-auth.py")
 GITHUB_SSH_KEY = load_installer("github_ssh_key_installer", "github-ssh-key.py")
+KEYRING_INSTALLER = load_installer("keyring_installer", "keyring.py")
 
 
 def completed(arguments):
@@ -577,50 +580,6 @@ class GithubAuthInstallerTests(unittest.TestCase):
             self.assertNotIn(name, environment)
         self.assertEqual(environment["GH_CONFIG_DIR"], "private")
 
-    def test_linux_keyring_initialization_is_temporary(self):
-        with mock.patch.object(
-            GITHUB_AUTH.sys, "platform", "linux"
-        ), mock.patch.object(
-            GITHUB_AUTH.shutil, "which", return_value="/usr/bin/secret-tool"
-        ), mock.patch.object(
-            GITHUB_AUTH.subprocess,
-            "run",
-            side_effect=[completed([]), completed([])],
-        ) as run, mock.patch.object(GITHUB_AUTH, "diagnostic"):
-            prepared = GITHUB_AUTH._prepare_linux_keyring()
-
-        self.assertTrue(prepared)
-        store = run.call_args_list[0]
-        clear = run.call_args_list[1]
-        self.assertEqual(store.args[0][1], "store")
-        self.assertEqual(store.kwargs["input"], "initialization")
-        self.assertEqual(clear.args[0][1], "clear")
-        self.assertEqual(clear.kwargs["stdin"], subprocess.DEVNULL)
-
-    def test_linux_keyring_initialization_requires_secret_tool(self):
-        with mock.patch.object(
-            GITHUB_AUTH.sys, "platform", "linux"
-        ), mock.patch.object(
-            GITHUB_AUTH.shutil, "which", return_value=None
-        ), mock.patch.object(
-            GITHUB_AUTH.subprocess, "run"
-        ) as run, mock.patch.object(GITHUB_AUTH, "diagnostic"):
-            prepared = GITHUB_AUTH._prepare_linux_keyring()
-
-        self.assertFalse(prepared)
-        run.assert_not_called()
-
-    def test_non_linux_keyring_initialization_is_a_noop(self):
-        with mock.patch.object(
-            GITHUB_AUTH.sys, "platform", "darwin"
-        ), mock.patch.object(
-            GITHUB_AUTH.subprocess, "run"
-        ) as run:
-            prepared = GITHUB_AUTH._prepare_linux_keyring()
-
-        self.assertTrue(prepared)
-        run.assert_not_called()
-
     def test_authorization_opens_the_device_page_without_prompting(self):
         process = mock.Mock()
         process.stdout = iter(
@@ -635,7 +594,7 @@ class GithubAuthInstallerTests(unittest.TestCase):
         ) as popen, mock.patch.object(
             GITHUB_AUTH.webbrowser, "open", return_value=True
         ) as open_browser, mock.patch.object(
-            GITHUB_AUTH, "_prepare_linux_keyring", return_value=True
+            GITHUB_AUTH, "keyring_ready", return_value=True
         ), mock.patch.object(
             GITHUB_AUTH, "_prepare_auth_directory", return_value=True
         ), mock.patch.object(
@@ -662,7 +621,7 @@ class GithubAuthInstallerTests(unittest.TestCase):
         ), mock.patch.object(
             GITHUB_AUTH.webbrowser, "open", return_value=False
         ), mock.patch.object(
-            GITHUB_AUTH, "_prepare_linux_keyring", return_value=True
+            GITHUB_AUTH, "keyring_ready", return_value=True
         ), mock.patch.object(
             GITHUB_AUTH, "_prepare_auth_directory", return_value=True
         ):
@@ -1132,18 +1091,102 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
         )
 
 
-class RecipeTests(unittest.TestCase):
-    def test_unix_github_recipe_installs_secret_service_before_authentication(self):
-        unix = (
-            REPO_ROOT / "recipes/unix/05-github.conf.yaml"
-        ).read_text(encoding="utf-8")
-        windows = (
-            REPO_ROOT / "recipes/windows/05-github.conf.yaml"
-        ).read_text(encoding="utf-8")
+class KeyringTests(unittest.TestCase):
+    def test_status_is_read_only_and_apply_requires_a_round_trip(self):
+        with mock.patch.object(KEYRING_INSTALLER, "keyring_ready", return_value=True), mock.patch.object(
+            KEYRING_INSTALLER, "check_keyring_write", side_effect=[False, True]
+        ) as check, mock.patch.object(KEYRING_INSTALLER, "diagnostic"):
+            self.assertEqual(KEYRING_INSTALLER.keyring("status", ""), "current")
+            check.assert_not_called()
+            self.assertEqual(KEYRING_INSTALLER.keyring("apply", ""), "blocked")
+            self.assertEqual(KEYRING_INSTALLER.keyring("apply", ""), "current")
 
-        self.assertLess(unix.index("gnome-keyring"), unix.index("libsecret-tools"))
-        self.assertLess(unix.index("libsecret-tools"), unix.index("github-auth.py"))
-        self.assertNotIn("gnome-keyring", windows)
+    def test_linux_round_trip_removes_the_probe_even_if_readback_fails(self):
+        with mock.patch.object(
+            KEYRING, "linux_keyring_command", return_value=("secret-tool", {})
+        ), mock.patch.object(
+            KEYRING, "_run", side_effect=[completed([]), None, completed([])]
+        ) as run:
+            self.assertFalse(KEYRING._linux_round_trip("probe", "disposable"))
+        self.assertEqual([c.args[0][1] for c in run.call_args_list], ["store", "lookup", "clear"])
+        self.assertEqual(run.call_args_list[0].kwargs["input"], "disposable")
+
+
+class RecipeTests(unittest.TestCase):
+    def test_keyring_recipe_selects_provisioning_scope_before_the_shared_check(self):
+        recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, "unix")
+        selected = ORCHESTRATE.resolve_recipes(recipes, ["keyring", "github"])
+        cases = (
+            ("linux", True, "linux"),
+            ("linux", False, "linux-userspace"),
+            ("microsoft-standard-WSL2", True, "wsl"),
+            ("microsoft-standard-WSL2", False, "linux-userspace"),
+        )
+        for release, privileged, variant in cases:
+            with self.subTest(release=release, privileged=privileged), mock.patch.object(
+                UNIX_RECIPE.sys, "platform", "linux"
+            ), mock.patch.object(
+                UNIX_RECIPE.platform, "release", return_value=release
+            ), mock.patch.object(UNIX_RECIPE, "system_packages_available", return_value=privileged):
+                self.assertEqual(ORCHESTRATE.install_configs(REPO_ROOT, selected), [
+                    "recipes/unix/{}/04-keyring.conf.yaml".format(variant),
+                    "recipes/04-keyring.after.conf.yaml",
+                    "recipes/unix/05-github.conf.yaml",
+                ])
+
+    def test_only_the_selected_unix_branch_can_replace_the_platform_fragment(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            UNIX_RECIPE.sys, "platform", "linux"
+        ), mock.patch.object(
+            UNIX_RECIPE.platform, "release", return_value="microsoft-standard-WSL2"
+        ), mock.patch.object(UNIX_RECIPE, "system_packages_available", return_value=True):
+            unix = Path(directory) / "unix"
+            generic = unix / "04-keyring.test.conf.yaml"
+            for name in ("linux", "wsl", "macos"):
+                (unix / name).mkdir(parents=True)
+            (unix / "linux" / generic.name).touch()
+            self.assertEqual(UNIX_RECIPE.unix_recipe_fragment(generic), generic)
+            (unix / "wsl" / generic.name).touch()
+            self.assertEqual(UNIX_RECIPE.unix_recipe_fragment(generic), unix / "wsl" / generic.name)
+            with mock.patch.object(UNIX_RECIPE.sys, "platform", "darwin"):
+                self.assertEqual(UNIX_RECIPE.unix_recipe_fragment(generic), generic)
+                (unix / "macos" / generic.name).touch()
+                self.assertEqual(UNIX_RECIPE.unix_recipe_fragment(generic), unix / "macos" / generic.name)
+
+    def test_keyring_uses_only_the_shared_check_on_windows_and_macos(self):
+        with mock.patch.object(UNIX_RECIPE.sys, "platform", "darwin"):
+            for platform in ("windows", "unix"):
+                with self.subTest(platform=platform):
+                    recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, platform)
+                    selected = ORCHESTRATE.resolve_recipes(recipes, ["keyring"])
+                    self.assertEqual(ORCHESTRATE.install_configs(REPO_ROOT, selected), [
+                        "recipes/04-keyring.after.conf.yaml",
+                    ])
+                    self.assertEqual(ORCHESTRATE.test_configs(REPO_ROOT, selected), [
+                        "recipes/04-keyring.test.conf.yaml",
+                    ])
+
+    def test_branch_fragment_can_declare_a_recipe_for_its_hosts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            macos = root / "recipes/unix/macos"
+            macos.mkdir(parents=True)
+            (root / "recipes/windows").mkdir()
+            (macos / "07-example.conf.yaml").touch()
+            (macos / "07-example.test.conf.yaml").touch()
+
+            with mock.patch.object(UNIX_RECIPE, "unix_recipe_branch", return_value="macos"):
+                selected = ORCHESTRATE.discover_recipes(root, "unix")
+                self.assertEqual([recipe.name for recipe in selected], ["07-example"])
+                self.assertEqual(ORCHESTRATE.install_configs(root, selected), [
+                    "recipes/unix/macos/07-example.conf.yaml",
+                ])
+                self.assertEqual(ORCHESTRATE.test_configs(root, selected), [
+                    "recipes/unix/macos/07-example.test.conf.yaml",
+                ])
+            with mock.patch.object(UNIX_RECIPE, "unix_recipe_branch", return_value="linux"):
+                self.assertEqual(ORCHESTRATE.discover_recipes(root, "unix"), [])
+            self.assertEqual(ORCHESTRATE.discover_recipes(root, "windows"), [])
 
     def test_discovers_canonical_platform_recipes(self):
         windows = [recipe.name for recipe in ORCHESTRATE.discover_recipes(REPO_ROOT, "windows")]
@@ -1153,6 +1196,7 @@ class RecipeTests(unittest.TestCase):
             windows,
             [
                 "00-base",
+                "04-keyring",
                 "05-github",
                 "10-dev",
                 "20-node",
@@ -1171,6 +1215,7 @@ class RecipeTests(unittest.TestCase):
             unix,
             [
                 "00-base",
+                "04-keyring",
                 "05-github",
                 "10-dev",
                 "20-node",
@@ -1363,6 +1408,8 @@ class ManifestTests(unittest.TestCase):
                 self.assertTrue(reference.startswith(("install/windows/", "install/shared/")))
 
     def test_every_resource_installer_is_referenced(self):
+        # The keyring session launcher needs a terminal, outside the installer lifecycle.
+        interactive_launcher = REPO_ROOT / "install/unix/keyring-session.py"
         resource_installers = {
             path.relative_to(REPO_ROOT).as_posix()
             for root, pattern in (
@@ -1372,6 +1419,7 @@ class ManifestTests(unittest.TestCase):
             )
             for path in root.rglob(pattern)
             if path.is_file()
+            and path != interactive_launcher
             and "install/lib/" not in path.as_posix()
             and "__pycache__" not in path.parts
         }

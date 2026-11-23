@@ -20,7 +20,7 @@ The plugin validates and invokes each selected resource script without introduci
 | Path | Use |
 | --- | --- |
 | `install/shared/` | Python installers that run on Windows and Unix. |
-| `install/unix/` | Executable, shebang-based Unix installers. |
+| `install/unix/` | Unix resource installers and interactive setup commands. |
 | `install/windows/` | PowerShell installers. |
 | `install/lib/python/lifecycle.py` | Shared npm-global and npm-project backends. |
 | `install/lib/unix/lifecycle.sh` | Unix protocol, GitHub release helpers, and the APT backend. |
@@ -192,12 +192,25 @@ such as `20-node`.
 Its fragments are assembled in this order:
 
 1. `recipes/20-node.before.conf.yaml`, when present.
-2. `recipes/windows/20-node.conf.yaml` or `recipes/unix/20-node.conf.yaml`.
+2. The applicable platform fragment, when present.
 3. `recipes/20-node.after.conf.yaml`, when present.
 
-The shared-before and shared-after phases let common preparation and finalization surround platform-specific work.
-Base is the ordinary `00-base` recipe and is never selected implicitly.
+Shared fragments can declare a recipe on their own.
+A platform or Unix branch fragment can also declare a recipe for the hosts it serves.
+For a recipe with variants, the resolver selects one Unix branch from the host checks below.
 
+| Branch directory | Condition |
+| --- | --- |
+| `macos/` | The Python runtime identifies macOS. |
+| `linux-userspace/` | The runtime identifies Linux and `sudo -n true` fails or is unavailable, including on WSL. |
+| `wsl/` | The Linux kernel release contains `microsoft` and `sudo -n true` succeeds. |
+| `linux/` | The Linux kernel release lacks that marker and `sudo -n true` succeeds. |
+
+The selected branch supplies the platform steps when it has a matching fragment.
+A fragment directly under `recipes/unix/` supplies any generic Unix steps needed when the selected branch has no fragment.
+Installation and platform test files use the same branch checks.
+
+Base is the ordinary `00-base` recipe and is never selected implicitly.
 With no explicit selection,
 the launcher reads the gitignored `.install-recipes` machine plan:
 

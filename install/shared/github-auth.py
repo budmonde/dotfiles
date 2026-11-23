@@ -15,6 +15,7 @@ repo_root = Path(
 sys.path.insert(0, str(repo_root / "install/lib/python"))
 
 from lifecycle import InstallerError, diagnostic, main
+from lifecycle.keyring import keyring_ready
 
 
 HOSTNAME = "github.com"
@@ -26,12 +27,6 @@ TOKEN_ENVIRONMENT_VARIABLES = (
     "GH_TOKEN",
     "GITHUB_ENTERPRISE_TOKEN",
     "GITHUB_TOKEN",
-)
-KEYRING_BOOTSTRAP_ATTRIBUTES = (
-    "application",
-    "dotfiles",
-    "resource",
-    "github-auth-keyring-initialization",
 )
 
 
@@ -159,55 +154,8 @@ def _publish_auth_metadata(source):
     return True
 
 
-def _prepare_linux_keyring():
-    if not sys.platform.startswith("linux"):
-        return True
-
-    secret_tool = shutil.which("secret-tool")
-    if secret_tool is None:
-        diagnostic("Secret Service tools are required for secure GitHub authentication.")
-        return False
-
-    diagnostic("Unlock or create the Secret Service keyring when prompted.")
-    stored = subprocess.run(
-        [
-            secret_tool,
-            "store",
-            "--label=Dotfiles keyring initialization",
-            *KEYRING_BOOTSTRAP_ATTRIBUTES,
-        ],
-        input="initialization",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-        env=_command_environment(),
-    )
-    if stored.returncode != 0:
-        diagnostic("Unable to initialize or unlock the Secret Service keyring.")
-        return False
-
-    cleared = subprocess.run(
-        [secret_tool, "clear", *KEYRING_BOOTSTRAP_ATTRIBUTES],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-        env=_command_environment(),
-    )
-    if cleared.returncode != 0:
-        diagnostic("Unable to remove the temporary keyring initialization item.")
-        return False
-    return True
-
-
 def _run_authorization(arguments):
-    if not _prepare_linux_keyring():
+    if not keyring_ready():
         return False
 
     with tempfile.TemporaryDirectory(prefix="github-auth-") as directory:
