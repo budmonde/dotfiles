@@ -1,3 +1,9 @@
+if [ -L "$HOME/.config/shell" ] && DOTFILES_WORKSPACE_ROOT=$(CDPATH= cd -P -- "$HOME/.config/shell/../../.." && pwd -P); then
+    export DOTFILES_WORKSPACE_ROOT
+else
+    unset DOTFILES_WORKSPACE_ROOT
+fi
+
 _dotfiles_machine_id_path="$HOME/.name"
 if [ -f "$_dotfiles_machine_id_path" ]; then
     if ! _dotfiles_machine_id=$(cat "$_dotfiles_machine_id_path" 2>/dev/null); then
