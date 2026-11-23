@@ -58,6 +58,7 @@ if [ -e "$clone_path" ] || [ -L "$clone_path" ]; then
     exit 1
 fi
 
+export PATH="$HOME/.local/bin:$PATH"
 if ! command -v git >/dev/null 2>&1; then
     printf '%s\n' 'bootstrap.sh: git is required.' >&2
     exit 1
@@ -75,7 +76,15 @@ if ! "$python_command" -c 'import sys; raise SystemExit(sys.version_info < (3, 9
     exit 1
 fi
 
-git clone https://github.com/budmonde/dotfiles.git "$clone_path"
+git -c core.fsmonitor= clone https://github.com/budmonde/dotfiles.git "$clone_path"
+git_state="$(DOTBOT_INSTALL_REPO_ROOT="$clone_path" "$python_command" "$clone_path/install/unix/git.py" apply)"
+case "$git_state" in
+    current|unsupported) ;;
+    *)
+        printf 'bootstrap.sh: Git installation did not converge: %s\n' "$git_state" >&2
+        exit 1
+        ;;
+esac
 printf '00-base\n' >"$clone_path/.install-recipes"
 printf 'Created base recipe plan at %s/.install-recipes\n' "$clone_path"
 

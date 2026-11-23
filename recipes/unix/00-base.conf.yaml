@@ -21,6 +21,7 @@
         if: '[ -n "$WSL_DISTRO_NAME" ]'
 
 - install:
+    - [install/unix/git.py, Installing Git with filesystem monitor configuration support]
     - [install/unix/uv, Installing uv]
     - [install/unix/shellver, Installing Shellver]
     - [install/unix/fzf, Installing fzf]

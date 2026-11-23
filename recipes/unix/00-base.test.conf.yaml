@@ -8,6 +8,12 @@ checks:
       environment-count: ["uv python list --only-installed | grep -c .", '^[1-9][0-9]*\s*$']
       installed-versions: [uv python list --only-installed]
 
+  git:
+    commands:
+      minimum-version:
+        - python3 -c "import re, subprocess; version = tuple(map(int, re.search(r'(\d+)\.(\d+)\.(\d+)', subprocess.check_output(['git', '--version'], text=True)).groups())); assert version >= (2, 36, 0), version; print('supported')"
+        - '(?m)^supported$'
+
   fzf:
     paths:
       fzf-tmux:

@@ -42,6 +42,106 @@ def completed(arguments):
     return subprocess.CompletedProcess(arguments, 0, stdout="", stderr="")
 
 
+class GitInstallerTests(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location(
+            "git_installer", REPO_ROOT / "install/unix/git.py"
+        )
+        self.installer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.installer)
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        root = Path(self.temporary.name)
+        self.installation = root / "data/git-install"
+        self.link = root / "bin/git"
+        for patcher in (
+            mock.patch.object(self.installer, "paths", return_value=(self.installation, self.link)),
+            mock.patch.object(self.installer.platform, "system", return_value="Linux"),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_status_detects_old_git_without_mutating_or_contacting_upstream(self):
+        with mock.patch.object(self.installer.shutil, "which", return_value="/usr/bin/git"), mock.patch.object(
+            self.installer, "version", return_value=(2, 34, 1)
+        ), mock.patch.object(self.installer, "latest_version") as latest:
+            self.assertEqual(self.installer.handle("status", ""), "drifted")
+        latest.assert_not_called()
+        self.assertFalse(self.installation.parent.exists())
+
+    def test_apply_preserves_acceptable_system_git_but_upgrade_installs(self):
+        with mock.patch.object(self.installer.shutil, "which", return_value="/usr/bin/git"), mock.patch.object(
+            self.installer, "version", return_value=(2, 43, 0)
+        ), mock.patch.object(self.installer, "install", return_value="current") as install:
+            self.assertEqual(self.installer.handle("apply", ""), "current")
+            install.assert_not_called()
+            self.assertEqual(self.installer.handle("upgrade", ""), "current")
+            install.assert_called_once()
+
+    def test_apply_repairs_old_system_git(self):
+        with mock.patch.object(self.installer.shutil, "which", return_value="/usr/bin/git"), mock.patch.object(
+            self.installer, "version", return_value=(2, 34, 1)
+        ), mock.patch.object(self.installer, "install", return_value="current") as install:
+            self.assertEqual(self.installer.handle("apply", ""), "current")
+            install.assert_called_once()
+
+    def test_broken_managed_link_is_repairable(self):
+        self.link.parent.mkdir()
+        self.link.symlink_to(self.installation / "bin/git")
+        self.assertEqual(self.installer.handle("status", ""), "drifted")
+
+    def test_unmanaged_old_local_git_is_preserved(self):
+        self.link.parent.mkdir()
+        self.link.write_text("external installation")
+        with mock.patch.object(self.installer, "version", return_value=(2, 34, 1)), mock.patch.object(
+            self.installer, "install"
+        ) as install:
+            self.assertEqual(self.installer.handle("apply", ""), "blocked")
+        install.assert_not_called()
+        self.assertEqual(self.link.read_text(), "external installation")
+
+    def test_build_failure_preserves_existing_managed_git(self):
+        (self.installation / "bin").mkdir(parents=True)
+        (self.installation / "bin/git").write_text("previous installation")
+        self.link.parent.mkdir()
+        self.link.symlink_to(self.installation / "bin/git")
+        with mock.patch.object(self.installer, "latest_version", return_value="2.56.0"), mock.patch.object(
+            self.installer.shutil, "which", return_value="/usr/bin/tool"
+        ), mock.patch.object(self.installer, "run", side_effect=CORE.InstallerError("build failed")):
+            with self.assertRaises(CORE.InstallerError):
+                self.installer.install()
+        self.assertEqual(self.link.read_text(), "previous installation")
+        self.assertEqual(list(self.installation.parent.iterdir()), [self.installation])
+
+    def test_latest_version_excludes_release_candidates(self):
+        response = subprocess.CompletedProcess([], 0, stdout='[{"name":"v2.57.0-rc0"},{"name":"v2.56.0"},{"name":"v2.9.5"}]')
+        with mock.patch.object(self.installer, "capture", return_value=response):
+            self.assertEqual(self.installer.latest_version(), "2.56.0")
+
+    def test_failed_post_install_verification_restores_previous_git(self):
+        (self.installation / "bin").mkdir(parents=True)
+        (self.installation / "bin/git").write_text("previous installation")
+        self.link.parent.mkdir()
+        self.link.symlink_to(self.installation / "bin/git")
+
+        def stage(arguments, cwd=None):
+            if arguments[-1] == "install":
+                staging = Path(next(value.split("=", 1)[1] for value in arguments if value.startswith("DESTDIR=")))
+                payload = staging / self.installation.relative_to(self.installation.anchor)
+                (payload / "bin").mkdir(parents=True)
+                (payload / "bin/git").write_text("replacement installation")
+
+        with mock.patch.object(self.installer, "latest_version", return_value="2.56.0"), mock.patch.object(
+            self.installer.shutil, "which", return_value="/usr/bin/tool"
+        ), mock.patch.object(self.installer, "run", side_effect=stage), mock.patch.object(
+            self.installer, "version", return_value=(2, 56, 0)
+        ), mock.patch.object(self.installer, "capture", return_value=subprocess.CompletedProcess([], 1, stdout="")):
+            with self.assertRaisesRegex(CORE.InstallerError, "HTTPS helper"):
+                self.installer.install()
+        self.assertEqual(self.link.read_text(), "previous installation")
+        self.assertEqual(list(self.installation.parent.iterdir()), [self.installation])
+
+
 class FacadeTests(unittest.TestCase):
     def test_public_backend_imports_remain_available(self):
         for name in (
@@ -1271,7 +1371,9 @@ class ManifestTests(unittest.TestCase):
                 (REPO_ROOT / "install/windows", "*.ps1"),
             )
             for path in root.rglob(pattern)
-            if path.is_file() and "install/lib/" not in path.as_posix()
+            if path.is_file()
+            and "install/lib/" not in path.as_posix()
+            and "__pycache__" not in path.parts
         }
         references = {reference for _, reference, _ in self.references()}
         self.assertEqual(resource_installers - references, set())
