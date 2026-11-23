@@ -256,6 +256,10 @@ def run_install(repo_root: Path, configs: Sequence[str], arguments: Sequence[str
 def run_test(repo_root: Path, configs: Sequence[str], arguments: Sequence[str]) -> int:
     initialize_envtest(repo_root)
     environment = os.environ.copy()
+    if environment.get("DOTFILES_MACHINE_ID"):
+        environment["ENVTEST_MACHINE_ID"] = environment["DOTFILES_MACHINE_ID"]
+    else:
+        environment.pop("ENVTEST_MACHINE_ID", None)
     environment["DOTFILES_ENVTEST_PATH"] = environment.get("PATH", "")
     invocation = [
         "uv",

@@ -1174,6 +1174,21 @@ class RecipeTests(unittest.TestCase):
                     recipe.name,
                 )
 
+    def test_test_launcher_scopes_machine_id_to_envtest(self):
+        for identity in ("workstation", None):
+            with self.subTest(identity=identity):
+                settings = {"ENVTEST_MACHINE_ID": "stale", "ENVTEST_LOG_DIRECTORY": "logs"}
+                if identity:
+                    settings["DOTFILES_MACHINE_ID"] = identity
+                with mock.patch.dict(os.environ, settings, clear=True), mock.patch.object(
+                    ORCHESTRATE, "initialize_envtest"
+                ), mock.patch.object(ORCHESTRATE.subprocess, "run") as run:
+                    ORCHESTRATE.run_test(REPO_ROOT, [], [])
+                    child = run.call_args.kwargs["env"]
+                    self.assertEqual(child.get("ENVTEST_MACHINE_ID"), identity)
+                    self.assertEqual(child["ENVTEST_LOG_DIRECTORY"], "logs")
+                    self.assertEqual(os.environ["ENVTEST_MACHINE_ID"], "stale")
+
     def test_test_adapter_preserves_the_callers_path(self):
         result = subprocess.CompletedProcess([], 0)
         with mock.patch.object(ORCHESTRATE, "initialize_envtest"), mock.patch.object(
