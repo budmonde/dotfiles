@@ -64,7 +64,6 @@ checks:
       version: [git --version, git version]
       configuration: [git config --show-origin --get user.email, '(?i)config[\\/]git[\\/]config"?\s+budmonde@gmail\.com']
       submodules: ["git submodule status --recursive", "!(?m)^-"]
-      hooks-path: ["git config --get core.hooksPath", '\.githooks']
 
   # Editors
   neovim:

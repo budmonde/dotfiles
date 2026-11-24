@@ -15,7 +15,7 @@ Sessionx.vim
 
 # Persistent undo
 [._]*.un~
-undodir/
+/undodir/
 
 # Compiled spell files
 spell/*.spl

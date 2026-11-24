@@ -49,4 +49,3 @@
 
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
-    - [git config core.hooksPath .githooks, Setting up git hooks]

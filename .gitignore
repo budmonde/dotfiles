@@ -2,7 +2,4 @@
 tags
 __pycache__/
 /.install-recipes
-
-# Keep this repository-owned guard; the remaining hooks are installer-created links.
-/.githooks/*
-!/.githooks/pre-commit
+/.worktrees/
