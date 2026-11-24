@@ -1,4 +1,4 @@
-if [ -L "$HOME/.config/shell" ] && DOTFILES_WORKSPACE_ROOT=$(CDPATH= cd -P -- "$HOME/.config/shell/../../.." && pwd -P); then
+if [ -L "$HOME/.config/shell" ] && DOTFILES_WORKSPACE_ROOT=$(CDPATH= cd -P -- "$HOME/.config/shell/../.." && pwd -P); then
     export DOTFILES_WORKSPACE_ROOT
 else
     unset DOTFILES_WORKSPACE_ROOT

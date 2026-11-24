@@ -3,7 +3,7 @@ schema_version: 3
 checks:
   dotfiles-common:
     links:
-      "${DOTFILES_WORKSPACE_ROOT}": ..
+      "${DOTFILES_WORKSPACE_ROOT}": .
     commands:
       worktree-clean: [git status --porcelain, '!\S']
       upstream-synchronized: ['git rev-list --left-right --count "@{upstream}...HEAD"', '^0\s+0\s*$']

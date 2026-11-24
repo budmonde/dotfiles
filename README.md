@@ -3,7 +3,7 @@
 ## Bootstrap
 
 Bootstrap creates a validated machine identity in `~/.name`,
-clones the public repository to `~/dotfiles/common`,
+clones the public repository to `~/dotfiles`,
 and creates a base-only `.install-recipes` plan.
 It refuses to replace an existing identity file and does not clone or name private repositories.
 

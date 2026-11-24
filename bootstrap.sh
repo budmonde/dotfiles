@@ -45,7 +45,7 @@ if [[ ! "$machine_name" =~ ^[a-z0-9][a-z0-9._-]{0,63}$ ]]; then
     exit 1
 fi
 
-default_path="$HOME/dotfiles/common"
+default_path="$HOME/dotfiles"
 if $noninteractive; then
     clone_path="$default_path"
 else

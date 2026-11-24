@@ -34,7 +34,7 @@ if ([string]::IsNullOrWhiteSpace($machineName) -or
     throw 'Machine name must be 1-64 lowercase letters, digits, dots, underscores, or hyphens, and must start with a letter or digit.'
 }
 
-$defaultPath = Join-Path (Join-Path $HOME 'dotfiles') 'common'
+$defaultPath = Join-Path $HOME 'dotfiles'
 if ($nonInteractive) {
     $clonePath = $defaultPath
 } else {

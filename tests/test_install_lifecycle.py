@@ -1623,7 +1623,9 @@ class ManifestOrderingTests(unittest.TestCase):
             self.assertIn("00-base", bootstrap)
             self.assertNotIn("dotfiles-local", bootstrap)
         self.assertIn("[System.IO.FileMode]::CreateNew", windows)
+        self.assertIn("$defaultPath = Join-Path $HOME 'dotfiles'", windows)
         self.assertIn("set -C", unix)
+        self.assertIn('default_path="$HOME/dotfiles"', unix)
         self.assertIn("./install.sh", unix)
         self.assertIn("./test.sh", unix)
 
@@ -1642,13 +1644,21 @@ class ManifestOrderingTests(unittest.TestCase):
             Path(temporary_directory, ".name").write_text(
                 "workstation\n", encoding="utf-8"
             )
+            shell_link = Path(temporary_directory, ".config", "shell")
+            shell_link.parent.mkdir()
+            try:
+                shell_link.symlink_to(REPO_ROOT / "config/shell", target_is_directory=True)
+            except OSError:
+                if os.name != "nt":
+                    raise
+                self.skipTest("creating a directory symlink requires Windows privileges")
             environment = os.environ.copy()
             environment["HOME"] = Path(temporary_directory).as_posix()
             result = subprocess.run(
                 [
                     bash,
                     "-c",
-                    '. "$1"; printf "%s" "$DOTFILES_MACHINE_ID"',
+                    '. "$1"; printf "%s\n" "$DOTFILES_MACHINE_ID" "$DOTFILES_WORKSPACE_ROOT"',
                     "bash",
                     (REPO_ROOT / "config/shell/machine.sh").as_posix(),
                 ],
@@ -1659,7 +1669,9 @@ class ManifestOrderingTests(unittest.TestCase):
             )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "workstation")
+        identity, workspace_root = result.stdout.splitlines()
+        self.assertEqual(identity, "workstation")
+        self.assertTrue(os.path.samefile(workspace_root, REPO_ROOT))
 
     def test_powershell_machine_loader_exports_the_canonical_identity(self):
         powershell = shutil.which("pwsh") or shutil.which("powershell")
@@ -1680,7 +1692,8 @@ class ManifestOrderingTests(unittest.TestCase):
                     "-NoProfile",
                     "-NonInteractive",
                     "-Command",
-                    "& '{}' -HomePath '{}'; Write-Output $env:DOTFILES_MACHINE_ID".format(
+                    ("& '{}' -HomePath '{}'; "
+                     "Write-Output $env:DOTFILES_MACHINE_ID $env:DOTFILES_WORKSPACE_ROOT").format(
                         script_path, home_path
                     ),
                 ],
@@ -1690,7 +1703,9 @@ class ManifestOrderingTests(unittest.TestCase):
             )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.strip(), "workstation")
+        identity, workspace_root = result.stdout.splitlines()
+        self.assertEqual(identity, "workstation")
+        self.assertTrue(os.path.samefile(workspace_root, REPO_ROOT))
 
     def test_prompts_show_machine_identity_and_current_hostname(self):
         powershell = shutil.which("pwsh") or shutil.which("powershell")
