@@ -245,7 +245,7 @@ The launcher rejects invalid order rather than sorting it.
 They pass the shared and selected test fragments to Envtest.
 
 The orchestrator defaults to the checkout that contains it.
-Launchers can pass `--repo-root PATH` to select another checkout's machine plan, recipes, and Envtest pin while reusing the same Dotbot runtime and plugins.
+Launchers can pass `--repo-root PATH` to select another checkout's machine plan and recipes while reusing the Dotbot and Envtest pins beside the orchestrator.
 
 ## Verification
 

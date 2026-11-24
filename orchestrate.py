@@ -182,10 +182,10 @@ def initialize_install_submodules() -> None:
     )
 
 
-def initialize_envtest(repo_root: Path) -> None:
+def initialize_envtest() -> None:
     subprocess.run(
         ["git", "submodule", "update", "--init", "--recursive", "--", "envtest"],
-        cwd=str(repo_root),
+        cwd=str(COMMON_ROOT),
         check=True,
     )
 
@@ -213,7 +213,7 @@ def run_install(repo_root: Path, configs: Sequence[str], arguments: Sequence[str
 
 
 def run_test(repo_root: Path, configs: Sequence[str], arguments: Sequence[str]) -> int:
-    initialize_envtest(repo_root)
+    initialize_envtest()
     environment = os.environ.copy()
     if environment.get("DOTFILES_MACHINE_ID"):
         environment["ENVTEST_MACHINE_ID"] = environment["DOTFILES_MACHINE_ID"]
@@ -224,7 +224,7 @@ def run_test(repo_root: Path, configs: Sequence[str], arguments: Sequence[str]) 
         "uv",
         "run",
         str(COMMON_ROOT / "tests" / "envtest_adapter.py"),
-        str(repo_root / "envtest" / "envtest.py"),
+        str(COMMON_ROOT / "envtest" / "envtest.py"),
         "--root",
         str(repo_root),
     ]
