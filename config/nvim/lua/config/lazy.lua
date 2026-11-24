@@ -153,7 +153,7 @@ local filesystem_plugins = {
                     enable = true,
                     show_on_dirs = true,
                     show_on_open_dirs = false,
-                    timeout = vim.fn.has("win32") == 1 and 2000 or 400,
+                    timeout = 2000,
                 },
                 -- Suppress libuv-watcher exhaustion on noisy trees.
                 filesystem_watchers = {
