@@ -1,8 +1,6 @@
-# includes must go at the top
-# host-specific customization
+# Load machine-specific host settings before the shared defaults.
 Include ~/.ssh/config_local
 
-# include must go at the top
 Host github.com
     User git
     IdentityFile ~/.ssh/git/github_ed25519

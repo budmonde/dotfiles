@@ -105,7 +105,8 @@
 [includeIf "gitdir:/mnt/"]
 	path = ~/.config/git/config-windows-mount
 
-[include]
-	path = ~/.config/git/config.local
 [credential "https://git.overleaf.com"]
 	provider = generic
+
+[include]
+	path = config.local

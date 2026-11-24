@@ -60,6 +60,14 @@ A private D-Bus session started by the launcher lasts until that shell exits.
 For managed GitHub authentication and SSH key setup, complete [keyring setup](#keyring), then run the common installer and tester with `--recipe github` in the same session.
 If your machine plan includes `05-github`, put `04-keyring` before it.
 
+## Machine-local Git and SSH settings
+
+For machine-specific Git settings, create `config.local` alongside Git’s installed `config` file, normally at `~/.config/git/config.local`.
+For machine-specific SSH hosts, create `~/.ssh/config_local`.
+You can also keep the SSH file at `config/ssh/config_local` in this checkout and link it to `~/.ssh/config_local` on machines that need it.
+Git and SSH skip their optional files when they are absent, and the repository ignores both local files.
+Avoid UTF-16, which Git and SSH reject.
+
 ## Installer Development
 
 Dotbot recipes select and order lifecycle-aware resource installers from `install/`.
