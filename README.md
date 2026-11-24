@@ -2,45 +2,42 @@
 
 ## Bootstrap
 
-Bootstrap creates a validated machine identity in `~/.name`,
-clones the public repository to `~/dotfiles`,
-and creates a base-only `.install-recipes` plan.
-It refuses to replace an existing identity file and does not clone or name private repositories.
+Bootstrap clones the public dotfiles, sets the machine name in `~/.name`, and creates a base-only `.install-recipes` plan.
+Interactive runs prompt for the clone path, defaulting to `~/dotfiles`.
+If a name already exists, answering `n` or pressing Enter keeps it.
 
-On a fresh Windows machine,
-set up a local account if needed by opening Command Prompt during initial boot with `Shift + F10` and running `OOBE\BYPASSNRO`.
-Then run PowerShell as administrator:
-
-```powershell
-irm https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.ps1 | iex
-```
-
-For non-interactive Windows bootstrap:
-
-```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.ps1))) --machine_name workstation
-```
-
-The Windows entry point ensures winget is on `PATH`,
-installs Git with Windows OpenSSH and installs Python,
-and enables the `ssh-agent` service.
-
-On a fresh Unix machine with Git and Python 3.9 or newer:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.sh | bash
-```
-
-For non-interactive Unix bootstrap:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap.sh | bash -s -- --machine_name workstation
-```
-
+Use `-y` or `--yes` to keep an existing name and use `~/dotfiles` without prompts.
+On a machine without `~/.name`, use `--machine_name workstation` to supply the name and skip the prompts.
+Machine names use 1–64 lowercase letters, digits, dots, underscores, or hyphens and start with a letter or digit.
 After bootstrap, run the printed installer and tester commands.
 
-If an older installation has no `~/.name`, create it before setting up GitHub authentication.
-Use a machine name of 1–64 lowercase letters, digits, dots, underscores, or hyphens, starting with a letter or digit.
+### Unix
+
+Run with Git and Python 3.9 or newer.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap/init.sh | bash
+```
+
+To pass options, replace the final `bash` with `bash -s -- --yes` or `bash -s -- --machine_name workstation`.
+
+### Windows
+
+If you need a local account and your Windows setup supports `OOBE\BYPASSNRO`, press `Shift + F10` during initial setup and run that command.
+After Windows setup, run PowerShell as administrator.
+The script uses WinGet to install Git and Python and starts the OpenSSH agent.
+
+```powershell
+irm https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap/init.ps1 | iex
+```
+
+To pass options, invoke the downloaded script as a script block.
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/budmonde/dotfiles/main/bootstrap/init.ps1))) --yes
+```
+
+Use `--machine_name workstation` in place of `--yes` to name a new machine.
 
 ## Keyring
 
@@ -57,6 +54,7 @@ A private D-Bus session started by the launcher lasts until that shell exits.
 
 ## GitHub access
 
+If an older installation has no `~/.name`, create it before setting up GitHub authentication.
 For managed GitHub authentication and SSH key setup, complete [keyring setup](#keyring), then run the common installer and tester with `--recipe github` in the same session.
 If your machine plan includes `05-github`, put `04-keyring` before it.
 

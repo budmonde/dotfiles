@@ -1577,7 +1577,7 @@ class ManifestOrderingTests(unittest.TestCase):
         self.assertFalse((REPO_ROOT / "test-profile.ps1").exists())
 
     def test_windows_bootstrap_seeds_only_the_base_recipe(self):
-        bootstrap = (REPO_ROOT / "bootstrap.ps1").read_text(encoding="utf-8")
+        bootstrap = (REPO_ROOT / "bootstrap/init.ps1").read_text(encoding="utf-8")
 
         self.assertIn(
             '[System.IO.File]::WriteAllText($recipePlanPath, "00-base`n", $utf8WithoutBom)',
@@ -1612,20 +1612,23 @@ class ManifestOrderingTests(unittest.TestCase):
         self.assertNotIn("[Environment]::GetEnvironmentVariable", vscode)
         self.assertNotIn("[Environment]::SetEnvironmentVariable", vscode)
 
-    def test_bootstraps_create_machine_identity_without_overwriting_it(self):
-        windows = (REPO_ROOT / "bootstrap.ps1").read_text(encoding="utf-8")
-        unix = (REPO_ROOT / "bootstrap.sh").read_text(encoding="utf-8")
+    def test_bootstraps_ask_before_replacing_an_existing_machine_identity(self):
+        windows = (REPO_ROOT / "bootstrap/init.ps1").read_text(encoding="utf-8")
+        unix = (REPO_ROOT / "bootstrap/init.sh").read_text(encoding="utf-8")
 
         for bootstrap in (windows, unix):
+            self.assertIn("-y", bootstrap)
+            self.assertIn("--yes", bootstrap)
             self.assertIn("--machine_name", bootstrap)
             self.assertIn("DOTFILES_MACHINE_ID", bootstrap)
-            self.assertIn("already exists", bootstrap)
+            self.assertRegex(bootstrap, r"Overwrite the machine name[^\n]*\[y/N\]")
             self.assertIn("00-base", bootstrap)
             self.assertNotIn("dotfiles-local", bootstrap)
         self.assertIn("[System.IO.FileMode]::CreateNew", windows)
-        self.assertIn("$defaultPath = Join-Path $HOME 'dotfiles'", windows)
+        self.assertIn("[System.IO.FileMode]::Truncate", windows)
+        self.assertIn("$clonePath = Join-Path $HOME 'dotfiles'", windows)
         self.assertIn("set -C", unix)
-        self.assertIn('default_path="$HOME/dotfiles"', unix)
+        self.assertIn('clone_path="$HOME/dotfiles"', unix)
         self.assertIn("./install.sh", unix)
         self.assertIn("./test.sh", unix)
 
