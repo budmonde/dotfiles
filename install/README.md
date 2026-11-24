@@ -244,6 +244,9 @@ The launcher rejects invalid order rather than sorting it.
 `test.ps1` and `test.sh` resolve the same default machine plan and `--recipe` selectors.
 They pass the shared and selected test fragments to Envtest.
 
+The orchestrator defaults to the checkout that contains it.
+Launchers can pass `--repo-root PATH` to select another checkout's machine plan, recipes, and Envtest pin while reusing the same Dotbot runtime and plugins.
+
 ## Verification
 
 Validate the selected recipes without running installers:

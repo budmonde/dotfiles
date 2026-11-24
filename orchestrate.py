@@ -8,7 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / "install/lib"))
+COMMON_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(COMMON_ROOT / "install/lib"))
 from recipe_resolver import RecipeError, has_install_fragments, resolve_fragments
 
 
@@ -32,14 +33,15 @@ class Recipe:
 
 def parse_recipe_arguments(
     arguments: Sequence[str],
-) -> Tuple[Optional[List[str]], List[str]]:
+) -> Tuple[Optional[Path], Optional[List[str]], List[str]]:
     parser = _RecipeArgumentParser(add_help=False, allow_abbrev=False)
+    parser.add_argument("--repo-root", type=Path)
     parser.add_argument("--recipe", action="append", nargs="+")
     options, remaining = parser.parse_known_args(list(arguments))
     selectors = None
     if options.recipe:
         selectors = [value for group in options.recipe for value in group]
-    return selectors, [value for value in remaining if value != "--"]
+    return options.repo_root, selectors, [value for value in remaining if value != "--"]
 
 
 def discover_recipes(repo_root: Path, platform: str) -> List[Recipe]:
@@ -166,16 +168,16 @@ def _workflow_configs(repo_root: Path, recipes: Iterable[Recipe], workflow: str)
     return configs
 
 
-def initialize_install_submodules(repo_root: Path) -> None:
+def initialize_install_submodules() -> None:
     targets = ["dotbot", "dotbot-plugins/install"]
     subprocess.run(
         ["git", "submodule", "sync", "--quiet", "--recursive", "--", *targets],
-        cwd=str(repo_root),
+        cwd=str(COMMON_ROOT),
         check=True,
     )
     subprocess.run(
         ["git", "submodule", "update", "--init", "--recursive", "--", *targets],
-        cwd=str(repo_root),
+        cwd=str(COMMON_ROOT),
         check=True,
     )
 
@@ -189,14 +191,15 @@ def initialize_envtest(repo_root: Path) -> None:
 
 
 def run_install(repo_root: Path, configs: Sequence[str], arguments: Sequence[str]) -> int:
-    initialize_install_submodules(repo_root)
-    plugin_root = repo_root / "dotbot-plugins" / "install"
+    initialize_install_submodules()
+    plugins = COMMON_ROOT / "dotbot-plugins"
+    plugin_root = plugins / "install"
     sys.path.insert(0, str(plugin_root))
     from runner import run_dotbot
 
     invocation = [
         "--plugin",
-        str(repo_root / "dotbot-plugins" / "failure_output.py"),
+        str(plugins / "failure_output.py"),
         "--plugin",
         str(plugin_root / "install.py"),
         "-d",
@@ -205,7 +208,7 @@ def run_install(repo_root: Path, configs: Sequence[str], arguments: Sequence[str
         *configs,
         *arguments,
     ]
-    dotbot = repo_root / "dotbot" / "bin" / "dotbot"
+    dotbot = COMMON_ROOT / "dotbot" / "bin" / "dotbot"
     return run_dotbot(dotbot, invocation, cwd=repo_root)
 
 
@@ -220,7 +223,7 @@ def run_test(repo_root: Path, configs: Sequence[str], arguments: Sequence[str]) 
     invocation = [
         "uv",
         "run",
-        str(repo_root / "tests" / "envtest_adapter.py"),
+        str(COMMON_ROOT / "tests" / "envtest_adapter.py"),
         str(repo_root / "envtest" / "envtest.py"),
         "--root",
         str(repo_root),
@@ -261,9 +264,9 @@ def main(
     workflow = values.pop(0)
     if values and values[0] in {"unix", "windows"}:
         platform = values.pop(0)
-    root = (repo_root or Path(__file__).resolve().parent).resolve()
     try:
-        selectors, remaining = parse_recipe_arguments(values)
+        selected_root, selectors, remaining = parse_recipe_arguments(values)
+        root = (selected_root or repo_root or COMMON_ROOT).resolve()
         recipes = discover_recipes(root, platform or host_family())
         selection = (
             resolve_recipes(recipes, selectors)

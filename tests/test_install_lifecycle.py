@@ -1302,7 +1302,8 @@ class RecipeTests(unittest.TestCase):
             ),
         )
         for arguments, expected_selectors, expected_remaining in cases:
-            selectors, remaining = ORCHESTRATE.parse_recipe_arguments(arguments)
+            root, selectors, remaining = ORCHESTRATE.parse_recipe_arguments(arguments)
+            self.assertIsNone(root)
             self.assertEqual(selectors, expected_selectors)
             self.assertEqual(remaining, expected_remaining)
 
