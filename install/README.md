@@ -10,7 +10,7 @@ The plugin validates and invokes each selected resource script without introduci
 | --- | --- |
 | Recipe config | Select and order links, shell actions, cleanup, and resource installers. |
 | `dotbot-install` runner | Consume lifecycle CLI flags and invoke unmodified Dotbot. |
-| `dotbot-install` directive | Validate path affinity, select the script host, and enforce the lifecycle protocol. |
+| `dotbot-install` directive | Resolve installer paths, launch scripts, and enforce the lifecycle protocol. |
 | Resource installer | Detect state, converge ordinary intent, and perform explicit upgrades. |
 | Backend library | Share package-manager or runtime mechanics without selecting resources. |
 | Envtest contract | Verify the resulting environment after installation. |
@@ -19,19 +19,20 @@ The plugin validates and invokes each selected resource script without introduci
 
 | Path | Use |
 | --- | --- |
-| `install/shared/` | Python installers that run on Windows and Unix. |
-| `install/unix/` | Unix resource installers and interactive setup commands. |
-| `install/windows/` | PowerShell installers. |
-| `install/lib/python/lifecycle.py` | Shared npm-global and npm-project backends. |
-| `install/lib/unix/lifecycle.sh` | Unix protocol, GitHub release helpers, and the APT backend. |
-| `install/lib/windows/Lifecycle.psm1` | Windows protocol, WinGet, and PowerShell Gallery backends. |
-| `orchestrate.py` | Shared recipe selection and fragment assembly with Dotbot and envtest workflow adapters. |
-| `recipes/` | Shared-before, platform, shared-after, and envtest recipe fragments. |
+| `recipes/<number>-<name>/` | Shared phases, platform fragments, selectors, and Envtest checks for one recipe. |
+| `install/resources/` | Dotbot installers, with a subdirectory for each tool that has multiple implementations. |
+| `install/select/` | Read-only probes invoked by recipe selectors. |
+| `install/keyring-session.py` | Opens an unlocked keyring session on headless Linux. |
+| `install/lib/recipe_resolver.py` | Recipe fragment selection and assembly. |
+| `install/lib/lifecycle/python/` | Python protocol adapter and npm, uv, keyring, and SSH helpers. |
+| `install/lib/lifecycle/bash.sh` | Bash protocol adapter, GitHub release helpers, and the APT backend. |
+| `install/lib/lifecycle/PowerShell.psm1` | PowerShell protocol adapter with implementations in `powershell/`. |
+| `orchestrate.py` | CLI selection, machine plans, and execution through Dotbot or Envtest. |
 
-Platform affinity is structural.
-A Windows recipe may reference `install/windows/` or `install/shared/`.
-A Unix recipe may reference `install/unix/` or `install/shared/`.
-The plugin rejects a mismatched path before running any installer.
+Put single-file installers directly in `install/resources/`.
+When a tool has separate implementations, keep them together, as in `node/unix.sh` and `node/windows.ps1`.
+Each platform recipe names the applicable file, and each installer checks its own platform-specific requirements.
+Resolve resource and link paths relative to the consuming checkout root.
 
 ## Dotbot surface
 
@@ -41,8 +42,8 @@ A nested list supplies an argument vector without shell parsing:
 
 ```yaml
 - install:
-    - [[install/windows/winget.ps1, BurntSushi.ripgrep.MSVC], Installing ripgrep]
-    - [[install/windows/node.ps1, -RequestedVersion, "24.19.0"], Installing Node.js]
+    - [[install/resources/winget.ps1, BurntSushi.ripgrep.MSVC], Installing ripgrep]
+    - [[install/resources/node/windows.ps1, -RequestedVersion, "24.19.0"], Installing Node.js]
 ```
 
 The plugin preflights every entry before execution,
@@ -107,7 +108,7 @@ An APT resource receives its package name from the recipe:
 #!/usr/bin/env bash
 set -euo pipefail
 
-source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/unix/lifecycle.sh"
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/lifecycle/bash.sh"
 
 package="${1:?APT package name is required}"
 shift
@@ -123,41 +124,39 @@ param(
     [string]$RequestedVersion
 )
 
-Import-Module (Join-Path $env:DOTBOT_INSTALL_REPO_ROOT 'install\lib\windows\Lifecycle.psm1') -Force
+Import-Module (Join-Path $env:DOTBOT_INSTALL_REPO_ROOT 'install\lib\lifecycle\PowerShell.psm1') -Force
 
 Invoke-DotbotInstaller {
     Invoke-WinGetPackage -PackageId $PackageId -Operation $Operation -RequestedVersion $RequestedVersion
 }
 ```
 
-A shared npm-global resource receives its package name from the recipe:
+A Python resource adds `install/lib/` to its import path.
+The npm resource receives the package name from its recipe:
 
 ```python
-import os
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(os.environ["DOTBOT_INSTALL_REPO_ROOT"]) / "install/lib/python"))
-
-from lifecycle import main, npm_global
+from lifecycle.python import core, npm
 
 
-package, operation = sys.argv[1:]
-raise SystemExit(main(lambda selected, version: npm_global(package, selected, version), [operation]))
+def install(operation, requested_version):
+    return npm.global_package(package, operation=operation, requested_version=requested_version)
 ```
 
-A shared `uv` source-backed tool keeps its source policy in the thin resource wrapper:
+Pass the handler to `core.main()` with the lifecycle arguments.
+A uv resource uses the same controls and can supply a source:
 
 ```python
-from lifecycle import main, uv_tool
+from lifecycle.python import uv
 
 
-SOURCE = "git+ssh://git@example.com/team/example.git"
-
-
-raise SystemExit(
-    main(lambda operation, version: uv_tool("example", "example", operation, version, source=SOURCE))
-)
+def install(operation, requested_version):
+    return uv.tool(
+        "example",
+        "example",
+        operation=operation,
+        requested_version=requested_version,
+        source="git+ssh://git@example.com/team/example.git",
+    )
 ```
 
 An exact recipe version can accompany a Git source requirement.
@@ -187,28 +186,30 @@ Simple repository commands remain Dotbot `shell` entries.
 
 ## Recipe selection
 
-Every logical recipe has a two-digit order and tag,
-such as `20-node`.
-Its fragments are assembled in this order:
+Every recipe has a directory named by its two-digit order and tag, such as `recipes/20-node/`.
+The shell and PowerShell launchers select the Unix and Windows families respectively.
+Within that directory, installation assembles `before.conf.yaml`, the chosen platform fragment, and `after.conf.yaml` in that order, omitting absent files.
+Envtest uses `test.conf.yaml` followed by the selected platform's test fragment.
+A recipe can provide only shared install fragments.
 
-1. `recipes/20-node.before.conf.yaml`, when present.
-2. The applicable platform fragment, when present.
-3. `recipes/20-node.after.conf.yaml`, when present.
+Use `unix.conf.yaml` or `windows.conf.yaml` for a platform with one implementation.
+Its optional Envtest fragment has the same stem and ends in `.test.conf.yaml`.
+When the implementation branches, use a directory of the same stem containing `select.yaml`.
+See [keyring's Unix selector](../recipes/04-keyring/unix/select.yaml) for the format.
 
-Shared fragments can declare a recipe on their own.
-A platform or Unix branch fragment can also declare a recipe for the hosts it serves.
-For a recipe with variants, the resolver selects one Unix branch from the host checks below.
+Each selector declares a `probe` mapping from fact names to command vectors and a `select` list of routes.
+Probes name Python scripts under `install/select/` relative to the checkout root and pass literal arguments.
+A probe reports one value on stdout, with diagnostics on stderr.
+Each route requires an exact match for all facts in `when`.
+Declare the cheapest discriminating fact first so a route can stop before running additional probes.
 
-| Branch directory | Condition |
-| --- | --- |
-| `macos/` | The Python runtime identifies macOS. |
-| `linux-userspace/` | The runtime identifies Linux and `sudo -n true` fails or is unavailable, including on WSL. |
-| `wsl/` | The Linux kernel release contains `microsoft` and `sudo -n true` succeeds. |
-| `linux/` | The Linux kernel release lacks that marker and `sudo -n true` succeeds. |
-
-The selected branch supplies the platform steps when it has a matching fragment.
-A fragment directly under `recipes/unix/` supplies any generic Unix steps needed when the selected branch has no fragment.
-Installation and platform test files use the same branch checks.
+The resolver requires one matching route.
+Its `target` names a sibling leaf or another selector directory.
+A `null` target explicitly uses the shared fragments.
+Branch names have meaning through the selector that points to them.
+Planning fails when a probe fails, a selected target is missing, or the routes yield zero or multiple matches.
+Each selected recipe resolves its install and test fragments together.
+The resolver loads Dotbot's vendored PyYAML on demand when it first encounters a selector.
 
 Base is the ordinary `00-base` recipe and is never selected implicitly.
 With no explicit selection,
@@ -241,7 +242,7 @@ The launcher rejects invalid order rather than sorting it.
 ```
 
 `test.ps1` and `test.sh` resolve the same default machine plan and `--recipe` selectors.
-They assemble each selected recipe's shared and platform `.test.conf.yaml` files and invoke envtest independently of Dotbot.
+They pass the shared and selected test fragments to Envtest.
 
 ## Verification
 

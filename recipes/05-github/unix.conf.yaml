@@ -1,0 +1,3 @@
+- install:
+    - [install/resources/github-auth.py, Authenticating GitHub CLI (the device code is in the clipboard)]
+    - [install/resources/github-ssh-key.py, Configuring the GitHub SSH key]

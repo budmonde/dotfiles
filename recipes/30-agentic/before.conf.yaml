@@ -1,0 +1,21 @@
+# Shared agentic configuration applied before the platform-specific fragment.
+
+- defaults:
+    link:
+        create: true
+        relink: true
+
+- clean:
+    - '~'
+    - ~/.config
+    - ~/.config/claude
+    - ~/.config/codex
+
+- link:
+    ~/.config/codex/config.toml: config/codex/config.toml
+    ~/.config/claude/settings.json: config/claude/settings.json
+    ~/.config/claude/keybindings.json: config/claude/keybindings.json
+
+- install:
+    - [[install/resources/npm-global.py, "@openai/codex"], Installing Codex CLI]
+    - [[install/resources/npm-global.py, "@anthropic-ai/claude-code"], Installing Claude Code]

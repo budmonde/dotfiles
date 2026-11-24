@@ -6,25 +6,15 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence, Tuple
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / "install/lib/python"))
-from unix_recipe import platform_recipe_files, unix_recipe_fragment
+sys.path.insert(0, str(Path(__file__).resolve().parent / "install/lib"))
+from recipe_resolver import RecipeError, has_install_fragments, resolve_fragments
 
 
 RECIPE_NAME = re.compile(r"^(?P<order>[0-9]{2})-(?P<tag>[a-z0-9][a-z0-9-]*)$")
-RECIPE_CONFIG = re.compile(
-    r"^(?P<name>[0-9]{2}-[a-z0-9][a-z0-9-]*)\.conf\.yaml$"
-)
-SHARED_CONFIG = re.compile(
-    r"^(?P<name>[0-9]{2}-[a-z0-9][a-z0-9-]*)\.(?:before|after)\.conf\.yaml$"
-)
 RANGE_SELECTOR = re.compile(r"^(?P<start>[0-9]{2})\.\.\.(?P<end>[0-9]{2})$")
 WORKFLOWS = {"install", "test"}
-
-
-class RecipeError(RuntimeError):
-    pass
 
 
 class _RecipeArgumentParser(argparse.ArgumentParser):
@@ -57,69 +47,33 @@ def discover_recipes(repo_root: Path, platform: str) -> List[Recipe]:
         raise RecipeError("Unsupported recipe platform: {}".format(platform))
 
     recipes_root = repo_root / "recipes"
-    identities: Dict[str, Recipe] = {}
-    orders: Dict[int, str] = {}
-    tags: Dict[str, str] = {}
-    platform_names = set()
-    unix_variant_names = set()
+    if not recipes_root.is_dir():
+        raise RecipeError("Recipe directory does not exist: {}".format(recipes_root))
 
-    def register_identity(name: str, family: str) -> None:
-        identity = _recipe(name, family)
-        existing_order = orders.get(identity.order)
-        if existing_order is not None and existing_order != name:
+    recipes = []
+    orders = {}
+    tags = {}
+    for directory in sorted(recipes_root.iterdir()):
+        if not directory.is_dir():
+            continue
+        recipe = _recipe(directory.name, platform)
+        if recipe.order in orders:
             raise RecipeError(
                 "Recipe order {:02d} is shared by {} and {}".format(
-                    identity.order, existing_order, name
+                    recipe.order, orders[recipe.order], recipe.name
                 )
             )
-        existing_tag = tags.get(identity.tag)
-        if existing_tag is not None and existing_tag != name:
+        if recipe.tag in tags:
             raise RecipeError(
                 "Recipe tag {} is shared by {} and {}".format(
-                    identity.tag, existing_tag, name
+                    recipe.tag, tags[recipe.tag], recipe.name
                 )
             )
-        orders[identity.order] = name
-        tags[identity.tag] = name
-        identities.setdefault(name, identity)
-
-    for family in ("unix", "windows"):
-        family_root = recipes_root / family
-        if not family_root.is_dir():
-            raise RecipeError("Recipe directory does not exist: {}".format(family_root))
-        for path in platform_recipe_files(family_root):
-            if path.name.endswith(".test.conf.yaml"):
-                continue
-            match = RECIPE_CONFIG.fullmatch(path.name)
-            if match is None:
-                raise RecipeError("Invalid recipe filename: {}".format(path))
-            name = match.group("name")
-            register_identity(name, family)
-            if path.parent != family_root:
-                unix_variant_names.add(name)
-            elif family == platform:
-                platform_names.add(name)
-
-    for path in sorted(recipes_root.glob("*.conf.yaml")):
-        if path.name.endswith(".test.conf.yaml"):
-            continue
-        match = SHARED_CONFIG.fullmatch(path.name)
-        if match is None:
-            raise RecipeError("Invalid shared recipe filename: {}".format(path))
-        name = match.group("name")
-        register_identity(name, platform)
-        platform_names.add(name)
-
-    if platform == "unix":
-        for name in unix_variant_names - platform_names:
-            generic = recipes_root / "unix" / "{}.conf.yaml".format(name)
-            if unix_recipe_fragment(generic).is_file():
-                platform_names.add(name)
-
-    return [
-        Recipe(name=name, order=identities[name].order, tag=identities[name].tag, platform=platform)
-        for name in sorted(platform_names, key=lambda value: identities[value].order)
-    ]
+        orders[recipe.order] = recipe.name
+        tags[recipe.tag] = recipe.name
+        if has_install_fragments(directory, platform):
+            recipes.append(recipe)
+    return recipes
 
 
 def resolve_recipes(recipes: Sequence[Recipe], selectors: Sequence[str]) -> List[Recipe]:
@@ -193,37 +147,22 @@ def read_machine_plan(path: Path, recipes: Sequence[Recipe]) -> List[Recipe]:
 
 
 def install_configs(repo_root: Path, recipes: Iterable[Recipe]) -> List[str]:
-    configs = []
-    for recipe in recipes:
-        before = repo_root / "recipes" / "{}.before.conf.yaml".format(recipe.name)
-        platform = repo_root / "recipes" / recipe.platform / "{}.conf.yaml".format(recipe.name)
-        after = repo_root / "recipes" / "{}.after.conf.yaml".format(recipe.name)
-        recipe_configs = [
-            path for path in (before, unix_recipe_fragment(platform), after) if path.is_file()
-        ]
-        if not recipe_configs:
-            raise RecipeError("Recipe has no install configuration: {}".format(recipe.name))
-        configs.extend(path.relative_to(repo_root).as_posix() for path in recipe_configs)
-    return configs
+    return _workflow_configs(repo_root, recipes, "install")
 
 
 def test_configs(repo_root: Path, recipes: Iterable[Recipe]) -> List[str]:
+    return _workflow_configs(repo_root, recipes, "test")
+
+
+def _workflow_configs(repo_root: Path, recipes: Iterable[Recipe], workflow: str) -> List[str]:
     configs = []
     for recipe in recipes:
-        shared = repo_root / "recipes" / "{}.test.conf.yaml".format(recipe.name)
-        platform = (
-            repo_root
-            / "recipes"
-            / recipe.platform
-            / "{}.test.conf.yaml".format(recipe.name)
-        )
-        found = False
-        for path in (shared, unix_recipe_fragment(platform)):
-            if path.is_file():
-                configs.append(path.relative_to(repo_root).as_posix())
-                found = True
-        if not found:
-            raise RecipeError("Recipe has no test configuration: {}".format(recipe.name))
+        directory = repo_root / "recipes" / recipe.name
+        fragments = resolve_fragments(repo_root, directory, recipe.platform)
+        selected = fragments.install if workflow == "install" else fragments.test
+        if not selected:
+            raise RecipeError("Recipe has no {} configuration: {}".format(workflow, recipe.name))
+        configs.extend(selected)
     return configs
 
 
@@ -320,6 +259,8 @@ def main(
         return 2
 
     workflow = values.pop(0)
+    if values and values[0] in {"unix", "windows"}:
+        platform = values.pop(0)
     root = (repo_root or Path(__file__).resolve().parent).resolve()
     try:
         selectors, remaining = parse_recipe_arguments(values)

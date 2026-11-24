@@ -1,0 +1,52 @@
+# Platform fragment for recipe 00-base.
+# Requires: admin shell (for symlinks), winget, python
+#
+# The profile-loader helper resolves MyDocuments at runtime and writes regular
+# profile loaders, so a machine-specific symlink never enters OneDrive.
+
+- clean:
+    - '~'
+    - '~/.local/bin'
+    - "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState"
+
+- link:
+    # Powershell
+    ~/.profile.ps1: config/profile.ps1
+
+    # Windows terminal
+    "%LOCALAPPDATA%\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json":
+        path: config/terminal/settings.json
+        force: true # force needed to overwrite windows default
+
+    # Windows launchers for bin commands
+    ~/.local/bin/git-filter-repo.cmd: bin/git-filter-repo.cmd
+    ~/.local/bin/set-title.cmd: bin/set-title.cmd
+    ~/.local/bin/push-notify.ps1: bin/push-notify.ps1
+    ~/.local/bin/push-notify.cmd:
+        path: bin/push-notify.cmd
+        force: true
+    ~/.local/bin/optimize-wsl-vhd.bat: bin/optimize-wsl-vhd.bat
+
+- install:
+    - [[install/resources/winget.ps1, astral-sh.uv], Installing uv]
+    - [install/resources/shellver/windows.ps1, Installing Shellver]
+    - [install/resources/profile-loader.ps1, Installing the PowerShell profile loader]
+    - [[install/resources/winget.ps1, Microsoft.PowerShell], Installing PowerShell 7]
+
+- shell:
+    - command: >-
+        pwsh -NoProfile -NonInteractive -Command
+        "if ((Get-ExecutionPolicy -Scope CurrentUser) -eq 'Restricted') { Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }"
+      description: Setting PowerShell 7 execution policy
+
+- install:
+    - [install/resources/fzf/windows.ps1, Installing fzf]
+    - [[install/resources/powershell-gallery.ps1, PSReadLine, -SkipPublisherCheck], Installing PSReadLine]
+    - [[install/resources/powershell-gallery.ps1, PSFzf], Installing PSFzf]
+    - [[install/resources/powershell-gallery.ps1, CompletionPredictor], Installing CompletionPredictor]
+    - [[install/resources/winget.ps1, BurntSushi.ripgrep.MSVC], Installing ripgrep]
+    - [[install/resources/winget.ps1, Rclone.Rclone], Installing rclone]
+    - [[install/resources/winget.ps1, Neovim.Neovim], Installing Neovim]
+    - [[install/resources/winget.ps1, GitHub.cli], Installing GitHub CLI]
+    - [install/resources/fonts.ps1, Installing configured fonts]
+    - [install/resources/debloat.ps1, Applying Windows debloat configuration]

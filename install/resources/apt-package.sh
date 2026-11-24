@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/lifecycle/bash.sh"
+
+package="${1:?APT package name is required}"
+shift
+installer_apt_package "$package" "$@"

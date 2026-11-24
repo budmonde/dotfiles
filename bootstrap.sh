@@ -77,7 +77,7 @@ if ! "$python_command" -c 'import sys; raise SystemExit(sys.version_info < (3, 9
 fi
 
 git -c core.fsmonitor= clone https://github.com/budmonde/dotfiles.git "$clone_path"
-git_state="$(DOTBOT_INSTALL_REPO_ROOT="$clone_path" "$python_command" "$clone_path/install/unix/git.py" apply)"
+git_state="$(DOTBOT_INSTALL_REPO_ROOT="$clone_path" "$python_command" "$clone_path/install/resources/git.unix.py" apply)"
 case "$git_state" in
     current|unsupported) ;;
     *)

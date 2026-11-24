@@ -51,7 +51,7 @@ Windows and macOS use their built-in stores.
 On Linux, the recipe reuses an available Secret Service or installs GNOME Keyring and its client tools on APT-based hosts.
 Without noninteractive sudo, Ubuntu 24.04 amd64 uses signed Ubuntu packages installed in the user’s XDG data directory and the system D-Bus tools.
 
-If the recipe stops at the unlock check on headless Linux, run `python3 install/unix/keyring-session.py` from the common checkout and enter the keyring passphrase.
+If the recipe stops at the unlock check on headless Linux, run `python3 install/keyring-session.py` from the common checkout and enter the keyring passphrase.
 Repeat the keyring install and test in the shell it opens, then continue setup there.
 A private D-Bus session started by the launcher lasts until that shell exits.
 
@@ -120,7 +120,7 @@ Status labels use terminal colors automatically; set `NO_COLOR` to disable them.
 The generic test engine is pinned as the `envtest/` submodule.
 The root `orchestrate.py` control plane owns recipe selection for both installation and testing.
 Its test adapter passes the selected YAML files to envtest explicitly.
-Base contracts live at `recipes/00-base.test.conf.yaml` and the corresponding platform path.
+Base contracts live at `recipes/00-base/test.conf.yaml` and the corresponding platform path.
 Other contracts live beside their recipe fragments as `<canonical-recipe>.test.conf.yaml`.
 Shared contracts contain platform-neutral checks.
 Platform recipe contracts contain only assertions whose runtime behavior or setup differs by platform.

@@ -1,2 +1,0 @@
-- install:
-    - [install/shared/keyring.py, Verifying the OS keyring in the current user session]

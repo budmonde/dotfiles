@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/lifecycle/bash.sh"
+
+plugin_root="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/plugins"
+tpm="$plugin_root/tpm"
+tmux_config="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
+
+declared_plugins() {
+    awk '/^[ \t]*set(-option)? +-g +@plugin/ { gsub(/'"'"'/, ""); gsub(/"/, ""); print $4 }' "$tmux_config" |
+        while IFS= read -r plugin; do
+            plugin="${plugin%%#*}"
+            plugin="${plugin##*/}"
+            plugin="${plugin%.git}"
+            [ "$plugin" = tpm ] || printf '%s\n' "$plugin"
+        done
+}
+
+installer_status() {
+    if [ ! -f "$tmux_config" ] || [ ! -x "$tpm/bin/install_plugins" ]; then
+        printf 'blocked\n'
+        return
+    fi
+    local missing= plugin
+    while IFS= read -r plugin; do
+        [ -d "$plugin_root/$plugin" ] || missing="${missing}${missing:+, }$plugin"
+    done < <(declared_plugins)
+    if [ -z "$missing" ]; then
+        printf 'current\n'
+    elif [ ! -d "$plugin_root" ]; then
+        installer_note "Missing declared tmux plugins: $missing"
+        printf 'absent\n'
+    else
+        installer_note "Missing declared tmux plugins: $missing"
+        printf 'drifted\n'
+    fi
+}
+
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    if [ "$state" = current ] || [ "$state" = blocked ]; then
+        printf '%s\n' "$state"
+        return
+    fi
+    "$tpm/bin/install_plugins" >&2
+    installer_status
+}
+
+installer_upgrade() {
+    if [ -n "$1" ]; then
+        installer_note 'TPM plugins do not accept a requested version'
+        return 1
+    fi
+    if [ ! -x "$tpm/bin/update_plugins" ]; then
+        printf 'blocked\n'
+        return
+    fi
+    "$tpm/bin/update_plugins" all >&2
+    installer_status
+}
+
+installer_main "$@"

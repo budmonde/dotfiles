@@ -1,0 +1,9 @@
+# Recipe: 65-gamedev — game development tools
+# Usage: .\install.ps1 --recipe gamedev
+
+- install:
+    - [[install/resources/winget.ps1, Unity.UnityHub], Installing Unity Hub]
+
+- shell:
+    - command: shellver bump machine
+      description: Refreshing Shellver machine generation

@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/lifecycle/bash.sh"
+
+install_dir="${XDG_DATA_HOME:-$HOME/.local/share}/gh-install"
+bin_dir="$HOME/.local/bin"
+binary="$install_dir/bin/gh"
+
+gh_target() {
+    [ "$(uname -s)" = Linux ] || return 1
+    case "$(uname -m)" in
+        x86_64) printf 'amd64\n' ;;
+        aarch64|arm64) printf 'arm64\n' ;;
+        *) return 1 ;;
+    esac
+}
+
+installer_status() {
+    if ! gh_target >/dev/null; then
+        printf 'unsupported\n'
+        return
+    fi
+    local candidate installed
+    candidate="$binary"
+    [ -x "$candidate" ] || candidate="$(command -v gh || true)"
+    if [ -z "$candidate" ]; then
+        printf 'absent\n'
+        return
+    fi
+    installed="$("$candidate" --version 2>/dev/null | head -1 | awk '{ print $3 }')"
+    installer_version_state "$installed" ""
+}
+
+install_gh() {
+    local version="$1"
+    local arch
+    arch="$(gh_target)" || {
+        installer_note 'GitHub CLI installer supports Linux x64 and arm64 only'
+        return 1
+    }
+    if [ -z "$version" ]; then
+        version="$(installer_github_latest_version cli/cli || true)"
+    fi
+    [ -n "$version" ] || {
+        installer_note 'Could not resolve a GitHub CLI release version'
+        return 1
+    }
+    version="${version#v}"
+
+    mkdir -p "$(dirname "$install_dir")"
+    local temporary staging backup=
+    temporary="$(mktemp -d)"
+    staging="$(mktemp -d "${install_dir}.install.XXXXXX")"
+    cleanup_gh() {
+        rm -rf "$temporary"
+        [ ! -d "$staging" ] || rm -rf "$staging"
+        if [ -n "$backup" ] && [ ! -e "$install_dir" ] && [ -e "$backup" ]; then
+            mv "$backup" "$install_dir"
+        fi
+    }
+    trap cleanup_gh RETURN
+
+    local filename="gh_${version}_linux_${arch}.tar.gz"
+    curl -fsSL "https://github.com/cli/cli/releases/download/v${version}/${filename}" -o "$temporary/$filename"
+    tar -xzf "$temporary/$filename" -C "$temporary"
+    mv "$temporary"/gh_*/* "$staging/"
+    "$staging/bin/gh" --version >&2
+
+    if [ -d "$install_dir" ]; then
+        backup="${install_dir}.previous.$$"
+        mv "$install_dir" "$backup"
+    elif [ -e "$install_dir" ]; then
+        installer_note "Refusing to replace non-directory GitHub CLI installation: $install_dir"
+        return 1
+    fi
+    mv "$staging" "$install_dir"
+    staging=
+    mkdir -p "$bin_dir"
+    ln -sfn "$binary" "$bin_dir/gh"
+    if [ -n "$backup" ]; then
+        rm -rf "$backup"
+        backup=
+    fi
+    trap - RETURN
+    rm -rf "$temporary"
+}
+
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    case "$state" in
+        absent) install_gh ''; installer_status ;;
+        *) printf '%s\n' "$state" ;;
+    esac
+}
+
+installer_upgrade() {
+    if ! gh_target >/dev/null; then
+        printf 'unsupported\n'
+        return
+    fi
+    install_gh "$1"
+    installer_status
+}
+
+installer_main "$@"

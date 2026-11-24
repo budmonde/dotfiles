@@ -1,6 +1,0 @@
-schema_version: 3
-
-checks:
-  keyring:
-    commands:
-      availability: [uv run --no-project python install/shared/keyring.py status, '(?m)^current$']

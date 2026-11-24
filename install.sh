@@ -16,7 +16,7 @@ export PATH="${HOME}/.local/bin:${PATH}"
 
 for python in python3 python; do
     if command -v "${python}" >/dev/null 2>&1; then
-        exec "${python}" "${BASEDIR}/orchestrate.py" install "${@}"
+        exec "${python}" "${BASEDIR}/orchestrate.py" install unix "${@}"
     fi
 done
 

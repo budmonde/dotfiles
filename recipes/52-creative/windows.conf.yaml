@@ -1,0 +1,13 @@
+# Recipe: 52-creative — digital art and photography tools
+# Usage: .\install.ps1 --recipe creative
+
+- install:
+    - [[install/resources/winget.ps1, BlenderFoundation.Blender], Installing Blender]
+    - [[install/resources/winget.ps1, darktable.darktable], Installing darktable]
+    - [[install/resources/winget.ps1, Figma.Figma], Installing Figma]
+    - [[install/resources/winget.ps1, GIMP.GIMP], Installing GIMP]
+    - [[install/resources/winget.ps1, Inkscape.Inkscape], Installing Inkscape]
+
+- shell:
+    - command: shellver bump machine
+      description: Refreshing Shellver machine generation

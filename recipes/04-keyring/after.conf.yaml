@@ -1,0 +1,2 @@
+- install:
+    - [install/resources/keyring.py, Verifying the OS keyring in the current user session]

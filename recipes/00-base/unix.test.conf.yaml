@@ -1,0 +1,68 @@
+schema_version: 3
+
+checks:
+  python:
+    paths: [python3]
+    commands:
+      version: [python3 --version, '^Python 3\.(?:[89]|[1-9][0-9])\.']
+      environment-count: ["uv python list --only-installed | grep -c .", '^[1-9][0-9]*\s*$']
+      installed-versions: [uv python list --only-installed]
+
+  git:
+    commands:
+      minimum-version:
+        - python3 -c "import re, subprocess; version = tuple(map(int, re.search(r'(\d+)\.(\d+)\.(\d+)', subprocess.check_output(['git', '--version'], text=True)).groups())); assert version >= (2, 36, 0), version; print('supported')"
+        - '(?m)^supported$'
+
+  fzf:
+    paths:
+      fzf-tmux:
+        locations: ["${XDG_DATA_HOME:-$HOME/.local/share}/fzf/bin"]
+
+  bash:
+    paths: [bash]
+    commands:
+      history: ["bash -ic 'test \"$HISTFILE\" = \"${XDG_STATE_HOME:-$HOME/.local/state}/bash/history\" && test -d \"${HISTFILE%/*}\" && echo ready'", '(?m)^ready$']
+
+  zsh:
+    links:
+      "~/.zshenv": config/zshenv
+      "~/.zshrc": config/zshrc
+      "~/.config/zsh": config/zsh
+    paths: [zsh]
+    commands:
+      version: [zsh --version, zsh]
+      configuration: ["zsh -ic 'print -r -- \"$KEYTIMEOUT\"'", '(?m)^1$']
+      history: ["zsh -ic 'test \"$HISTFILE\" = \"${XDG_STATE_HOME:-$HOME/.local/state}/zsh/history\" && test -d \"${HISTFILE:h}\" && print -r -- ready'", '(?m)^ready$']
+
+  tmux:
+    links:
+      "~/.config/tmux": config/tmux
+    files:
+      "~/.config/tmux/plugins/tpm/tpm": file
+      "~/.config/tmux/plugins/tmux-resurrect/resurrect.tmux": file
+      "~/.config/tmux/plugins/tmux-continuum/continuum.tmux": file
+    paths: [tmux]
+    commands:
+      plugin-state: [DOTBOT_INSTALL_REPO_ROOT="$PWD" ./install/resources/tmux-plugins.sh status, '(?m)^current$']
+      version: [tmux -V, tmux]
+      configuration:
+        - >-
+          tmux -L dotfiles-test-$$ -f "$HOME/.config/tmux/tmux.conf"
+          start-server \; show-options -gv prefix \; list-keys -T prefix I \; kill-server
+        - C-a
+        - run-shell
+
+  vim:
+    commands:
+      version: [vim --version, 'VIM - Vi IMproved 9\.2', '\+clipboard_provider']
+
+  push-notify:
+    if: 'test -n "$WSL_DISTRO_NAME"'
+    links:
+      "~/.local/bin/push-notify": bin/push-notify
+    paths:
+      push-notify:
+        locations: [~/.local/bin]
+    commands:
+      notification: ['push-notify --silent "dotfiles environment test" "push-notify validation"']

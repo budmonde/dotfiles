@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$DOTBOT_INSTALL_REPO_ROOT/install/lib/lifecycle/bash.sh"
+
+install_dir="${XDG_DATA_HOME:-$HOME/.local/share}/fnm"
+binary="$install_dir/fnm"
+
+installer_status() {
+    if [ ! -x "$binary" ]; then
+        printf 'absent\n'
+        return
+    fi
+    local installed
+    installed="$("$binary" --version 2>/dev/null | awk '{ print $NF }')"
+    installer_version_state "$installed" ""
+}
+
+install_fnm() {
+    local requested_version="$1"
+    if [ -n "$requested_version" ]; then
+        installer_note 'fnm does not support requested-version installation through its supported installer'
+        return 1
+    fi
+    command -v curl >/dev/null 2>&1 || {
+        installer_note 'curl is required to install fnm'
+        return 1
+    }
+    curl -fsSL https://fnm.vercel.app/install |
+        bash -s -- --install-dir "$install_dir" --skip-shell 1>&2
+    [ -x "$binary" ] || {
+        installer_note "fnm installation did not produce $binary"
+        return 1
+    }
+}
+
+installer_apply() {
+    local state
+    state="$(installer_status)"
+    if [ "$state" != absent ]; then
+        printf '%s\n' "$state"
+        return
+    fi
+    install_fnm "$1"
+    installer_status
+}
+
+installer_upgrade() {
+    install_fnm "$1"
+    installer_status
+}
+
+installer_main "$@"

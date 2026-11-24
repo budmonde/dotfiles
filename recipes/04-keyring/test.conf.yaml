@@ -1,0 +1,6 @@
+schema_version: 3
+
+checks:
+  keyring:
+    commands:
+      availability: [uv run --no-project python install/resources/keyring.py status, '(?m)^current$']

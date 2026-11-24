@@ -1,0 +1,33 @@
+# Unix-specific configuration (Linux, macOS, WSL)
+# Platform fragment for recipe 00-base.
+
+- clean:
+    - '~'
+    - '~/.config'
+    - '~/.local/bin'
+
+- link:
+    # Zshell
+    ~/.zshenv: config/zshenv
+    ~/.zshrc: config/zshrc
+    ~/.config/zsh: config/zsh
+
+    # Tmux
+    ~/.config/tmux: config/tmux
+
+    # WSL->Windows push notification
+    ~/.local/bin/push-notify:
+        path: bin/push-notify
+        if: '[ -n "$WSL_DISTRO_NAME" ]'
+
+- install:
+    - [install/resources/git.unix.py, Installing Git with filesystem monitor configuration support]
+    - [install/resources/uv.sh, Installing uv]
+    - [install/resources/shellver/unix.sh, Installing Shellver]
+    - [install/resources/fzf/unix.sh, Installing fzf]
+    - [install/resources/tmux-plugins.sh, Installing tmux plugins]
+    - [install/resources/rg.sh, Installing ripgrep]
+    - [install/resources/rclone.sh, Installing rclone]
+    - [install/resources/vim.sh, Installing Vim]
+    - [install/resources/nvim.sh, Installing Neovim]
+    - [install/resources/gh.sh, Installing GitHub CLI]

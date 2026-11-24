@@ -1,0 +1,6 @@
+# Recipe: 41-iqa — image quality assessment tools
+# Usage: .\install.ps1 --recipe iqa
+
+- install:
+    - [[install/resources/winget.ps1, VideoLAN.VLC], Installing VLC]
+    - [[install/resources/winget.ps1, Gyan.FFmpeg], Installing FFmpeg]

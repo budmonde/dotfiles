@@ -1,6 +1,0 @@
-# Recipe: 40-research — academic and research workflow tools
-# Usage: .\install.ps1 --recipe research
-
-- install:
-    - [[install/windows/winget.ps1, MiKTeX.MiKTeX], Installing MiKTeX]
-    - [[install/windows/winget.ps1, Google.Chrome], Installing Google Chrome]

@@ -1,6 +1,0 @@
-# Recipe: 30-agentic — agentic-coding CLI tooling
-# Usage: .\install.ps1 --recipe agentic
-# Requires the common `node` recipe to be installed before starting this shell.
-
-- install:
-    - [[install/windows/environment.ps1, "CODEX_HOME=User:Path:~/.config/codex"], Configuring the persistent Codex environment]

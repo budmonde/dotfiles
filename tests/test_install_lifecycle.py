@@ -13,14 +13,13 @@ from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO_ROOT / "install/lib/python"))
-import lifecycle as LIFECYCLE
-from lifecycle import core as CORE
-from lifecycle import keyring as KEYRING
-import unix_recipe as UNIX_RECIPE
-from lifecycle import npm as NPM
-from lifecycle import ssh_key as SSH_KEY
-from lifecycle import uv as UV
+sys.path.insert(0, str(REPO_ROOT / "install/lib"))
+from lifecycle.python import core as CORE
+from lifecycle.python import keyring as KEYRING
+from lifecycle.python import npm as NPM
+from lifecycle.python import ssh_key as SSH_KEY
+from lifecycle.python import uv as UV
+import recipe_resolver as RECIPE_RESOLVER
 
 sys.path.insert(0, str(REPO_ROOT))
 import orchestrate as ORCHESTRATE
@@ -28,7 +27,7 @@ import orchestrate as ORCHESTRATE
 
 def load_installer(module_name, filename):
     spec = importlib.util.spec_from_file_location(
-        module_name, REPO_ROOT / "install/shared" / filename
+        module_name, REPO_ROOT / "install/resources" / filename
     )
     module = importlib.util.module_from_spec(spec)
     with mock.patch.dict(os.environ, {"DOTBOT_INSTALL_REPO_ROOT": str(REPO_ROOT)}):
@@ -48,7 +47,7 @@ def completed(arguments):
 class GitInstallerTests(unittest.TestCase):
     def setUp(self):
         spec = importlib.util.spec_from_file_location(
-            "git_installer", REPO_ROOT / "install/unix/git.py"
+            "git_installer", REPO_ROOT / "install/resources/git.unix.py"
         )
         self.installer = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.installer)
@@ -145,18 +144,6 @@ class GitInstallerTests(unittest.TestCase):
         self.assertEqual(list(self.installation.parent.iterdir()), [self.installation])
 
 
-class FacadeTests(unittest.TestCase):
-    def test_public_backend_imports_remain_available(self):
-        for name in (
-            "main",
-            "managed_ssh_key",
-            "npm_global",
-            "npm_project",
-            "uv_tool",
-        ):
-            self.assertTrue(callable(getattr(LIFECYCLE, name)))
-
-
 class WindowsEnvironmentBackendTests(unittest.TestCase):
     def run_lifecycle(self, script):
         if os.name != "nt":
@@ -164,7 +151,7 @@ class WindowsEnvironmentBackendTests(unittest.TestCase):
         powershell = shutil.which("pwsh") or shutil.which("powershell")
         if powershell is None:
             self.skipTest("PowerShell is not available")
-        module = str(REPO_ROOT / "install/lib/windows/Lifecycle.psm1").replace(
+        module = str(REPO_ROOT / "install/lib/lifecycle/PowerShell.psm1").replace(
             "'", "''"
         )
         result = subprocess.run(
@@ -312,7 +299,7 @@ class NpmProjectTests(unittest.TestCase):
         with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
             NPM, "capture", side_effect=capture
         ):
-            state = NPM.npm_project(self.project, "apply")
+            state = NPM.project(self.project, operation="apply")
 
         self.assertEqual(state, "current")
         self.assertTrue(any(arguments[1] == "install" for arguments in calls))
@@ -329,7 +316,7 @@ class NpmProjectTests(unittest.TestCase):
         with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
             NPM, "capture", side_effect=capture
         ):
-            state = NPM.npm_project(self.project, "apply")
+            state = NPM.project(self.project, operation="apply")
 
         self.assertEqual(state, "current")
         self.assertFalse(any(arguments[1] == "install" for arguments in calls))
@@ -340,7 +327,7 @@ class NpmGlobalTests(unittest.TestCase):
         with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
             NPM, "_npm_installed_version", return_value="1.0.0"
         ), mock.patch.object(NPM, "capture") as capture:
-            state = NPM.npm_global("example-package", "status")
+            state = NPM.global_package("example-package", operation="status")
 
         self.assertEqual(state, "current")
         capture.assert_not_called()
@@ -349,7 +336,7 @@ class NpmGlobalTests(unittest.TestCase):
         with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
             NPM, "_npm_installed_version", return_value="1.0.0"
         ), mock.patch.object(NPM, "capture") as capture:
-            state = NPM.npm_global("example-package", "apply")
+            state = NPM.global_package("example-package", operation="apply")
 
         self.assertEqual(state, "current")
         capture.assert_not_called()
@@ -359,7 +346,7 @@ class NpmGlobalTests(unittest.TestCase):
         with mock.patch.object(NPM.shutil, "which", return_value="npm"), mock.patch.object(
             NPM, "_npm_installed_version", side_effect=installed_versions
         ), mock.patch.object(NPM, "capture", return_value=completed([])) as capture:
-            state = NPM.npm_global("example-package", "apply", "2.0.0")
+            state = NPM.global_package("example-package", operation="apply", requested_version="2.0.0")
 
         self.assertEqual(state, "current")
         capture.assert_called_once()
@@ -375,7 +362,7 @@ class UvToolTests(unittest.TestCase):
             "_uv_tool_installed_version",
             return_value=None,
         ), mock.patch.object(UV, "capture") as capture:
-            state = UV.uv_tool("example", "example", "apply")
+            state = UV.tool("example", "example", operation="apply")
 
         self.assertEqual(state, "unsupported")
         capture.assert_not_called()
@@ -398,7 +385,7 @@ class UvToolTests(unittest.TestCase):
             "capture",
             return_value=completed([]),
         ) as capture:
-            state = UV.uv_tool("example", "example", "apply")
+            state = UV.tool("example", "example", operation="apply")
 
         self.assertEqual(state, "current")
         self.assertIn(
@@ -425,7 +412,7 @@ class UvToolTests(unittest.TestCase):
             "capture",
             return_value=completed([]),
         ) as capture:
-            state = UV.uv_tool("example", "example", "apply", source=source)
+            state = UV.tool("example", "example", operation="apply", source=source)
 
         self.assertEqual(state, "current")
         self.assertIn(
@@ -452,7 +439,7 @@ class UvToolTests(unittest.TestCase):
             "capture",
             return_value=completed([]),
         ) as capture:
-            state = UV.uv_tool("example", "example", "apply", source=source)
+            state = UV.tool("example", "example", operation="apply", source=source)
 
         self.assertEqual(state, "current")
         self.assertIn(
@@ -542,8 +529,8 @@ class UvToolTests(unittest.TestCase):
             "capture",
             return_value=completed([]),
         ) as capture:
-            state = UV.uv_tool(
-                "example", "example", "apply", "1.2.3", source=source
+            state = UV.tool(
+                "example", "example", operation="apply", requested_version="1.2.3", source=source
             )
 
         self.assertEqual(state, "current")
@@ -560,7 +547,7 @@ class UvToolTests(unittest.TestCase):
             UV, "_uv_tool_state", side_effect=["absent", "drifted"]
         ), mock.patch.object(UV, "capture", return_value=completed([])):
             with self.assertRaisesRegex(UV.InstallerError, "remains drifted"):
-                UV.uv_tool("example", "example", "apply", "1.2.3", source=source)
+                UV.tool("example", "example", operation="apply", requested_version="1.2.3", source=source)
 
 
 class GithubAuthInstallerTests(unittest.TestCase):
@@ -594,7 +581,7 @@ class GithubAuthInstallerTests(unittest.TestCase):
         ) as popen, mock.patch.object(
             GITHUB_AUTH.webbrowser, "open", return_value=True
         ) as open_browser, mock.patch.object(
-            GITHUB_AUTH, "keyring_ready", return_value=True
+            GITHUB_AUTH, "ready", return_value=True
         ), mock.patch.object(
             GITHUB_AUTH, "_prepare_auth_directory", return_value=True
         ), mock.patch.object(
@@ -621,7 +608,7 @@ class GithubAuthInstallerTests(unittest.TestCase):
         ), mock.patch.object(
             GITHUB_AUTH.webbrowser, "open", return_value=False
         ), mock.patch.object(
-            GITHUB_AUTH, "keyring_ready", return_value=True
+            GITHUB_AUTH, "ready", return_value=True
         ), mock.patch.object(
             GITHUB_AUTH, "_prepare_auth_directory", return_value=True
         ):
@@ -1022,7 +1009,7 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
         ), mock.patch.dict(
             os.environ, {"DOTFILES_MACHINE_ID": "workstation"}
         ):
-            state = SSH_KEY.managed_ssh_key(
+            state = SSH_KEY.manage(
                 "apply",
                 "",
                 service_name="GitLab",
@@ -1092,9 +1079,18 @@ class GithubSshKeyInstallerTests(unittest.TestCase):
 
 
 class KeyringTests(unittest.TestCase):
+    def test_provider_checks_linux_before_probing_for_tools(self):
+        provider = load_installer("keyring_provider", "keyring-provider.unix.py")
+        with mock.patch.object(provider.sys, "platform", "win32"), mock.patch.object(
+            provider, "_linux_tools_present"
+        ) as detect_tools, mock.patch.object(provider, "diagnostic") as diagnostic:
+            self.assertEqual(provider.provision_keyring("apply", "", "userspace"), "blocked")
+        detect_tools.assert_not_called()
+        diagnostic.assert_called_once_with("This keyring provider requires Linux.")
+
     def test_status_is_read_only_and_apply_requires_a_round_trip(self):
-        with mock.patch.object(KEYRING_INSTALLER, "keyring_ready", return_value=True), mock.patch.object(
-            KEYRING_INSTALLER, "check_keyring_write", side_effect=[False, True]
+        with mock.patch.object(KEYRING_INSTALLER, "ready", return_value=True), mock.patch.object(
+            KEYRING_INSTALLER, "check_write", side_effect=[False, True]
         ) as check, mock.patch.object(KEYRING_INSTALLER, "diagnostic"):
             self.assertEqual(KEYRING_INSTALLER.keyring("status", ""), "current")
             check.assert_not_called()
@@ -1113,80 +1109,97 @@ class KeyringTests(unittest.TestCase):
 
 
 class RecipeTests(unittest.TestCase):
-    def test_keyring_recipe_selects_provisioning_scope_before_the_shared_check(self):
+    def test_keyring_selects_scope_by_privilege_before_the_shared_check(self):
         recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, "unix")
         selected = ORCHESTRATE.resolve_recipes(recipes, ["keyring", "github"])
-        cases = (
-            ("linux", True, "linux"),
-            ("linux", False, "linux-userspace"),
-            ("microsoft-standard-WSL2", True, "wsl"),
-            ("microsoft-standard-WSL2", False, "linux-userspace"),
-        )
-        for release, privileged, variant in cases:
-            with self.subTest(release=release, privileged=privileged), mock.patch.object(
-                UNIX_RECIPE.sys, "platform", "linux"
-            ), mock.patch.object(
-                UNIX_RECIPE.platform, "release", return_value=release
-            ), mock.patch.object(UNIX_RECIPE, "system_packages_available", return_value=privileged):
-                self.assertEqual(ORCHESTRATE.install_configs(REPO_ROOT, selected), [
-                    "recipes/unix/{}/04-keyring.conf.yaml".format(variant),
-                    "recipes/04-keyring.after.conf.yaml",
-                    "recipes/unix/05-github.conf.yaml",
+        for signal, variant in (("available", "systemspace"), ("unavailable", "userspace")):
+            with self.subTest(signal=signal), mock.patch.object(
+                RECIPE_RESOLVER.subprocess, "run",
+                side_effect=lambda args, **kwargs: subprocess.CompletedProcess(
+                    args, 0, "linux" if args[-1] == "os" else signal
+                ),
+            ) as run:
+                configs = ORCHESTRATE.install_configs(REPO_ROOT, selected)
+                self.assertEqual(configs, [
+                    "recipes/04-keyring/unix/{}.conf.yaml".format(variant),
+                    "recipes/04-keyring/after.conf.yaml",
+                    "recipes/05-github/unix.conf.yaml",
                 ])
-
-    def test_only_the_selected_unix_branch_can_replace_the_platform_fragment(self):
-        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
-            UNIX_RECIPE.sys, "platform", "linux"
-        ), mock.patch.object(
-            UNIX_RECIPE.platform, "release", return_value="microsoft-standard-WSL2"
-        ), mock.patch.object(UNIX_RECIPE, "system_packages_available", return_value=True):
-            unix = Path(directory) / "unix"
-            generic = unix / "04-keyring.test.conf.yaml"
-            for name in ("linux", "wsl", "macos"):
-                (unix / name).mkdir(parents=True)
-            (unix / "linux" / generic.name).touch()
-            self.assertEqual(UNIX_RECIPE.unix_recipe_fragment(generic), generic)
-            (unix / "wsl" / generic.name).touch()
-            self.assertEqual(UNIX_RECIPE.unix_recipe_fragment(generic), unix / "wsl" / generic.name)
-            with mock.patch.object(UNIX_RECIPE.sys, "platform", "darwin"):
-                self.assertEqual(UNIX_RECIPE.unix_recipe_fragment(generic), generic)
-                (unix / "macos" / generic.name).touch()
-                self.assertEqual(UNIX_RECIPE.unix_recipe_fragment(generic), unix / "macos" / generic.name)
+                self.assertEqual([call.args[0][-1] for call in run.call_args_list], ["os", "noninteractive-sudo"])
 
     def test_keyring_uses_only_the_shared_check_on_windows_and_macos(self):
-        with mock.patch.object(UNIX_RECIPE.sys, "platform", "darwin"):
+        with mock.patch.object(
+            RECIPE_RESOLVER.subprocess, "run",
+            return_value=subprocess.CompletedProcess([], 0, "macos"),
+        ) as run:
             for platform in ("windows", "unix"):
                 with self.subTest(platform=platform):
                     recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, platform)
                     selected = ORCHESTRATE.resolve_recipes(recipes, ["keyring"])
                     self.assertEqual(ORCHESTRATE.install_configs(REPO_ROOT, selected), [
-                        "recipes/04-keyring.after.conf.yaml",
+                        "recipes/04-keyring/after.conf.yaml",
                     ])
                     self.assertEqual(ORCHESTRATE.test_configs(REPO_ROOT, selected), [
-                        "recipes/04-keyring.test.conf.yaml",
+                        "recipes/04-keyring/test.conf.yaml",
                     ])
+            self.assertEqual([call.args[0][-1] for call in run.call_args_list], ["os", "os"])
 
-    def test_branch_fragment_can_declare_a_recipe_for_its_hosts(self):
+    def test_selector_pairs_install_and_envtest_through_nested_routes(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            macos = root / "recipes/unix/macos"
-            macos.mkdir(parents=True)
-            (root / "recipes/windows").mkdir()
-            (macos / "07-example.conf.yaml").touch()
-            (macos / "07-example.test.conf.yaml").touch()
-
-            with mock.patch.object(UNIX_RECIPE, "unix_recipe_branch", return_value="macos"):
-                selected = ORCHESTRATE.discover_recipes(root, "unix")
-                self.assertEqual([recipe.name for recipe in selected], ["07-example"])
-                self.assertEqual(ORCHESTRATE.install_configs(root, selected), [
-                    "recipes/unix/macos/07-example.conf.yaml",
-                ])
-                self.assertEqual(ORCHESTRATE.test_configs(root, selected), [
-                    "recipes/unix/macos/07-example.test.conf.yaml",
-                ])
-            with mock.patch.object(UNIX_RECIPE, "unix_recipe_branch", return_value="linux"):
-                self.assertEqual(ORCHESTRATE.discover_recipes(root, "unix"), [])
+            root = Path(directory).resolve()
+            recipe = root / "recipes/07-example"
+            unix = recipe / "unix"
+            branch = unix / "first-choice"
+            branch.mkdir(parents=True)
+            (root / "install/select").mkdir(parents=True)
+            (root / "install/select/host.py").write_text('print("fixture")', encoding="utf-8")
+            selector = """- probe:
+    platform: [install/select/host.py, os]
+- select:
+    - when: {platform: fixture}
+      target: {}
+"""
+            (unix / "select.yaml").write_text(selector.replace("{}", "first-choice"), encoding="utf-8")
+            (branch / "select.yaml").write_text(selector.replace("{}", "selected"), encoding="utf-8")
+            (branch / "selected.conf.yaml").touch()
+            (branch / "selected.test.conf.yaml").touch()
+            (recipe / "test.conf.yaml").touch()
             self.assertEqual(ORCHESTRATE.discover_recipes(root, "windows"), [])
+            with mock.patch.object(
+                RECIPE_RESOLVER.subprocess, "run",
+                return_value=subprocess.CompletedProcess([], 0, "fixture"),
+            ) as run:
+                recipes = ORCHESTRATE.discover_recipes(root, "unix")
+                self.assertEqual([item.name for item in recipes], ["07-example"])
+                run.assert_not_called()
+                fragments = RECIPE_RESOLVER.resolve_fragments(root, recipe, "unix")
+                run.assert_called_once()
+            self.assertEqual(fragments.install, ["recipes/07-example/unix/first-choice/selected.conf.yaml"])
+            self.assertEqual(fragments.test, [
+                "recipes/07-example/test.conf.yaml",
+                "recipes/07-example/unix/first-choice/selected.test.conf.yaml",
+            ])
+
+    def test_selector_rejects_missing_ambiguous_and_unmatched_routes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            recipe = root / "recipes/07-example"
+            unix = recipe / "unix"
+            unix.mkdir(parents=True)
+            (root / "install/select").mkdir(parents=True)
+            (root / "install/select/host.py").write_text('print("fixture")', encoding="utf-8")
+            header = "- probe:\n    os: [install/select/host.py, os]\n- select:\n"
+            route = "    - when: {os: fixture}\n      target: absent\n"
+            cases = (
+                (route, "selects missing branch 'absent'"),
+                (route * 2, "matched 2 routes"),
+                (route.replace("fixture", "other"), "matched 0 routes"),
+            )
+            for routes, error in cases:
+                with self.subTest(error=error):
+                    (unix / "select.yaml").write_text(header + routes, encoding="utf-8")
+                    with self.assertRaisesRegex(ORCHESTRATE.RecipeError, error):
+                        RECIPE_RESOLVER.resolve_fragments(root, recipe, "unix")
 
     def test_discovers_canonical_platform_recipes(self):
         windows = [recipe.name for recipe in ORCHESTRATE.discover_recipes(REPO_ROOT, "windows")]
@@ -1254,15 +1267,15 @@ class RecipeTests(unittest.TestCase):
         self.assertEqual(
             ORCHESTRATE.install_configs(REPO_ROOT, selected),
             [
-                "recipes/00-base.before.conf.yaml",
-                "recipes/windows/00-base.conf.yaml",
-                "recipes/00-base.after.conf.yaml",
-                "recipes/20-node.before.conf.yaml",
-                "recipes/windows/20-node.conf.yaml",
-                "recipes/20-node.after.conf.yaml",
-                "recipes/30-agentic.before.conf.yaml",
-                "recipes/windows/30-agentic.conf.yaml",
-                "recipes/30-agentic.after.conf.yaml",
+                "recipes/00-base/before.conf.yaml",
+                "recipes/00-base/windows.conf.yaml",
+                "recipes/00-base/after.conf.yaml",
+                "recipes/20-node/before.conf.yaml",
+                "recipes/20-node/windows.conf.yaml",
+                "recipes/20-node/after.conf.yaml",
+                "recipes/30-agentic/before.conf.yaml",
+                "recipes/30-agentic/windows.conf.yaml",
+                "recipes/30-agentic/after.conf.yaml",
             ],
         )
 
@@ -1300,12 +1313,12 @@ class RecipeTests(unittest.TestCase):
         self.assertEqual(
             ORCHESTRATE.test_configs(REPO_ROOT, selected),
             [
-                "recipes/00-base.test.conf.yaml",
-                "recipes/windows/00-base.test.conf.yaml",
-                "recipes/20-node.test.conf.yaml",
-                "recipes/windows/20-node.test.conf.yaml",
-                "recipes/30-agentic.test.conf.yaml",
-                "recipes/windows/30-agentic.test.conf.yaml",
+                "recipes/00-base/test.conf.yaml",
+                "recipes/00-base/windows.test.conf.yaml",
+                "recipes/20-node/test.conf.yaml",
+                "recipes/20-node/windows.test.conf.yaml",
+                "recipes/30-agentic/test.conf.yaml",
+                "recipes/30-agentic/windows.test.conf.yaml",
             ],
         )
 
@@ -1315,7 +1328,7 @@ class RecipeTests(unittest.TestCase):
             configs = ORCHESTRATE.test_configs(REPO_ROOT, recipes)
             for recipe in recipes:
                 self.assertTrue(
-                    any("/{}.test.conf.yaml".format(recipe.name) in config for config in configs),
+                    any(config.startswith("recipes/{}/".format(recipe.name)) for config in configs),
                     recipe.name,
                 )
 
@@ -1341,7 +1354,7 @@ class RecipeTests(unittest.TestCase):
         ) as run:
             returncode = ORCHESTRATE.run_test(
                 REPO_ROOT,
-                ["recipes/00-base.test.conf.yaml"],
+                ["recipes/00-base/test.conf.yaml"],
                 ["--list-checks"],
             )
 
@@ -1400,28 +1413,22 @@ class ManifestTests(unittest.TestCase):
             self.assertTrue(path.is_file(), (manifest, reference))
 
     def test_platform_manifests_only_use_compatible_installers(self):
+        host_resources = {
+            "unix": r"(?:[^/]+(?:\.unix\.py|\.sh)|[^/]+/unix\.(?:py|sh))",
+            "windows": r"(?:[^/]+(?:\.windows\.py|\.ps1)|[^/]+/windows\.(?:py|ps1))",
+        }
         for manifest, reference, _ in self.references():
-            relative_manifest = manifest.relative_to(REPO_ROOT).as_posix()
-            if relative_manifest.startswith("recipes/unix/"):
-                self.assertTrue(reference.startswith(("install/unix/", "install/shared/")))
-            if relative_manifest.startswith("recipes/windows/"):
-                self.assertTrue(reference.startswith(("install/windows/", "install/shared/")))
+            name = manifest.relative_to(REPO_ROOT / "recipes").parts[1].split(".")[0]
+            resource = Path(reference).relative_to("install/resources").as_posix()
+            shared = re.fullmatch(r"[^/]+(?<!\.unix)(?<!\.windows)\.py", resource)
+            platform = re.fullmatch(host_resources.get(name, r"(?!)"), resource)
+            self.assertTrue(shared or platform, (manifest, reference))
 
     def test_every_resource_installer_is_referenced(self):
-        # The keyring session launcher needs a terminal, outside the installer lifecycle.
-        interactive_launcher = REPO_ROOT / "install/unix/keyring-session.py"
         resource_installers = {
             path.relative_to(REPO_ROOT).as_posix()
-            for root, pattern in (
-                (REPO_ROOT / "install/shared", "*.py"),
-                (REPO_ROOT / "install/unix", "*"),
-                (REPO_ROOT / "install/windows", "*.ps1"),
-            )
-            for path in root.rglob(pattern)
-            if path.is_file()
-            and path != interactive_launcher
-            and "install/lib/" not in path.as_posix()
-            and "__pycache__" not in path.parts
+            for path in (REPO_ROOT / "install/resources").rglob("*")
+            if path.is_file() and "__pycache__" not in path.parts
         }
         references = {reference for _, reference, _ in self.references()}
         self.assertEqual(resource_installers - references, set())
@@ -1430,20 +1437,20 @@ class ManifestTests(unittest.TestCase):
         versions = {
             arguments[-1]
             for manifest, reference, arguments in self.references()
-            if reference in {"install/unix/node", "install/windows/node.ps1"}
+            if reference in {"install/resources/node/unix.sh", "install/resources/node/windows.ps1"}
         }
         self.assertEqual(versions, {"24.19.0"})
         self.assertFalse((REPO_ROOT / "profiles/node-version").exists())
 
     def test_google_drive_installer_belongs_to_collab_recipe(self):
         collab = (
-            REPO_ROOT / "recipes/windows/51-collab.conf.yaml"
+            REPO_ROOT / "recipes/51-collab/windows.conf.yaml"
         ).read_text(encoding="utf-8")
         research = (
-            REPO_ROOT / "recipes/windows/40-research.conf.yaml"
+            REPO_ROOT / "recipes/40-research/windows.conf.yaml"
         ).read_text(encoding="utf-8")
 
-        entry = "[[install/windows/winget.ps1, Google.GoogleDrive]"
+        entry = "[[install/resources/winget.ps1, Google.GoogleDrive]"
         self.assertIn(entry, collab)
         self.assertNotIn(entry, research)
 
@@ -1501,12 +1508,12 @@ class ManifestOrderingTests(unittest.TestCase):
             self.assertNotIn("shellver init", content)
 
     def test_platform_base_tests_start_with_bootstrap_requirements(self):
-        unix = (REPO_ROOT / "recipes/unix/00-base.test.conf.yaml").read_text(
+        unix = (REPO_ROOT / "recipes/00-base/unix.test.conf.yaml").read_text(
             encoding="utf-8"
         )
         self.assertLess(unix.index("  python:"), unix.index("  fzf:"))
 
-        windows = (REPO_ROOT / "recipes/windows/00-base.test.conf.yaml").read_text(
+        windows = (REPO_ROOT / "recipes/00-base/windows.test.conf.yaml").read_text(
             encoding="utf-8"
         )
         positions = [
@@ -1524,30 +1531,30 @@ class ManifestOrderingTests(unittest.TestCase):
                 self.assertIn("\n- clean:\n", "\n" + content, str(manifest))
 
     def test_base_defaults_are_shared_and_platform_cleanup_is_local(self):
-        before = (REPO_ROOT / "recipes/00-base.before.conf.yaml").read_text(encoding="utf-8")
+        before = (REPO_ROOT / "recipes/00-base/before.conf.yaml").read_text(encoding="utf-8")
         self.assertIn("- defaults:", before)
         for platform in ("unix", "windows"):
-            manifest = REPO_ROOT / "recipes" / platform / "00-base.conf.yaml"
+            manifest = REPO_ROOT / "recipes/00-base" / "{}.conf.yaml".format(platform)
             content = manifest.read_text(encoding="utf-8")
             self.assertNotIn("- defaults:", content, str(manifest))
             self.assertIn("- clean:", content, str(manifest))
 
     def test_neovim_restore_is_shared_post_platform_work(self):
-        action = "install/shared/nvim-plugins.py"
-        after = (REPO_ROOT / "recipes/00-base.after.conf.yaml").read_text(encoding="utf-8")
+        action = "install/resources/nvim-plugins.py"
+        after = (REPO_ROOT / "recipes/00-base/after.conf.yaml").read_text(encoding="utf-8")
         self.assertIn(action, after)
         for platform in ("unix", "windows"):
-            content = (REPO_ROOT / "recipes" / platform / "00-base.conf.yaml").read_text(
+            content = (REPO_ROOT / "recipes/00-base" / "{}.conf.yaml".format(platform)).read_text(
                 encoding="utf-8"
             )
             self.assertNotIn(action, content)
 
     def test_cross_platform_recipe_finalizers_are_shared(self):
         for recipe in ("10-dev", "20-node", "30-agentic", "40-research", "41-iqa"):
-            after = REPO_ROOT / "recipes" / "{}.after.conf.yaml".format(recipe)
+            after = REPO_ROOT / "recipes" / recipe / "after.conf.yaml"
             self.assertIn("shellver bump machine", after.read_text(encoding="utf-8"))
             for platform in ("unix", "windows"):
-                manifest = REPO_ROOT / "recipes" / platform / "{}.conf.yaml".format(recipe)
+                manifest = REPO_ROOT / "recipes" / recipe / "{}.conf.yaml".format(platform)
                 self.assertNotIn("shellver bump machine", manifest.read_text(encoding="utf-8"))
 
     def test_unified_launchers_delegate_to_the_orchestrator(self):
@@ -1556,10 +1563,10 @@ class ManifestOrderingTests(unittest.TestCase):
         test_sh = (REPO_ROOT / "test.sh").read_text(encoding="utf-8")
         test_ps1 = (REPO_ROOT / "test.ps1").read_text(encoding="utf-8")
 
-        self.assertIn('${BASEDIR}/orchestrate.py" install', install_sh)
-        self.assertIn("$ORCHESTRATOR install @Args", install_ps1)
-        self.assertIn('${BASEDIR}/orchestrate.py" test', test_sh)
-        self.assertIn("$ORCHESTRATOR test @Args", test_ps1)
+        self.assertIn('${BASEDIR}/orchestrate.py" install unix', install_sh)
+        self.assertIn("$ORCHESTRATOR install windows @Args", install_ps1)
+        self.assertIn('${BASEDIR}/orchestrate.py" test unix', test_sh)
+        self.assertIn("$ORCHESTRATOR test windows @Args", test_ps1)
         self.assertFalse((REPO_ROOT / "install/orchestrate.py").exists())
         self.assertFalse((REPO_ROOT / "install/recipes.py").exists())
         self.assertFalse((REPO_ROOT / "test/orchestrate.py").exists())
@@ -1578,13 +1585,13 @@ class ManifestOrderingTests(unittest.TestCase):
         self.assertNotIn("Copy-Item .install-recipes.example .install-recipes", bootstrap)
 
     def test_windows_agentic_owns_persistent_codex_home(self):
-        manifest = (REPO_ROOT / "recipes/windows/30-agentic.conf.yaml").read_text(
+        manifest = (REPO_ROOT / "recipes/30-agentic/windows.conf.yaml").read_text(
             encoding="utf-8"
         )
-        installer = "install/windows/environment.ps1"
+        installer = "install/resources/environment.ps1"
         self.assertIn(installer, manifest)
         self.assertIn('"CODEX_HOME=User:Path:~/.config/codex"', manifest)
-        base = (REPO_ROOT / "recipes/windows/00-base.conf.yaml").read_text(
+        base = (REPO_ROOT / "recipes/00-base/windows.conf.yaml").read_text(
             encoding="utf-8"
         )
         self.assertNotIn(installer, base)
@@ -1596,7 +1603,7 @@ class ManifestOrderingTests(unittest.TestCase):
         self.assertNotIn("[Environment]::GetEnvironmentVariable", content)
         self.assertNotIn("[Environment]::SetEnvironmentVariable", content)
 
-        vscode = (REPO_ROOT / "install/windows/vscode-user-data.ps1").read_text(
+        vscode = (REPO_ROOT / "install/resources/vscode-user-data.ps1").read_text(
             encoding="utf-8"
         )
         self.assertIn("Get-WindowsEnvironmentVariableState", vscode)

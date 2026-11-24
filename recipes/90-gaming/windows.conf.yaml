@@ -1,0 +1,9 @@
+# Recipe: 90-gaming
+# Usage: .\install.ps1 --recipe gaming
+
+- install:
+    - [[install/resources/winget.ps1, Valve.Steam], Installing Steam]
+
+- shell:
+    - command: shellver bump machine
+      description: Refreshing Shellver machine generation

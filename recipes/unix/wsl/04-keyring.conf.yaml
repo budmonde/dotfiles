@@ -1,2 +1,0 @@
-- install:
-    - [[install/unix/keyring-provider.py, system], Preparing WSL Secret Service tools]

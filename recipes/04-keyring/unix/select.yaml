@@ -1,0 +1,11 @@
+- probe:
+    os: [install/select/host.py, os]
+    sudo: [install/select/host.py, noninteractive-sudo]
+
+- select:
+    - when: {os: macos}
+      target: null
+    - when: {os: linux, sudo: available}
+      target: systemspace
+    - when: {os: linux, sudo: unavailable}
+      target: userspace

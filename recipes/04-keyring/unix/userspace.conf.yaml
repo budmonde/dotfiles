@@ -1,0 +1,2 @@
+- install:
+    - [[install/resources/keyring-provider.unix.py, userspace], Preparing userspace Secret Service tools]

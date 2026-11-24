@@ -10,7 +10,7 @@ foreach ($PYTHON in ('python', 'python3')) {
     if (& { $ErrorActionPreference = "SilentlyContinue"
             ![string]::IsNullOrEmpty((&$PYTHON -V))
             $ErrorActionPreference = "Stop" }) {
-        &$PYTHON $ORCHESTRATOR install @Args
+        &$PYTHON $ORCHESTRATOR install windows @Args
         exit $LASTEXITCODE
     }
 }

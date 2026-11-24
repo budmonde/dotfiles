@@ -1,9 +1,0 @@
-# Recipe: 10-dev — development build tools
-# Usage: .\install.ps1 --recipe dev
-
-- install:
-    - [[install/windows/winget.ps1, Microsoft.VisualStudio.2022.Community], Installing Visual Studio]
-    - [[install/windows/winget.ps1, Kitware.CMake], Installing CMake]
-    - [[install/windows/winget.ps1, ezwinports.make], Installing Make]
-    - [[install/windows/winget.ps1, GoLang.Go], Installing Go]
-    - [[install/windows/winget.ps1, Nvidia.Nsight.Compute], Installing NVIDIA Nsight Compute]

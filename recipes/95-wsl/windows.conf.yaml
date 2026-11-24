@@ -1,0 +1,10 @@
+# Recipe: 95-wsl — install WSL
+# Usage: .\install.ps1 --recipe wsl
+# Note: WSL install requires admin privileges and may trigger a reboot.
+
+- install:
+    - [install/resources/wsl.ps1, Installing Windows Subsystem for Linux]
+
+- shell:
+    - command: shellver bump machine
+      description: Refreshing Shellver machine generation
