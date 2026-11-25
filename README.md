@@ -58,6 +58,15 @@ If an older installation has no `~/.name`, create it before setting up GitHub au
 For managed GitHub authentication and SSH key setup, complete [keyring setup](#keyring), then run the common installer and tester with `--recipe github` in the same session.
 If your machine plan includes `05-github`, put `04-keyring` before it.
 
+## Machine-local shell hooks
+
+Use `~/.shellenv_local_before` on Unix or `~/.profile_local_before.ps1` on Windows to supply inputs such as XDG roots or PATH entries for tool discovery.
+Dotfiles then fills in missing XDG roots, builds its managed PATH, and configures tools.
+Use `~/.shellenv_local_after` or `~/.profile_local_after.ps1` to use that environment or override the resulting settings before shell integrations activate.
+
+On Unix, migrate `~/.shellenv_local_early` to `~/.shellenv_local_before` and `~/.shellenv_local` to `~/.shellenv_local_after`.
+On Windows, rename an existing `~/.profile_local.ps1` to `~/.profile_local_after.ps1` to keep it running at the same point in startup.
+
 ## Machine-local Git and SSH settings
 
 For machine-specific Git settings, create `config.local` alongside Git’s installed `config` file, normally at `~/.config/git/config.local`.

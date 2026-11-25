@@ -1,11 +1,3 @@
-# XDG Base Directory Specification
-$env:XDG_CONFIG_HOME = "$HOME\.config"
-$env:XDG_DATA_HOME = "$HOME\.local\share"
-$env:XDG_STATE_HOME = "$HOME\.local\state"
-$env:XDG_CACHE_HOME = "$HOME\.cache"
-
-# XDG Base Directory Specification paths
-# https://specifications.freedesktop.org/basedir/latest/
 $env:INPUTRC = "$env:XDG_CONFIG_HOME\readline\inputrc"
 $env:CLAUDE_CONFIG_DIR = "$env:XDG_CONFIG_HOME\claude"
 $env:PYTHONSTARTUP = "$env:XDG_CONFIG_HOME\python\pythonrc"

@@ -3,3 +3,9 @@ tags
 __pycache__/
 /.install-recipes
 /.worktrees/
+
+# Machine-local shell hooks
+/.shellenv_local_before
+/.shellenv_local_after
+/.profile_local_before.ps1
+/.profile_local_after.ps1

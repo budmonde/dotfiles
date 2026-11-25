@@ -1,5 +1,9 @@
+# Preserve process-specific PATH entries and pick up machine or user PATH entries
+# registered by installers since the parent terminal started.
+Merge-EnvironmentPath
+
 # Tool-managed paths
-$fzfBin = if ($env:XDG_DATA_HOME) { Join-Path $env:XDG_DATA_HOME 'fzf\bin' } else { "$HOME\.local\share\fzf\bin" }
+$fzfBin = Join-Path $env:XDG_DATA_HOME 'fzf\bin'
 if (Test-Path $fzfBin) { Prepend-PathEntry $fzfBin }
 
 # Personal paths (highest priority)

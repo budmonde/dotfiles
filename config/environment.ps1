@@ -3,20 +3,18 @@ param(
     [switch]$Interactive
 )
 
-Merge-EnvironmentPath
-
 . "$PSScriptRoot\powershell\machine.ps1"
 
-# External tool environment variables.
-. "$PSScriptRoot\powershell\external.ps1"
-
-# PATH setup.
-. "$PSScriptRoot\powershell\bootstrap.ps1"
-
-# Late local environment: overrides that depend on the base dotfiles setup.
-if (Test-Path "$HOME\.profile_local.ps1") {
-    . "$HOME\.profile_local.ps1"
+if (Test-Path -LiteralPath "$HOME\.profile_local_before.ps1" -PathType Leaf) {
+    . "$HOME\.profile_local_before.ps1"
 }
 
-# Runtime integrations mutate the current shell; static values and paths stay in external and bootstrap.
+. "$PSScriptRoot\powershell\xdg.ps1"
+. "$PSScriptRoot\powershell\bootstrap.ps1"
+. "$PSScriptRoot\powershell\external.ps1"
+
+if (Test-Path -LiteralPath "$HOME\.profile_local_after.ps1" -PathType Leaf) {
+    . "$HOME\.profile_local_after.ps1"
+}
+
 . "$PSScriptRoot\powershell\integrations.ps1" -Interactive:$Interactive
