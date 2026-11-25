@@ -1724,7 +1724,7 @@ class ManifestOrderingTests(unittest.TestCase):
                 [
                     bash,
                     "-c",
-                    '. "$1"; printf "%s\n" "$DOTFILES_MACHINE_ID" "$DOTFILES_WORKSPACE_ROOT"',
+                    '. "$1"; printf "%s\n" "$DOTFILES_MACHINE_ID" "$DOTFILES_WORKSPACE_ROOT" "$DOTFILES_SHELL_DIR"',
                     "bash",
                     (REPO_ROOT / "config/shell/machine.sh").as_posix(),
                 ],
@@ -1735,9 +1735,10 @@ class ManifestOrderingTests(unittest.TestCase):
             )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        identity, workspace_root = result.stdout.splitlines()
+        identity, workspace_root, shell_directory = result.stdout.splitlines()
         self.assertEqual(identity, "workstation")
         self.assertTrue(os.path.samefile(workspace_root, REPO_ROOT))
+        self.assertTrue(os.path.samefile(shell_directory, REPO_ROOT / "config/shell"))
 
     def test_powershell_machine_loader_exports_the_canonical_identity(self):
         powershell = shutil.which("pwsh") or shutil.which("powershell")
@@ -1759,7 +1760,8 @@ class ManifestOrderingTests(unittest.TestCase):
                     "-NonInteractive",
                     "-Command",
                     ("& '{}' -HomePath '{}'; "
-                     "Write-Output $env:DOTFILES_MACHINE_ID $env:DOTFILES_WORKSPACE_ROOT").format(
+                     "Write-Output $env:DOTFILES_MACHINE_ID $env:DOTFILES_WORKSPACE_ROOT "
+                     "$env:DOTFILES_SHELL_DIR").format(
                         script_path, home_path
                     ),
                 ],
@@ -1769,9 +1771,10 @@ class ManifestOrderingTests(unittest.TestCase):
             )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        identity, workspace_root = result.stdout.splitlines()
+        identity, workspace_root, shell_directory = result.stdout.splitlines()
         self.assertEqual(identity, "workstation")
         self.assertTrue(os.path.samefile(workspace_root, REPO_ROOT))
+        self.assertTrue(os.path.samefile(shell_directory, REPO_ROOT / "config/powershell"))
 
     def test_prompts_show_machine_identity_and_current_hostname(self):
         powershell = shutil.which("pwsh") or shutil.which("powershell")

@@ -9,12 +9,12 @@ if (Test-Path -LiteralPath "$HOME\.profile_local_before.ps1" -PathType Leaf) {
     . "$HOME\.profile_local_before.ps1"
 }
 
-. "$PSScriptRoot\powershell\xdg.ps1"
-. "$PSScriptRoot\powershell\bootstrap.ps1"
-. "$PSScriptRoot\powershell\external.ps1"
+. "$env:DOTFILES_SHELL_DIR\xdg.ps1"
+. "$env:DOTFILES_SHELL_DIR\bootstrap.ps1"
+. "$env:DOTFILES_SHELL_DIR\external.ps1"
 
 if (Test-Path -LiteralPath "$HOME\.profile_local_after.ps1" -PathType Leaf) {
     . "$HOME\.profile_local_after.ps1"
 }
 
-. "$PSScriptRoot\powershell\integrations.ps1" -Interactive:$Interactive
+. "$env:DOTFILES_SHELL_DIR\integrations.ps1" -Interactive:$Interactive

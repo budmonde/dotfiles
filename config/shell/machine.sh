@@ -1,7 +1,14 @@
-if [ -L "$HOME/.config/shell" ] && DOTFILES_WORKSPACE_ROOT=$(CDPATH= cd -P -- "$HOME/.config/shell/../.." && pwd -P); then
-    export DOTFILES_WORKSPACE_ROOT
+if [ -d "$HOME/.config/shell" ] && DOTFILES_SHELL_DIR=$(CDPATH= cd -P -- "$HOME/.config/shell" && pwd -P); then
+    export DOTFILES_SHELL_DIR
 else
-    unset DOTFILES_WORKSPACE_ROOT
+    unset DOTFILES_SHELL_DIR
+fi
+
+unset DOTFILES_WORKSPACE_ROOT
+if [ -n "${DOTFILES_SHELL_DIR:-}" ] && [ -L "$HOME/.config/shell" ]; then
+    DOTFILES_WORKSPACE_ROOT=${DOTFILES_SHELL_DIR%/*}
+    DOTFILES_WORKSPACE_ROOT=${DOTFILES_WORKSPACE_ROOT%/*}
+    export DOTFILES_WORKSPACE_ROOT="${DOTFILES_WORKSPACE_ROOT:-/}"
 fi
 
 _dotfiles_machine_id_path="$HOME/.name"

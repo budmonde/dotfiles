@@ -1,16 +1,16 @@
 # shellenv is the shared environment loader for bash and zsh
 
-. ~/.config/shell/functions.sh
-
-. ~/.config/shell/machine.sh
+. "$HOME/.config/shell/machine.sh" || return
+[ -n "${DOTFILES_SHELL_DIR:-}" ] || return
+. "$DOTFILES_SHELL_DIR/functions.sh"
 
 if [ -f "$HOME/.shellenv_local_before" ]; then
     . "$HOME/.shellenv_local_before"
 fi
 
-. ~/.config/shell/xdg.sh
-. ~/.config/shell/bootstrap.sh
-. ~/.config/shell/external.sh
+. "$DOTFILES_SHELL_DIR/xdg.sh"
+. "$DOTFILES_SHELL_DIR/bootstrap.sh"
+. "$DOTFILES_SHELL_DIR/external.sh"
 
 if [ -f "$HOME/.shellenv_local_after" ]; then
     . "$HOME/.shellenv_local_after"

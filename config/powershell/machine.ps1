@@ -2,7 +2,8 @@ param(
     [string]$HomePath = $HOME
 )
 
-$env:DOTFILES_WORKSPACE_ROOT = (Get-Item -LiteralPath $PSScriptRoot).Parent.Parent.FullName
+$env:DOTFILES_SHELL_DIR = $PSScriptRoot
+$env:DOTFILES_WORKSPACE_ROOT = (Get-Item -LiteralPath $env:DOTFILES_SHELL_DIR).Parent.Parent.FullName
 $machineNamePath = Join-Path $HomePath '.name'
 if (-not (Test-Path -LiteralPath $machineNamePath -PathType Leaf)) {
     Remove-Item Env:DOTFILES_MACHINE_ID -ErrorAction SilentlyContinue
