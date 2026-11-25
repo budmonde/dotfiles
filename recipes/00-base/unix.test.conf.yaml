@@ -58,7 +58,7 @@ checks:
       version: [vim --version, 'VIM - Vi IMproved 9\.2', '\+clipboard_provider']
 
   push-notify:
-    if: 'test -n "$WSL_DISTRO_NAME"'
+    if: '[ -n "${WSL_DISTRO_NAME:-}" ] && command -v cmd.exe >/dev/null 2>&1'
     links:
       "~/.local/bin/push-notify": bin/push-notify
     paths:

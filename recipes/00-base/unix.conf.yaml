@@ -18,7 +18,7 @@
     # WSL->Windows push notification
     ~/.local/bin/push-notify:
         path: bin/push-notify
-        if: '[ -n "$WSL_DISTRO_NAME" ]'
+        if: '[ -n "${WSL_DISTRO_NAME:-}" ] && command -v cmd.exe >/dev/null 2>&1'
 
 - install:
     - [install/resources/git.unix.py, Installing Git with filesystem monitor configuration support]
