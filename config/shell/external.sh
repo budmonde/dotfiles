@@ -41,10 +41,15 @@ else
 fi
 
 if [ -n "${IS_WSL:-}" ]; then
-    export PDF_VIEWER=wslview
-    if [ -z "${WINDOWS_USER:-}" ]; then
-        export WINDOWS_USER=$(powershell.exe -NoProfile -Command \
-            "[Environment]::UserName" | tr -d '\r\n')
+    if command -v wslview >/dev/null 2>&1; then
+        export PDF_VIEWER="${PDF_VIEWER:-wslview}"
     fi
-    export WINDOWS_HOME="/mnt/c/Users/$WINDOWS_USER"
+    if [ -z "${WINDOWS_USER:-}" ] && command -v powershell.exe >/dev/null 2>&1; then
+        WINDOWS_USER="$(powershell.exe -NoProfile -Command \
+            "[Environment]::UserName" | tr -d '\r\n')"
+        export WINDOWS_USER
+    fi
+    if [ -n "${WINDOWS_USER:-}" ]; then
+        export WINDOWS_HOME="/mnt/c/Users/$WINDOWS_USER"
+    fi
 fi

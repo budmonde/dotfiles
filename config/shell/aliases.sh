@@ -28,7 +28,7 @@ alias ea='$EDITOR ~/.config/shell/aliases.sh; src'
 alias eg='git config --global -e'
 
 # Command shortcuts
-if [ -n "$IS_WSL" ]; then
+if [ -n "${IS_WSL:-}" ] && command -v git.exe >/dev/null 2>&1; then
     git() {
         case "$(pwd -P)" in
             /mnt/*) git.exe "$@" ;;
@@ -38,10 +38,16 @@ if [ -n "$IS_WSL" ]; then
 fi
 alias g='git'
 alias v='$EDITOR -p'
-alias vs='NVIM_SESSION=1 nvim'
-alias pjson='python -m json.tool'
+if command -v nvim >/dev/null 2>&1; then
+    alias vs='NVIM_SESSION=1 nvim'
+fi
+if command -v python >/dev/null 2>&1; then
+    alias pjson='python -m json.tool'
+elif command -v python3 >/dev/null 2>&1; then
+    alias pjson='python3 -m json.tool'
+fi
 
-if [ -n "$IS_WSL" ]; then
+if [ -n "${IS_WSL:-}" ] && [ -n "${PDF_VIEWER:-}" ] && command -v "$PDF_VIEWER" >/dev/null 2>&1; then
     alias pdf-viewer-pipe="xargs $PDF_VIEWER"
 fi
 
