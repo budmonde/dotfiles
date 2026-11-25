@@ -12,7 +12,6 @@
     - ~/.config/codex
 
 - link:
-    ~/.config/codex/config.toml: config/codex/config.toml
     ~/.config/claude/settings.json: config/claude/settings.json
     ~/.config/claude/keybindings.json: config/claude/keybindings.json
 

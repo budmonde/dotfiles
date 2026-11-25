@@ -1,0 +1,6 @@
+schema_version: 3
+
+checks:
+  codex:
+    links:
+      "~/.config/codex/config.toml": config/codex/wsl.config.toml

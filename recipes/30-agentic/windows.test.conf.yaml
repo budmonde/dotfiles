@@ -1,6 +1,19 @@
 schema_version: 3
 
 checks:
+  codex:
+    links:
+      "~/.config/codex/config.toml": config/codex/windows.config.toml
+    commands:
+      home:
+        command: >-
+          $report = codex doctor --json | ConvertFrom-Json;
+          $actual = [IO.Path]::GetFullPath([string]$report.checks."config.load".details.CODEX_HOME);
+          $expected = [IO.Path]::GetFullPath($env:CODEX_HOME);
+          if ($actual -ieq $expected) { "configured" } else { "misconfigured" }
+        patterns: [configured]
+        timeout: 30
+
   codex-environment:
     commands:
       home:

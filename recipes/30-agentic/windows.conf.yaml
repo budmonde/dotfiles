@@ -2,5 +2,8 @@
 # Usage: .\install.ps1 --recipe agentic
 # Requires the common `node` recipe to be installed before starting this shell.
 
+- link:
+    ~/.config/codex/config.toml: config/codex/windows.config.toml
+
 - install:
     - [[install/resources/environment.ps1, "CODEX_HOME=User:Path:~/.config/codex"], Configuring the persistent Codex environment]

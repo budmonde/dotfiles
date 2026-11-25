@@ -1,0 +1,8 @@
+- probe:
+    runtime: [install/select/host.py, unix-runtime]
+
+- select:
+    - when: {runtime: native}
+      target: native
+    - when: {runtime: wsl}
+      target: wsl

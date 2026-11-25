@@ -196,6 +196,8 @@ Use `unix.conf.yaml` or `windows.conf.yaml` for a platform with one implementati
 Its optional Envtest fragment has the same stem and ends in `.test.conf.yaml`.
 When the implementation branches, use a directory of the same stem containing `select.yaml`.
 See [keyring's Unix selector](../recipes/04-keyring/unix/select.yaml) for the format.
+Use a selector directory's `before.conf.yaml`, `after.conf.yaml`, and `test.conf.yaml` for steps shared by its leaves.
+They wrap the selected install fragment and precede the selected Envtest fragment, just as they do at the recipe root.
 
 Each selector declares a `probe` mapping from fact names to command vectors and a `select` list of routes.
 Probes name Python scripts under `install/select/` relative to the checkout root and pass literal arguments.

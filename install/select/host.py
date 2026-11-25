@@ -1,4 +1,6 @@
 import argparse
+import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -8,6 +10,16 @@ def operating_system():
     if sys.platform.startswith("linux"):
         return "linux"
     return {"darwin": "macos", "win32": "windows"}.get(sys.platform, sys.platform)
+
+
+def unix_runtime():
+    if sys.platform.startswith("linux") and (
+        os.environ.get("WSL_INTEROP")
+        or os.environ.get("WSL_DISTRO_NAME")
+        or "microsoft" in platform.release().lower()
+    ):
+        return "wsl"
+    return "native"
 
 
 def noninteractive_sudo_available():
@@ -28,10 +40,12 @@ def noninteractive_sudo_available():
 
 def main():
     parser = argparse.ArgumentParser(description="Report a host fact for recipe selection.")
-    parser.add_argument("fact", choices=["os", "noninteractive-sudo"])
+    parser.add_argument("fact", choices=["os", "noninteractive-sudo", "unix-runtime"])
     fact = parser.parse_args().fact
     if fact == "os":
         value = operating_system()
+    elif fact == "unix-runtime":
+        value = unix_runtime()
     else:
         value = "available" if noninteractive_sudo_available() else "unavailable"
     print(value)

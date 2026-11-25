@@ -28,19 +28,29 @@ def has_install_fragments(directory: Path, platform: str) -> bool:
 
 
 def resolve_fragments(repo_root: Path, directory: Path, platform: str) -> RecipeFragments:
-    install, test = _platform_fragments(repo_root, directory, platform, {})
-    before, after = (directory / name for name in SHARED_INSTALL)
+    return _directory_fragments(repo_root, directory, platform, {})
+
+
+def _fragment(repo_root: Path, path: Path) -> List[str]:
+    return [path.relative_to(repo_root).as_posix()] if path.is_file() else []
+
+
+def _directory_fragments(
+    repo_root: Path,
+    directory: Path,
+    name: Optional[str],
+    signals: Dict[Tuple[str, ...], str],
+    required: bool = False,
+) -> RecipeFragments:
+    selected = (
+        _platform_fragments(repo_root, directory, name, signals, required)
+        if name is not None
+        else RecipeFragments([], [])
+    )
+    before, after = (_fragment(repo_root, directory / phase) for phase in SHARED_INSTALL)
     return RecipeFragments(
-        [
-            path.relative_to(repo_root).as_posix()
-            for path in (before, install, after)
-            if path is not None and path.is_file()
-        ],
-        [
-            path.relative_to(repo_root).as_posix()
-            for path in (directory / "test.conf.yaml", test)
-            if path is not None and path.is_file()
-        ],
+        before + selected.install + after,
+        _fragment(repo_root, directory / "test.conf.yaml") + selected.test,
     )
 
 
@@ -49,8 +59,8 @@ def _platform_fragments(
     directory: Path,
     name: str,
     signals: Dict[Tuple[str, ...], str],
-    required: bool = False,
-) -> Tuple[Optional[Path], Optional[Path]]:
+    required: bool,
+) -> RecipeFragments:
     install = directory / (name + ".conf.yaml")
     test = directory / (name + ".test.conf.yaml")
     branch = directory / name
@@ -61,12 +71,10 @@ def _platform_fragments(
             )
         selector = branch / "select.yaml"
         target = _select_branch(repo_root, selector, signals)
-        if target is None:
-            return None, None
-        return _platform_fragments(repo_root, branch, target, signals, required=True)
+        return _directory_fragments(repo_root, branch, target, signals, required=True)
     if required and not (install.is_file() or test.is_file()):
         raise RecipeError("{} selects missing branch '{}'".format(directory / "select.yaml", name))
-    return install, test
+    return RecipeFragments(_fragment(repo_root, install), _fragment(repo_root, test))
 
 
 def _selector_data(selector: Path):

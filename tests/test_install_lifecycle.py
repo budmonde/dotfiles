@@ -1163,6 +1163,9 @@ class RecipeTests(unittest.TestCase):
             (branch / "select.yaml").write_text(selector.replace("{}", "selected"), encoding="utf-8")
             (branch / "selected.conf.yaml").touch()
             (branch / "selected.test.conf.yaml").touch()
+            (unix / "before.conf.yaml").touch()
+            (unix / "test.conf.yaml").touch()
+            (branch / "after.conf.yaml").touch()
             (recipe / "test.conf.yaml").touch()
             self.assertEqual(ORCHESTRATE.discover_recipes(root, "windows"), [])
             with mock.patch.object(
@@ -1174,11 +1177,40 @@ class RecipeTests(unittest.TestCase):
                 run.assert_not_called()
                 fragments = RECIPE_RESOLVER.resolve_fragments(root, recipe, "unix")
                 run.assert_called_once()
-            self.assertEqual(fragments.install, ["recipes/07-example/unix/first-choice/selected.conf.yaml"])
+            self.assertEqual(fragments.install, [
+                "recipes/07-example/unix/before.conf.yaml",
+                "recipes/07-example/unix/first-choice/selected.conf.yaml",
+                "recipes/07-example/unix/first-choice/after.conf.yaml",
+            ])
             self.assertEqual(fragments.test, [
                 "recipes/07-example/test.conf.yaml",
+                "recipes/07-example/unix/test.conf.yaml",
                 "recipes/07-example/unix/first-choice/selected.test.conf.yaml",
             ])
+
+    def test_agentic_selects_one_codex_profile_and_its_matching_check(self):
+        recipe = REPO_ROOT / "recipes/30-agentic"
+        for platform, signal, leaf, profile in (
+            ("windows", "", "windows", "windows.config.toml"),
+            ("unix", "native", "unix/native", "config.toml"),
+            ("unix", "wsl", "unix/wsl", "wsl.config.toml"),
+        ):
+            with self.subTest(leaf=leaf), mock.patch.object(
+                RECIPE_RESOLVER.subprocess, "run",
+                return_value=subprocess.CompletedProcess([], 0, signal),
+            ):
+                fragments = RECIPE_RESOLVER.resolve_fragments(REPO_ROOT, recipe, platform)
+                target = "config/codex/" + profile
+                links = [
+                    line.split(": ", 1)[1]
+                    for fragment in fragments.install
+                    for line in (REPO_ROOT / fragment).read_text(encoding="utf-8").splitlines()
+                    if line.strip().startswith("~/.config/codex/config.toml: ")
+                ]
+                self.assertEqual(links, [target])
+                check = f"recipes/30-agentic/{leaf}.test.conf.yaml"
+                self.assertIn(check, fragments.test)
+                self.assertIn(target, (REPO_ROOT / check).read_text(encoding="utf-8"))
 
     def test_selector_rejects_missing_ambiguous_and_unmatched_routes(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1526,10 +1558,22 @@ class ManifestOrderingTests(unittest.TestCase):
         self.assertEqual(positions, sorted(positions))
 
     def test_every_link_manifest_declares_its_cleanup_surface(self):
-        for manifest in (REPO_ROOT / "recipes").rglob("*.conf.yaml"):
+        recipes_root = REPO_ROOT / "recipes"
+        for manifest in recipes_root.rglob("*.conf.yaml"):
             content = manifest.read_text(encoding="utf-8")
             if "\n- link:\n" in "\n" + content:
-                self.assertIn("\n- clean:\n", "\n" + content, str(manifest))
+                shared_before = [
+                    parent / "before.conf.yaml"
+                    for parent in manifest.parents
+                    if parent.is_relative_to(recipes_root) and parent != recipes_root
+                ]
+                self.assertTrue(
+                    any(
+                        path.is_file() and "\n- clean:\n" in "\n" + path.read_text(encoding="utf-8")
+                        for path in [manifest, *shared_before]
+                    ),
+                    str(manifest),
+                )
 
     def test_base_defaults_are_shared_and_platform_cleanup_is_local(self):
         before = (REPO_ROOT / "recipes/00-base/before.conf.yaml").read_text(encoding="utf-8")
@@ -1555,8 +1599,12 @@ class ManifestOrderingTests(unittest.TestCase):
             after = REPO_ROOT / "recipes" / recipe / "after.conf.yaml"
             self.assertIn("shellver bump machine", after.read_text(encoding="utf-8"))
             for platform in ("unix", "windows"):
-                manifest = REPO_ROOT / "recipes" / recipe / "{}.conf.yaml".format(platform)
-                self.assertNotIn("shellver bump machine", manifest.read_text(encoding="utf-8"))
+                family = after.parent / platform
+                manifests = [family.with_suffix(".conf.yaml")]
+                manifests.extend(family.rglob("*.conf.yaml"))
+                for manifest in manifests:
+                    if manifest.is_file() and not manifest.name.endswith(".test.conf.yaml"):
+                        self.assertNotIn("shellver bump machine", manifest.read_text(encoding="utf-8"))
 
     def test_unified_launchers_delegate_to_the_orchestrator(self):
         install_sh = (REPO_ROOT / "install.sh").read_text(encoding="utf-8")
