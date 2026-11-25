@@ -1212,6 +1212,14 @@ class RecipeTests(unittest.TestCase):
                 self.assertIn(check, fragments.test)
                 self.assertIn(target, (REPO_ROOT / check).read_text(encoding="utf-8"))
 
+    def test_machine_plan_can_list_optional_recipes_as_comments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            plan = Path(directory) / ".install-recipes"
+            plan.write_text("  # Optional recipes\n\n00-base\n# 50-desktop\n10-dev\n", encoding="utf-8")
+            available = ORCHESTRATE.discover_recipes(REPO_ROOT, "unix")
+            selected = ORCHESTRATE.read_machine_plan(plan, available)
+            self.assertEqual([recipe.name for recipe in selected], ["00-base", "10-dev"])
+
     def test_selector_rejects_missing_ambiguous_and_unmatched_routes(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
@@ -1312,13 +1320,20 @@ class RecipeTests(unittest.TestCase):
         )
 
     def test_example_machine_plan_is_canonical_and_monotonic(self):
-        recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, "windows")
-        selected = ORCHESTRATE.read_machine_plan(
-            REPO_ROOT / ".install-recipes.example", recipes
-        )
-
-        self.assertEqual(selected[0].name, "00-base")
-        self.assertEqual(selected[-1].name, "90-gaming")
+        example = REPO_ROOT / ".install-recipes.example"
+        entries = []
+        for line in example.read_text(encoding="utf-8").splitlines():
+            name = line.strip().removeprefix("#").strip()
+            if re.fullmatch(r"\d{2}-[a-z0-9-]+", name):
+                entries.append(name)
+        available = set()
+        for platform in ("unix", "windows"):
+            with self.subTest(platform=platform):
+                recipes = ORCHESTRATE.discover_recipes(REPO_ROOT, platform)
+                available.update(recipe.name for recipe in recipes)
+                selected = ORCHESTRATE.read_machine_plan(example, recipes)
+                self.assertEqual(selected[0].name, "00-base")
+        self.assertEqual(entries, sorted(available))
 
     def test_recipe_parser_preserves_unconsumed_arguments(self):
         cases = (

@@ -221,6 +221,9 @@ the launcher reads the gitignored `.install-recipes` machine plan:
 .\install.ps1
 ```
 
+Use one canonical recipe name per line.
+Blank lines and lines beginning with `#` are ignored.
+
 `--recipe` replaces the machine plan.
 Selectors may be canonical names,
 numeric IDs,

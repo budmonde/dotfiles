@@ -1,12 +1,17 @@
+# Uncomment the recipes this machine needs.
 00-base
-04-keyring
-05-github
-10-dev
-20-node
-30-agentic
-40-research
-41-iqa
-50-desktop
-51-collab
-52-creative
-90-gaming
+# 04-keyring
+# 05-github
+# 10-dev
+# 20-node
+# 30-agentic
+# 40-research
+# 41-iqa
+
+# Windows only
+# 50-desktop
+# 51-collab
+# 52-creative
+# 65-gamedev
+# 90-gaming
+# 95-wsl

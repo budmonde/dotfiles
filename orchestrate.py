@@ -136,7 +136,8 @@ def read_machine_plan(path: Path, recipes: Sequence[Recipe]) -> List[Recipe]:
                 path
             )
         )
-    selectors = [line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    lines = path.read_text(encoding="utf-8").splitlines()
+    selectors = [line for line in map(str.strip, lines) if line and not line.startswith("#")]
     resolved = resolve_recipes(recipes, selectors)
     for selector, recipe in zip(selectors, resolved):
         if selector != recipe.name:
