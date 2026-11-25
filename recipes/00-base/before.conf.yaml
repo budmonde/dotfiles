@@ -41,7 +41,7 @@
 
     # Misc
     ~/.config/gh: config/gh
-    ~/.config/shellver/common: shellver
+    ~/.config/shellver/dotfiles: shellver
 
     # Common launchers
     ~/.local/bin/git-filter-repo: bin/git-filter-repo

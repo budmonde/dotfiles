@@ -1,7 +1,7 @@
 schema_version: 3
 
 checks:
-  dotfiles-common:
+  dotfiles:
     links:
       "${DOTFILES_WORKSPACE_ROOT}": .
     commands:
@@ -115,13 +115,13 @@ checks:
 
   shellver:
     links:
-      "~/.config/shellver/common": shellver
+      "~/.config/shellver/dotfiles": shellver
     paths:
       shellver:
         locations: ["~/.local/bin"]
     commands:
       help: [shellver --help]
-      common-status: [shellver status common, 'status:\s+current']
+      dotfiles-status: [shellver status dotfiles, 'status:\s+current']
       machine-status: [shellver status machine, 'status:\s+current']
 
   git-filter-repo:
