@@ -3,8 +3,8 @@
     Sync PowerToys settings by writing directly to disk.
 
 .DESCRIPTION
-    Applies declared PowerToys configuration from template files, supporting
-    environment variable placeholders and a common/local override merge strategy.
+    Resolves environment variable placeholders in the declared templates and
+    merges the result into the live PowerToys settings.
 
     Strategy: stop PowerToys, write settings to disk, restart PowerToys.
 
@@ -121,7 +121,6 @@ if (-not (Test-Path $PtConfig)) {
 }
 
 $SettingsDir = Join-Path $PtConfig 'settings'
-$OverrideDir = Join-Path $PtConfig 'settings.d'
 
 # --- Helper: Deep-merge two hashtables (override wins) ---
 function Merge-Deep {
@@ -290,23 +289,12 @@ if ($Export) {
         New-Item -ItemType Directory -Path $modulesDir -Force | Out-Null
     }
 
-    # Collect local override file names to warn about
-    $localModules = @()
-    $overrideModulesDir = Join-Path $OverrideDir 'modules'
-    if (Test-Path $overrideModulesDir) {
-        $localModules = Get-ChildItem $overrideModulesDir -Filter '*.json' | ForEach-Object { $_.BaseName }
-    }
-    $hasLocalTopLevel = Test-Path (Join-Path $OverrideDir 'settings.json')
-
     # Export top-level settings (on-disk format, no wrapper)
     $topLevelPath = Join-Path $PowerToysDiskDir 'settings.json'
     if (Test-Path $topLevelPath) {
         Write-Host "Exporting top-level settings..."
         $content = [System.IO.File]::ReadAllText($topLevelPath, [System.Text.Encoding]::UTF8)
         $content | Set-Content (Join-Path $SettingsDir 'settings.json') -Encoding UTF8 -NoNewline
-        if ($hasLocalTopLevel) {
-            Write-Warning "settings.json has local overrides in settings.d/ -- exported file may contain values that should stay in the local repo."
-        }
     }
 
     # Export per-module settings (scan on-disk module directories)
@@ -319,9 +307,6 @@ if ($Export) {
         Write-Host "  Exporting module: $modName"
         $content = [System.IO.File]::ReadAllText($modSettingsPath, [System.Text.Encoding]::UTF8)
         $content | Set-Content (Join-Path $modulesDir "$modName.json") -Encoding UTF8 -NoNewline
-        if ($modName -in $localModules) {
-            Write-Warning "  $modName has local overrides in settings.d/ -- exported file may contain secrets or values that should stay in the local repo."
-        }
     }
 
     # Export ZoomIt settings from registry
@@ -335,16 +320,10 @@ if ($Export) {
         $zoomItJson = $zoomItReg | ConvertTo-Json -Depth 5
         $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
         [System.IO.File]::WriteAllText((Join-Path $modulesDir 'ZoomIt.json'), $zoomItJson, $utf8NoBom)
-        if ('ZoomIt' -in $localModules) {
-            Write-Warning "  ZoomIt has local overrides in settings.d/ -- exported file may contain values that should stay in the local repo."
-        }
     }
 
     Write-Host "Export complete -> $SettingsDir"
-    if ($localModules.Count -gt 0 -or $hasLocalTopLevel) {
-        Write-Host ""
-        Write-Warning "Review exported files for any secrets or local-only values before committing."
-    }
+    Write-Warning "Review exported files for secrets or machine-specific values before committing."
     exit 0
 }
 
@@ -360,17 +339,8 @@ $changes = @()
 # Resolve top-level settings
 $settingsFile = Join-Path $SettingsDir 'settings.json'
 if (Test-Path $settingsFile) {
-    $baseJson = Get-Content $settingsFile -Raw -Encoding UTF8
-    $merged = $baseJson | ConvertFrom-Json | ConvertTo-Hashtable
-
-    $overrideFile = Join-Path $OverrideDir 'settings.json'
-    if (Test-Path $overrideFile) {
-        $overrideJson = Get-Content $overrideFile -Raw -Encoding UTF8
-        $override = $overrideJson | ConvertFrom-Json | ConvertTo-Hashtable
-        $merged = Merge-Deep $merged $override
-    }
-
-    $resolvedJson = Resolve-Placeholders ($merged | ConvertTo-Json -Depth 50 -Compress)
+    $declared = Get-Content $settingsFile -Raw -Encoding UTF8 | ConvertFrom-Json | ConvertTo-Hashtable
+    $resolvedJson = Resolve-Placeholders ($declared | ConvertTo-Json -Depth 50 -Compress)
 
     if (Test-UnresolvedPlaceholders $resolvedJson) {
         $vars = Get-UnresolvedVars $resolvedJson
@@ -388,17 +358,8 @@ $zoomItChange = $null
 if (Test-Path $modulesDir) {
     foreach ($file in Get-ChildItem $modulesDir -Filter '*.json') {
         $moduleName = $file.BaseName
-        $baseJson = Get-Content $file.FullName -Raw -Encoding UTF8
-        $merged = $baseJson | ConvertFrom-Json | ConvertTo-Hashtable
-
-        $overrideFile = Join-Path $OverrideDir "modules\$($file.Name)"
-        if (Test-Path $overrideFile) {
-            $overrideJson = Get-Content $overrideFile -Raw -Encoding UTF8
-            $override = $overrideJson | ConvertFrom-Json | ConvertTo-Hashtable
-            $merged = Merge-Deep $merged $override
-        }
-
-        $resolvedJson = Resolve-Placeholders ($merged | ConvertTo-Json -Depth 50 -Compress)
+        $declared = Get-Content $file.FullName -Raw -Encoding UTF8 | ConvertFrom-Json | ConvertTo-Hashtable
+        $resolvedJson = Resolve-Placeholders ($declared | ConvertTo-Json -Depth 50 -Compress)
 
         if (Test-UnresolvedPlaceholders $resolvedJson) {
             $vars = Get-UnresolvedVars $resolvedJson
