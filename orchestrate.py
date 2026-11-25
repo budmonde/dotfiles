@@ -162,6 +162,8 @@ def _workflow_configs(repo_root: Path, recipes: Iterable[Recipe], workflow: str)
     for recipe in recipes:
         directory = repo_root / "recipes" / recipe.name
         fragments = resolve_fragments(repo_root, directory, recipe.platform)
+        if fragments is None:
+            continue
         selected = fragments.install if workflow == "install" else fragments.test
         if not selected:
             raise RecipeError("Recipe has no {} configuration: {}".format(workflow, recipe.name))
@@ -275,10 +277,15 @@ def main(
             else read_machine_plan(root / ".install-recipes", recipes)
         )
         if workflow == "install":
-            result = run_install(root, install_configs(root, selection), remaining)
+            configs = install_configs(root, selection)
+            run = run_install
         else:
-            result = run_test(root, test_configs(root, selection), remaining)
-        return propagate_returncode(result)
+            configs = test_configs(root, selection)
+            run = run_test
+        if not configs:
+            print("No selected recipes apply on this host.", file=sys.stderr)
+            return 0
+        return propagate_returncode(run(root, configs, remaining))
     except (OSError, RecipeError, subprocess.CalledProcessError) as error:
         print(str(error), file=sys.stderr)
         return 2

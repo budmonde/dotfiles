@@ -27,7 +27,7 @@ def has_install_fragments(directory: Path, platform: str) -> bool:
     )
 
 
-def resolve_fragments(repo_root: Path, directory: Path, platform: str) -> RecipeFragments:
+def resolve_fragments(repo_root: Path, directory: Path, platform: str) -> Optional[RecipeFragments]:
     return _directory_fragments(repo_root, directory, platform, {})
 
 
@@ -41,16 +41,19 @@ def _directory_fragments(
     name: Optional[str],
     signals: Dict[Tuple[str, ...], str],
     required: bool = False,
-) -> RecipeFragments:
+) -> Optional[RecipeFragments]:
     selected = (
         _platform_fragments(repo_root, directory, name, signals, required)
         if name is not None
-        else RecipeFragments([], [])
+        else None
     )
     before, after = (_fragment(repo_root, directory / phase) for phase in SHARED_INSTALL)
+    shared_tests = _fragment(repo_root, directory / "test.conf.yaml")
+    if selected is None:
+        return RecipeFragments(before + after, shared_tests) if before or after or shared_tests else None
     return RecipeFragments(
         before + selected.install + after,
-        _fragment(repo_root, directory / "test.conf.yaml") + selected.test,
+        shared_tests + selected.test,
     )
 
 
@@ -60,7 +63,7 @@ def _platform_fragments(
     name: str,
     signals: Dict[Tuple[str, ...], str],
     required: bool,
-) -> RecipeFragments:
+) -> Optional[RecipeFragments]:
     install = directory / (name + ".conf.yaml")
     test = directory / (name + ".test.conf.yaml")
     branch = directory / name

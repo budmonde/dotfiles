@@ -207,7 +207,7 @@ Declare the cheapest discriminating fact first so a route can stop before runnin
 
 The resolver requires one matching route.
 Its `target` names a sibling leaf or another selector directory.
-A `null` target explicitly uses the shared fragments.
+Use `target: null` to skip the branch and keep shared fragments.
 Branch names have meaning through the selector that points to them.
 Planning fails when a probe fails, a selected target is missing, or the routes yield zero or multiple matches.
 Each selected recipe resolves its install and test fragments together.

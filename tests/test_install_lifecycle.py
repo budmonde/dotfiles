@@ -1188,6 +1188,49 @@ class RecipeTests(unittest.TestCase):
                 "recipes/07-example/unix/first-choice/selected.test.conf.yaml",
             ])
 
+    def test_null_route_skips_empty_recipe_and_keeps_shared_fragments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            recipes_root = root / "recipes"
+            recipe = recipes_root / "07-optional"
+            platform = recipe / "unix"
+            branch = platform / "nested"
+            branch.mkdir(parents=True)
+            probe = root / "install/select/host.py"
+            probe.parent.mkdir(parents=True)
+            probe.write_text('print("fixture")\n', encoding="utf-8")
+            selector = (
+                "- probe:\n    os: [install/select/host.py, os]\n"
+                "- select:\n    - when: {{os: fixture}}\n      target: {}\n"
+            )
+            (platform / "select.yaml").write_text(selector.format("nested"), encoding="utf-8")
+            (branch / "select.yaml").write_text(selector.format("null"), encoding="utf-8")
+
+            active = recipes_root / "08-active"
+            active.mkdir()
+            (active / "before.conf.yaml").touch()
+            (active / "test.conf.yaml").touch()
+
+            for workflow, filename in (("install", "before.conf.yaml"), ("test", "test.conf.yaml")):
+                with self.subTest(workflow=workflow), mock.patch.object(
+                    ORCHESTRATE, f"run_{workflow}", return_value=0
+                ) as run, contextlib.redirect_stderr(io.StringIO()):
+                    arguments = [workflow, "--recipe", "optional"]
+                    self.assertEqual(ORCHESTRATE.main(arguments, root, "unix"), 0)
+                    run.assert_not_called()
+                    self.assertEqual(ORCHESTRATE.main(arguments + ["active"], root, "unix"), 0)
+                    run.assert_called_once_with(root, [f"recipes/08-active/{filename}"], [])
+
+            (platform / "before.conf.yaml").touch()
+            (recipe / "test.conf.yaml").touch()
+            selected = ORCHESTRATE.resolve_recipes(ORCHESTRATE.discover_recipes(root, "unix"), ["optional"])
+            self.assertEqual(ORCHESTRATE.install_configs(root, selected), [
+                "recipes/07-optional/unix/before.conf.yaml",
+            ])
+            self.assertEqual(ORCHESTRATE.test_configs(root, selected), [
+                "recipes/07-optional/test.conf.yaml",
+            ])
+
     def test_agentic_selects_one_codex_profile_and_its_matching_check(self):
         recipe = REPO_ROOT / "recipes/30-agentic"
         for platform, signal, leaf, profile in (
